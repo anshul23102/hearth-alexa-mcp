@@ -16,7 +16,8 @@ export function openDb(path = process.env.HEARTH_DB ?? "data/hearth.db"): Databa
       asin TEXT,
       qty INTEGER NOT NULL,
       pack_units INTEGER NOT NULL DEFAULT 1,
-      unit_price_cents INTEGER NOT NULL,
+      unit_price_cents INTEGER NOT NULL, -- minor units of the currency column (cents, pence, whole yen)
+      currency TEXT NOT NULL DEFAULT 'USD',
       status TEXT NOT NULL,
       product_key TEXT NOT NULL,
       kind TEXT NOT NULL,
@@ -24,10 +25,27 @@ export function openDb(path = process.env.HEARTH_DB ?? "data/hearth.db"): Databa
       UNIQUE (household, dedupe)
     );
     CREATE INDEX IF NOT EXISTS orders_key ON orders (household, product_key);
-    CREATE TABLE IF NOT EXISTS recall_cache (
-      query TEXT PRIMARY KEY,
-      fetched_at INTEGER NOT NULL,
-      body TEXT NOT NULL
+    CREATE TABLE IF NOT EXISTS recalls (
+      source TEXT NOT NULL,
+      ext_id TEXT NOT NULL,
+      region TEXT NOT NULL,
+      date TEXT NOT NULL,
+      title TEXT NOT NULL,
+      product TEXT NOT NULL,
+      text TEXT NOT NULL,
+      url TEXT NOT NULL,
+      hazard TEXT NOT NULL,
+      remedy TEXT NOT NULL,
+      image TEXT,
+      search TEXT NOT NULL,
+      PRIMARY KEY (source, ext_id)
+    );
+    CREATE INDEX IF NOT EXISTS recalls_region_date ON recalls (region, date);
+    CREATE TABLE IF NOT EXISTS recall_sync (
+      source TEXT PRIMARY KEY,
+      synced_at INTEGER NOT NULL,
+      count INTEGER NOT NULL,
+      mode TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS proposals (
       id TEXT PRIMARY KEY,
@@ -52,6 +70,8 @@ export function openDb(path = process.env.HEARTH_DB ?? "data/hearth.db"): Databa
       PRIMARY KEY (household, key)
     );
   `);
+  const cols = (db.prepare("PRAGMA table_info(orders)").all() as unknown as { name: string }[]).map((c) => c.name);
+  if (!cols.includes("currency")) db.exec("ALTER TABLE orders ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'");
   return db;
 }
 

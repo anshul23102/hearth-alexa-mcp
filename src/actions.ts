@@ -2,13 +2,14 @@ import type { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 import { audit } from "./db.js";
 import type { Runway } from "./forecast.js";
+import { fmtMoney } from "./money.js";
 
-export interface Line { productKey: string; title: string; name: string; packs: number; unitPriceCents: number; reason: string }
+export interface Line { productKey: string; title: string; name: string; packs: number; unitPriceCents: number; currency: string; reason: string }
 export interface Proposal {
   id: string; household: string; status: "pending" | "confirmed" | "expired" | "cancelled" | "undone";
-  createdAt: number; expiresAt: number; lines: Line[]; totalCents: number; budgetCents: number | null; dropped: { title: string; why: string }[];
+  createdAt: number; expiresAt: number; currency: string; lines: Line[]; totalCents: number; budgetCents: number | null; dropped: { title: string; why: string }[];
 }
-export interface Receipt { orderRef: string; placedAt: number; totalCents: number; undoUntil: number; lines: Line[] }
+export interface Receipt { orderRef: string; placedAt: number; currency: string; totalCents: number; undoUntil: number; lines: Line[] }
 
 /** The only seam between Hearth and a real storefront. Swap this for Amazon's ordering APIs in production. */
 export interface StoreAdapter {
@@ -24,29 +25,31 @@ const PROPOSAL_TTL = 30 * 60_000;
 const UNDO_WINDOW = 10 * 60_000;
 
 /** Pick what to reorder: items running out inside `withinDays`, cheapest-need-first, capped by budget. */
-export function propose(db: DatabaseSync, household: string, runway: Runway[], opts: { withinDays: number; budgetCents?: number }, now = Date.now()): Proposal {
+export function propose(db: DatabaseSync, household: string, runway: Runway[], opts: { withinDays: number; budgetCents?: number; currency?: string }, now = Date.now()): Proposal {
   const due = runway.filter((r) => r.daysLeft <= opts.withinDays).sort((a, b) => a.daysLeft - b.daysLeft);
+  const currency = opts.currency ?? due[0]?.currency ?? "USD";
   const lines: Line[] = [];
   const dropped: Proposal["dropped"] = [];
   let total = 0;
   for (const r of due) {
+    if (r.currency !== currency) { dropped.push({ title: r.name, why: `priced in ${r.currency}; this household orders in ${currency}` }); continue; }
     // One cycle's worth, rounded to whole packs, minimum 1.
     const cycleDays = 30;
     const unitsNeeded = Math.max(1, Math.round(r.unitsPerDay * cycleDays));
     const packs = Math.max(1, Math.round(unitsNeeded / Math.max(1, r.packUnits)));
     const cost = packs * r.unitPriceCents;
     if (opts.budgetCents !== undefined && total + cost > opts.budgetCents) {
-      dropped.push({ title: r.name, why: `would exceed budget by $${((total + cost - opts.budgetCents) / 100).toFixed(2)}` });
+      dropped.push({ title: r.name, why: `would exceed budget by ${fmtMoney(total + cost - opts.budgetCents, currency)}` });
       continue;
     }
     total += cost;
     lines.push({
-      productKey: r.productKey, title: r.title, name: r.name, packs, unitPriceCents: r.unitPriceCents,
+      productKey: r.productKey, title: r.title, name: r.name, packs, unitPriceCents: r.unitPriceCents, currency,
       reason: r.daysLeft < 0 ? `ran out ~${-r.daysLeft}d ago by your usual pace` : `about ${r.daysLeft}d left (±${r.windowDays})`,
     });
   }
   const p: Proposal = {
-    id: `prop_${randomUUID().slice(0, 12)}`, household, status: "pending", createdAt: now, expiresAt: now + PROPOSAL_TTL,
+    id: `prop_${randomUUID().slice(0, 12)}`, household, status: "pending", createdAt: now, expiresAt: now + PROPOSAL_TTL, currency,
     lines, totalCents: total, budgetCents: opts.budgetCents ?? null, dropped,
   };
   db.prepare("INSERT INTO proposals (id, household, created_at, expires_at, status, payload) VALUES (?, ?, ?, ?, ?, ?)").run(
@@ -77,7 +80,7 @@ export async function confirm(db: DatabaseSync, store: StoreAdapter, household: 
   }
   if (p.lines.length === 0) return { ok: false, error: "Nothing to order in this proposal." };
   const { orderRef } = await store.place(p.lines, id.replace("prop_", ""));
-  const receipt: Receipt = { orderRef, placedAt: now, totalCents: p.totalCents, undoUntil: now + UNDO_WINDOW, lines: p.lines };
+  const receipt: Receipt = { orderRef, placedAt: now, currency: p.currency, totalCents: p.totalCents, undoUntil: now + UNDO_WINDOW, lines: p.lines };
   db.prepare("UPDATE proposals SET status = 'confirmed', receipt = ? WHERE id = ?").run(JSON.stringify(receipt), id);
   audit(db, household, "confirm_restock", { id, orderRef, totalCents: p.totalCents }, now);
   return { ok: true, receipt, replayed: false };

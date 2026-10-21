@@ -125,3 +125,29 @@ export function friendlyName(title: string): string {
   if (best) return `${brand} ${best.text}`;
   return words.slice(0, 3).join(" ");
 }
+
+// ---- currency (global exports mix symbols, ISO codes and minor-unit conventions) ----------------------------
+
+const SYMBOLS: [RegExp, string][] = [
+  [/\bUSD\b|US\$/i, "USD"], [/\bCAD\b|CA\$|C\$/i, "CAD"], [/\bGBP\b|£/i, "GBP"], [/\bEUR\b|€/i, "EUR"],
+  [/\bINR\b|₹|\bRs\.?/i, "INR"], [/\bJPY\b|¥|円/i, "JPY"], [/\bAUD\b|A\$/i, "AUD"], [/\bMXN\b/i, "MXN"],
+  [/\bBRL\b|R\$/i, "BRL"], [/\bSGD\b|S\$/i, "SGD"], [/\bAED\b/i, "AED"], [/\bKRW\b|₩/i, "KRW"], [/\bCHF\b/i, "CHF"],
+  [/\bSEK\b/i, "SEK"], [/\bPLN\b|zł/i, "PLN"],
+  [/\$/, "USD"],
+];
+/** Currency code found in a price string or column, or null. A bare "$" is read as USD. */
+export function parseCurrency(raw: string): string | null {
+  for (const [re, code] of SYMBOLS) if (re.test(raw)) return code;
+  const m = raw.trim().toUpperCase().match(/^[A-Z]{3}$/);
+  return m ? m[0] : null;
+}
+export function minorDigits(currency: string): number {
+  try { return new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2; } catch { return 2; }
+}
+/** Amount in the currency's minor unit (cents, pence, or whole yen). */
+export function toMinor(raw: string, currency: string): number | null {
+  const cents = parseMoneyCents(raw);
+  if (cents === null) return null;
+  const d = minorDigits(currency);
+  return d === 2 ? cents : Math.round((cents / 100) * 10 ** d);
+}

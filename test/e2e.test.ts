@@ -12,7 +12,7 @@ let proc: ChildProcess;
 let client: Client;
 
 before(async () => {
-  proc = spawn("npx", ["tsx", "src/http.ts"], { env: { ...process.env, PORT: String(PORT), HEARTH_DB: ":memory:" }, stdio: "pipe" });
+  proc = spawn("npx", ["tsx", "src/http.ts"], { env: { ...process.env, PORT: String(PORT), HEARTH_DB: ":memory:", HEARTH_RECALLS_OFFLINE: "1", HEARTH_RECALLS_SYNC: "off" }, stdio: "pipe" });
   for (let i = 0; i < 60; i++) {
     try { if ((await fetch(`${BASE}/healthz`)).ok) break; } catch { /* retry */ }
     await new Promise((r) => setTimeout(r, 250));

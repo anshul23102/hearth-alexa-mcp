@@ -11,6 +11,7 @@ export interface Runway {
   lastUnits: number;
   packUnits: number;
   unitPriceCents: number;
+  currency: string;
   runoutDate: string;
   daysLeft: number;
   /** ± days around runoutDate that contains the typical error of past cycles. */
@@ -27,7 +28,7 @@ const median = (xs: number[]) => {
 };
 const addDays = (iso: string, d: number) => new Date(Date.parse(iso) + d * DAY).toISOString().slice(0, 10);
 
-interface Row { ordered_at: string; title: string; qty: number; pack_units: number; unit_price_cents: number; product_key: string; status: string }
+interface Row { ordered_at: string; title: string; qty: number; pack_units: number; unit_price_cents: number; currency: string; product_key: string; status: string }
 
 /**
  * Consumption model: for each consecutive pair of purchases, the units bought first
@@ -38,7 +39,7 @@ interface Row { ordered_at: string; title: string; qty: number; pack_units: numb
 export function forecast(db: DatabaseSync, household: string, now = Date.now()): Runway[] {
   const rows = db
     .prepare(
-      `SELECT ordered_at, title, qty * pack_units AS qty, pack_units, unit_price_cents, product_key, status FROM orders
+      `SELECT ordered_at, title, qty * pack_units AS qty, pack_units, unit_price_cents, currency, product_key, status FROM orders
        WHERE household = ? AND kind = 'consumable' AND status != 'returned' ORDER BY ordered_at`,
     )
     .all(household) as unknown as Row[];
@@ -81,6 +82,7 @@ export function forecast(db: DatabaseSync, household: string, now = Date.now()):
       lastUnits: last.qty,
       packUnits: last.pack_units,
       unitPriceCents: last.unit_price_cents,
+      currency: last.currency,
       runoutDate: runout,
       daysLeft,
       windowDays: Math.max(1, Math.round(mad * last.qty)),
