@@ -24,7 +24,7 @@ Alexa+ something it does not have today: a durable, honest memory of what a hous
 
 ## Run it
 
-Requires Node 22+ (uses the built-in `node:sqlite`).
+Requires Node 22.13+ (uses the built-in `node:sqlite`).
 
 ```bash
 npm install
