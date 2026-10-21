@@ -125,8 +125,8 @@ runs typecheck, build, tests and `npm audit`. Demo the alert pipeline: start wit
 ## Scale and accuracy
 
 ```bash
-npx tsx scripts/bench.ts 5000 200     # 676k orders, 5,000 households: import, forecast and recall latency
-npx tsx scripts/eval-recalls.ts       # precision/recall of recall matching on real notices
+npm run bench -- 5000 200     # 676k orders, 5,000 households: import, forecast and recall latency
+npm run eval       # precision/recall of recall matching on real notices
 ```
 `POST /api/import` (Bearer token, `Content-Type: text/csv`) streams a large export on a worker thread. A 500k-row, 43.5 MB
 upload took 12.4 s while concurrent requests stayed at p99 13 ms. Full tables and caveats: [docs/SCALE.md](docs/SCALE.md).
