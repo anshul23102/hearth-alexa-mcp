@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { friendlyName } from "../src/normalize.js";
 import { shortHazard, modelTokens } from "../src/recalls.js";
-import { bedrockStep, toConverse, fromConverse, hasBedrockCredentials, type Converser, type WireMessage } from "../src/agent.js";
+import { openDb } from "../src/db.js";
+import { reserveBedrockCall, bedrockStep, toConverse, fromConverse, hasBedrockCredentials, type Converser, type WireMessage } from "../src/agent.js";
 import type { ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 
 test("friendlyName gives something sayable", () => {
@@ -46,4 +47,12 @@ test("Bedrock mode only turns on with credentials", () => {
   assert.equal(hasBedrockCredentials({}), false);
   assert.equal(hasBedrockCredentials({ AWS_PROFILE: "x" }), true);
   assert.equal(hasBedrockCredentials({ AWS_PROFILE: "x", HEARTH_AGENT: "local" }), false);
+});
+
+test("free-plan guard: model calls are capped per day, persist, and reset tomorrow", () => {
+  const db = openDb(":memory:");
+  const day1 = Date.parse("2026-10-21T10:00:00Z");
+  assert.deepEqual([1, 2, 3, 4].map(() => reserveBedrockCall(db, 3, day1).ok), [true, true, true, false]);
+  assert.equal(reserveBedrockCall(db, 3, day1 + 3600_000).ok, false, "still capped later the same day");
+  assert.equal(reserveBedrockCall(db, 3, Date.parse("2026-10-22T00:00:01Z")).ok, true, "a new UTC day starts fresh");
 });

@@ -1,3 +1,4 @@
+import type { DatabaseSync } from "node:sqlite";
 import { BedrockRuntimeClient, ConverseCommand, type Message, type ContentBlock, type Tool } from "@aws-sdk/client-bedrock-runtime";
 
 // Server-side brain for the simulated Alexa+: Claude on Amazon Bedrock (Converse API with tool use).
@@ -58,7 +59,7 @@ export async function bedrockStep(client: Converser, messages: WireMessage[], to
     system: [{ text: SYSTEM }],
     messages: toConverse(messages),
     toolConfig: tools.length ? { tools: toTools(tools) } : undefined,
-    inferenceConfig: { maxTokens: 700, temperature: 0.2 },
+    inferenceConfig: { maxTokens: 400, temperature: 0.2 },
   }));
   return fromConverse(out.output?.message);
 }
@@ -88,4 +89,19 @@ export function validateAgentRequest(body: unknown): string | null {
     if (!t || typeof t.name !== "string" || !/^[\w-]{1,64}$/.test(t.name) || (t.description !== undefined && String(t.description).length > 2000) || typeof t.inputSchema !== "object") return "malformed tool";
   }
   return null;
+}
+
+/**
+ * Free-plan guard: every model call is counted per UTC day in the database and refused past the cap, so a loop,
+ * a bug or an abusive client can never run up a bill. The cap survives restarts. Default 150 calls/day
+ * (roughly a dollar or less of Sonnet-class usage at this app's request sizes); override with HEARTH_BEDROCK_DAILY_CALLS.
+ */
+export function reserveBedrockCall(db: DatabaseSync, max = Number(process.env.HEARTH_BEDROCK_DAILY_CALLS ?? 150), now = Date.now()): { ok: boolean; used: number; max: number } {
+  const key = `bedrock_calls:${new Date(now).toISOString().slice(0, 10)}`;
+  db.prepare("DELETE FROM prefs WHERE household = '_system' AND key LIKE 'bedrock_calls:%' AND key != ?").run(key);
+  const row = db.prepare("SELECT value FROM prefs WHERE household = '_system' AND key = ?").get(key) as { value: string } | undefined;
+  const used = Number(row?.value ?? 0);
+  if (used >= max) return { ok: false, used, max };
+  db.prepare("INSERT OR REPLACE INTO prefs (household, key, value) VALUES ('_system', ?, ?)").run(key, String(used + 1));
+  return { ok: true, used: used + 1, max };
 }

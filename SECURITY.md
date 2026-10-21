@@ -44,7 +44,7 @@ known vulnerabilities at time of writing.
 
 ## Operator knobs
 `HEARTH_MAX_ORDER`, `HEARTH_MAX_DAILY` (major units), `HEARTH_ALLOWED_HOSTS`, `HEARTH_ALLOWED_ORIGINS`, `HEARTH_TRUST_PROXY`,
-`HEARTH_RATE_REGISTER|TOKEN|AUTHORIZE`, `HEARTH_MAX_UPLOAD_MB`, `PUBLIC_URL`. Set `PUBLIC_URL` and `HEARTH_ALLOWED_HOSTS` when deploying behind a domain.
+`HEARTH_RATE_REGISTER|TOKEN|AUTHORIZE`, `HEARTH_BEDROCK_DAILY_CALLS` (hard daily cap on paid model calls), `HEARTH_MAX_UPLOAD_MB`, `PUBLIC_URL`. Set `PUBLIC_URL` and `HEARTH_ALLOWED_HOSTS` when deploying behind a domain.
 
 ## Reporting
 Open a private security advisory on the GitHub repository.
