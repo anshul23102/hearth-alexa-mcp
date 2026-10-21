@@ -40,7 +40,7 @@ test("negotiates the 2025-11-25 protocol and lists tools with annotations", asyn
   assert.equal(client.getServerVersion()?.name, "hearth");
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name).sort();
-  assert.deepEqual(names, ["activity_log", "check_recalls", "confirm_restock", "delete_household_data", "household_runway", "import_order_history", "plan_restock", "remember_preference", "undo_restock"]);
+  assert.deepEqual(names, ["activity_log", "check_recalls", "confirm_restock", "delete_household_data", "household_runway", "import_order_history", "plan_restock", "recall_alerts", "remember_preference", "undo_restock"]);
   assert.equal(tools.find((t) => t.name === "confirm_restock")!.annotations?.destructiveHint, true);
   assert.equal(tools.find((t) => t.name === "household_runway")!.annotations?.readOnlyHint, true);
   const appCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("app")).map((t) => t.name).sort();

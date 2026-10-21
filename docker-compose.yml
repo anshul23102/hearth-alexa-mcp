@@ -1,0 +1,17 @@
+# docker compose up --build   (see .env.example for every setting)
+services:
+  hearth:
+    build: .
+    ports: ["3939:3939"]
+    env_file: [{ path: .env, required: false }]
+    environment:
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3939}
+      HEARTH_DB: /data/hearth.db
+    volumes: ["hearth-data:/data"]
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+volumes:
+  hearth-data:

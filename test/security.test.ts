@@ -248,3 +248,66 @@ test("F7 blast radius: operator spend ceilings hold even when the model confirms
   assert.equal(b.r2.isError, true);
   assert.match(b.r2.content[0].text, /daily safety limit/);
 });
+
+test("F-audit: the activity log is hash-chained, so edits and deletions are detected", async () => {
+  const { openDb, audit, verifyAudit } = await import("../src/db.js");
+  const db = openDb(":memory:");
+  for (let i = 0; i < 6; i++) audit(db, "h", "step", { i }, 1000 + i);
+  audit(db, "other", "step", { x: 1 }, 1);
+  assert.deepEqual(verifyAudit(db, "h"), { ok: true, entries: 6 });
+  assert.equal(verifyAudit(db, "other").ok, true, "chains are per household");
+  db.prepare("UPDATE audit SET detail = ? WHERE household = 'h' AND seq = 3").run('{"i":999}');
+  assert.deepEqual(verifyAudit(db, "h"), { ok: false, entries: 6, brokenAt: 3 }, "an edited entry is found");
+  db.prepare("UPDATE audit SET detail = ? WHERE household = 'h' AND seq = 3").run('{"i":2}');
+  assert.equal(verifyAudit(db, "h").ok, true, "restoring the original text restores the chain");
+  db.prepare("DELETE FROM audit WHERE household = 'h' AND seq = 4").run();
+  assert.equal(verifyAudit(db, "h").ok, false, "a deleted entry is found");
+  // two writers racing for the same sequence number must not fork the chain
+  const db2 = openDb(":memory:");
+  audit(db2, "h", "a", {}, 1);
+  const origPrepare = db2.prepare.bind(db2);
+  let raced = false;
+  (db2 as any).prepare = (sql: string) => {
+    if (!raced && /SELECT seq, hash FROM audit/.test(sql)) { raced = true; audit(db2, "h", "intruder", {}, 2); }
+    return origPrepare(sql);
+  };
+  audit(db2, "h", "b", {}, 3);
+  (db2 as any).prepare = origPrepare;
+  assert.deepEqual(verifyAudit(db2, "h"), { ok: true, entries: 3 });
+});
+
+test("F2 property: random activity by three households never leaks one household's data to another", async () => {
+  const toks = [await link(BASE), await link(BASE), await link(BASE)];
+  const clients = await Promise.all(toks.map(mcp));
+  const markers = ["ALPHA", "BRAVO", "CHARLIE"];
+  // each household imports a recognisable durable and consumable history
+  for (let i = 0; i < 3; i++) {
+    const rows = ["Order ID,Order Date,Product Name,ASIN,Quantity,Unit Price,Order Status"];
+    for (let k = 0; k < 6; k++) rows.push(`o${i}${k},2025-0${k + 1}-10,"${markers[i]}brand Paper Towels 12 Count",B0${i}00000${k % 2}AA,1,$9.00,Delivered`);
+    rows.push(`d${i},2025-01-02,"${markers[i]}tron Pressure Cooker ZX${i}00",B0${i}9999999,1,$50.00,Delivered`);
+    await clients[i].callTool({ name: "import_order_history", arguments: { csv: rows.join("\n") } });
+  }
+  let seed = 99;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
+  const ops = [
+    (c: Client) => c.callTool({ name: "household_runway", arguments: { withinDays: 200 } }),
+    (c: Client) => c.callTool({ name: "check_recalls", arguments: {} }),
+    (c: Client) => c.callTool({ name: "plan_restock", arguments: { withinDays: 60, budget: 100 } }),
+    (c: Client) => c.callTool({ name: "recall_alerts", arguments: { includeSeen: true } }),
+    (c: Client) => c.callTool({ name: "activity_log", arguments: { limit: 50 } }),
+    (c: Client) => c.callTool({ name: "remember_preference", arguments: { kind: "budget", value: String(20 + Math.floor(rnd() * 80)) } }),
+    (c: Client) => c.readResource({ uri: "hearth://alerts" }),
+  ];
+  const outputs: string[][] = [[], [], []];
+  for (let step = 0; step < 90; step++) {
+    const who = Math.floor(rnd() * 3);
+    const r = await ops[Math.floor(rnd() * ops.length)](clients[who]);
+    outputs[who].push(JSON.stringify(r));
+  }
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+    if (i === j) continue;
+    assert.ok(!outputs[i].some((o) => o.includes(markers[j])), `household ${i} saw data from household ${j}`);
+  }
+  assert.ok(outputs.every((o) => o.some((x) => x.includes("brand") || x.includes("tron"))) , "each household did see its own data");
+  await Promise.all(clients.map((c) => c.close()));
+});

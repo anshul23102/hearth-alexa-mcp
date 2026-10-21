@@ -30,6 +30,9 @@ const en = {
   "pref.skip": "Okay, I'll leave that one out of future plans.",
   "pref.lang": "Okay, I'll speak {lang} from now on.",
   "pref.regions": "Okay, I'll check recalls from {regions}.",
+  "alerts.new": "Heads up: a new recall was just published for your {name}, {hazard}. I've put the details on screen.",
+  "alerts.more": " I also have {k} more.",
+  "alerts.none": "No new recalls for anything you own.",
 } as const;
 type Key = keyof typeof en;
 
@@ -57,6 +60,9 @@ const es: Record<Key, string> = {
   "pref.skip": "De acuerdo, lo dejaré fuera de los próximos planes.",
   "pref.lang": "De acuerdo, hablaré en {lang} a partir de ahora.",
   "pref.regions": "De acuerdo, revisaré retiros de {regions}.",
+  "alerts.new": "Atención: se acaba de publicar un retiro del mercado para tu {name}, por {hazard}. Puse los detalles en pantalla.",
+  "alerts.more": " Tengo {k} más.",
+  "alerts.none": "No hay retiros nuevos para nada de lo que tienes.",
 };
 
 const hi: Record<Key, string> = {
@@ -83,6 +89,9 @@ const hi: Record<Key, string> = {
   "pref.skip": "ठीक है, इसे आगे की योजनाओं से बाहर रखा जाएगा।",
   "pref.lang": "ठीक है, अब से {lang} में बात होगी।",
   "pref.regions": "ठीक है, {regions} के रिकॉल जाँचे जाएँगे।",
+  "alerts.new": "ध्यान दें: आपके {name} के लिए अभी एक नया रिकॉल जारी हुआ है, {hazard}। विवरण स्क्रीन पर है।",
+  "alerts.more": " {k} और हैं।",
+  "alerts.none": "आपकी किसी चीज़ के लिए कोई नया रिकॉल नहीं है।",
 };
 
 const CATALOG: Record<Lang, Record<Key, string>> = { en, es, hi };

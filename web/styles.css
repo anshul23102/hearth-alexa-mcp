@@ -40,6 +40,8 @@ body{min-height:100dvh;color:var(--paper);font:14px/1.5 var(--mono);background:
 
 /* ---- the device ---- */
 .device{display:flex;flex-direction:column;justify-content:center;gap:22px;max-width:640px;min-height:0}
+.alertbar{background:var(--red);color:#fff;font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:9px 12px;align-self:flex-start;max-width:100%;animation:drop .5s var(--ease) both}
+@keyframes drop{from{transform:translateY(-14px);opacity:0}to{transform:none;opacity:1}}
 .lightbar{display:flex;gap:6px;height:8px;margin-bottom:6px}
 .lightbar i{flex:0 0 clamp(36px,6vw,64px);background:var(--paper);border-radius:4px;opacity:.28;transform-origin:50% 100%}
 .lightbar[data-state=thinking] i{animation:sweep 1.1s var(--ease) infinite;animation-delay:calc(var(--n)*110ms)}

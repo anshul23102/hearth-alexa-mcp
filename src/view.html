@@ -151,10 +151,10 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
   }
   function recalls(sc) {
     const ms = sc.matches || [];
-    if (!ms.length) return slip('<h1>All clear</h1><p class="sub">Checked ' + sc.checked + " products against current CPSC recalls. No matches.</p>");
+    if (!ms.length) return slip(sc.fromAlerts ? '<h1>Nothing new</h1><p class="sub">No new recalls for anything you own.</p>' : '<h1>All clear</h1><p class="sub">Checked ' + sc.checked + " products against " + Number(sc.indexed || 0).toLocaleString(LOC) + " recall notices. No matches.</p>");
     const src = (sc.regions || []).join(" + ");
     const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul>' + (m.recall.url ? '<button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button>' : "") + '</div><hr class="dots">').join("");
-    slip('<h1>' + ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at</h1><p class=\"sub\">Matched on brand, product type and model number against " + Number(sc.indexed || 0).toLocaleString(LOC) + " public recall notices (" + esc(src) + ").</p><hr class=\"dots\">" + cards);
+    slip('<h1>' + (sc.fromAlerts ? "New recall alert" : ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at") + "</h1><p class=\"sub\">Matched on brand, product type and model number against " + Number(sc.indexed || 0).toLocaleString(LOC) + " public recall notices (" + esc(src) + ").</p><hr class=\"dots\">" + cards);
     app.querySelectorAll("[data-url]").forEach((b) => b.addEventListener("click", () => request("ui/open-link", { url: b.dataset.url }).catch(() => {})));
   }
   function proposal(sc) {
@@ -208,7 +208,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
   function undone(sc) { slip('<h1>' + (sc.ok ? "Cancelled" : "Could not cancel") + '</h1><p class="sub ' + (sc.ok ? "ok" : "err") + '">' + esc(sc.message) + "</p>"); }
   function log(sc) {
     const items = sc.items || [];
-    slip("<h1>What I've done</h1><p class=\"sub\">Every action, newest first.</p><hr class=\"dots\">" + (items.length ? items.map((i) => '<div class="logrow"><time>' + hhmm(Date.parse(i.at)) + "</time><span>" + esc(i.action.replace(/_/g, " ")) + "</span></div>").join("") : '<div class="empty">Nothing yet.</div>'));
+    slip("<h1>What I've done</h1><p class=\"sub\">Every action, newest first. " + (sc.chainIntact === false ? '<span class="err">Integrity check failed.</span>' : "History is hash-chained: any edit would be detected.") + "</p><hr class=\"dots\">" + (items.length ? items.map((i) => '<div class="logrow"><time>' + hhmm(Date.parse(i.at)) + "</time><span>" + esc(i.action.replace(/_/g, " ")) + "</span></div>").join("") : '<div class="empty">Nothing yet.</div>'));
   }
 
   function render(result) {

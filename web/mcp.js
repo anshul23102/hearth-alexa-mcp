@@ -115,6 +115,46 @@ export class McpClient {
     return init;
   }
 
+  /**
+   * Server-initiated messages (Streamable HTTP "standalone" stream): GET /mcp with the session id.
+   * Used to receive notifications/resources/updated for the recall-alert subscription. Reconnects with backoff.
+   */
+  listen(onMessage) {
+    this.listening = true;
+    (async () => {
+      let delay = 1000;
+      while (this.listening) {
+        try {
+          const headers = { accept: "text/event-stream", "mcp-protocol-version": PROTOCOL, authorization: `Bearer ${this.token}` };
+          if (this.sessionId) headers["mcp-session-id"] = this.sessionId;
+          const res = await fetch(this.endpoint, { headers });
+          if (res.status === 405 || res.status === 401) return; // not supported / signed out: stop quietly
+          if (!res.ok || !res.body) throw new Error(`stream ${res.status}`);
+          delay = 1000;
+          const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+          for (;;) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let i;
+            while ((i = buf.indexOf("\n\n")) >= 0) {
+              const evt = buf.slice(0, i); buf = buf.slice(i + 2);
+              const data = evt.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trimStart()).join("\n");
+              if (!data) continue;
+              const msg = JSON.parse(data);
+              this.onWire({ dir: "in", body: msg });
+              onMessage(msg);
+            }
+          }
+        } catch { /* fall through to backoff */ }
+        await new Promise((r) => setTimeout(r, delay));
+        delay = Math.min(delay * 2, 15000);
+      }
+    })();
+  }
+
+  stop() { this.listening = false; }
+
   async callTool(name, args = {}) { return this.rpc("tools/call", { name, arguments: args }); }
 
   uiUri(toolName) { return this.tools.find((t) => t.name === toolName)?._meta?.ui?.resourceUri ?? null; }

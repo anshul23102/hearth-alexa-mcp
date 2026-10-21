@@ -13,6 +13,8 @@ push marketplaces to notify buyers. The claim is narrower, and each part has evi
   for 400,000+ hazardous products sold through Fulfilled by Amazon, by email and on "Your Orders". Amazon is contesting the
   order in court; I have not verified the outcome. Source: [CPSC release](https://www.cpsc.gov/Newsroom/News-Releases/2025/CPSC-Issues-Final-Order-to-Amazon-com-Outlining-Remediation-Plans-for-Hazardous-Products).
 
+**Reaching owners is a push problem, not a search problem.** The order that matters is "notify purchasers on the day the recall publishes", so Hearth indexes owners by brand and, when a new notice appears, finds every affected household and pushes to its open session (and stores the alert for the ones that are offline), instead of waiting for someone to ask.
+
 **The hard part is the join.** A recall is free text issued by a regulator in one country ("Foodi OP300 series pressure
 cookers"); an order is a marketplace title ("Ninja Foodi 6.5 Qt ... OP302"). Matching them without crying wolf is an entity-resolution
 problem across 10,000+ notices, several regulators and retitled listings. Hearth measures this (see [SCALE.md](SCALE.md)):

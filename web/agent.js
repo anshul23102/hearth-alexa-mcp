@@ -37,6 +37,7 @@ export function localStep(messages, { sampleCsv }) {
   const lang = t.match(/\b(spanish|español|espanol|hindi|हिन्दी|english)\b/);
   if (lang && /\b(speak|talk|switch|reply|respond|habla|बात|in)\b/.test(t)) return call("remember_preference", { kind: "language", value: /span|espa/.test(lang[1]) ? "es" : /hindi|हिन्दी/.test(lang[1]) ? "hi" : "en" });
   if (/\b(load|import|sample|history|upload)\w*/.test(t)) return call("import_order_history", { csv: sampleCsv });
+  if (/\b(new recall|recall alert|any alerts?|just recalled)\w*/.test(t)) return call("recall_alerts", {});
   if (/\b(recall|unsafe|safe|dangerous|burn|hazard)\w*/.test(t)) return call("check_recalls", {});
   if (/\b(undo|cancel)\w*/.test(t)) {
     const r = lastStructured(messages, "receipt");

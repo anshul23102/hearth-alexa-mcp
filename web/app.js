@@ -87,6 +87,7 @@ async function boot() {
     $("proto").textContent = `MCP ${init.protocolVersion}`;
     setStatus("ok", `Linked · ${init.serverInfo.name} ${init.serverInfo.version} · ${brain === "bedrock" ? "Claude on Amazon Bedrock" : "offline router"}`);
     $("forget").hidden = false;
+    subscribeToAlerts();
     const r = await mcp.callTool("household_runway", { withinDays: 30 });
     if (r.structuredContent?.items?.length) { ready(); speak("Welcome back. I remember your household. Ask me what's running low."); }
     else {
@@ -123,6 +124,31 @@ $("loadBtn").addEventListener("click", async () => {
   await ask("Load my order history", { quiet: false });
   ready();
 });
+
+// ---- proactive recall alerts (MCP resource subscription) ------------------------------------------------
+let alertQueued = false;
+async function subscribeToAlerts() {
+  try { await mcp.rpc("resources/subscribe", { uri: "hearth://alerts" }); } catch { return; } // older servers: no push, pull still works
+  mcp.listen((msg) => {
+    if (msg.method === "notifications/resources/updated" && msg.params?.uri === "hearth://alerts") showAlert();
+  });
+}
+async function showAlert() {
+  if (busy) { alertQueued = true; return; }
+  busy = true;
+  try {
+    const r = await mcp.callTool("recall_alerts", {});
+    const text = r.content?.[0]?.text ?? "";
+    const bar = $("alertbar");
+    bar.textContent = "New recall for something you own";
+    bar.hidden = false;
+    setTimeout(() => { bar.hidden = true; }, 20000);
+    heard.textContent = "(new recall alert, pushed by the server)";
+    await showCard("recall_alerts", {}, r);
+    messages.push({ role: "assistant", content: [{ type: "text", text }] });
+    await speak(text);
+  } catch (e) { console.error(e); } finally { busy = false; setState("idle"); if (alertQueued) { alertQueued = false; showAlert(); } }
+}
 
 // ---- the loop ---------------------------------------------------------------
 async function ask(text, opts = {}) {

@@ -21,6 +21,7 @@ self-audit, **not** a third-party penetration test.
 | F7 | Medium | A prompt-injected model could place an order of any size | Operator-set per-order and rolling 24 h ceilings the model cannot change; plan size cap; elicitation when the client supports it; undo; audit | F7 |
 | F8 | Low | No CSP or security headers; one `innerHTML` with server text in the host | Hash-only CSP (the receipt view's script is allowed by SHA-256), nosniff, DENY framing, no-referrer; zero HTML sinks in host JS | F8, hygiene |
 | F9 | Low | No way for a customer to erase their data | `delete_household_data`: hidden from the model (`visibility: app`), exact confirmation phrase, elicitation when available, revokes tokens | privacy |
+| F11 | Low | The audit log was append-only by convention: a database editor could rewrite history unnoticed | SHA-256 hash chain per household (`seq`, `prev_hash`, `hash`, unique index); `activity_log` verifies it and says so if it fails; concurrent writers cannot fork it | F-audit (incl. race) |
 | F10 | Low | Client registration accepted `javascript:`, `data:` and remote `http:` redirect URIs | https or loopback only, no fragments, at most 5 | F10 |
 
 Also verified with tests: static server path traversal (7 encodings), SQL metacharacters in data and inputs, an
@@ -39,12 +40,19 @@ known vulnerabilities at time of writing.
 3. **No encryption at rest, single node.** Order history sits in a SQLite file; use disk encryption or a managed database, and a shared store (Redis/DynamoDB) for rate limits behind a load balancer.
 4. **Data egress to the model provider.** In Bedrock mode, product titles and tool results are sent to the model. Use a region and model access policy that match your data-residency rules.
 5. **`style-src 'unsafe-inline'`** remains because the receipt view uses inline style attributes; scripts are hash-locked.
-6. **Audit log is not tamper-evident.** It is append-only by convention, not by construction.
+6. **The audit chain detects tampering, it does not prevent it.** Someone with write access can still rewrite the whole chain consistently; anchor the latest hash somewhere you trust (a log service, S3 object lock) to close that.
 7. **Untested at hostile scale.** Rate limits are per node and in memory; there has been no load or fuzz campaign beyond the included tests.
+
+## Operations endpoints
+- `GET /healthz` liveness, `GET /readyz` readiness (database answers and the recall index has data), both unauthenticated and free of data.
+- `GET /metrics` Prometheus text; **404 unless `HEARTH_METRICS_TOKEN` (16+ chars) is set**, then bearer-protected, constant-time compared. Labels are route groups, tool names and outcomes only: no household ids, tokens or arguments (tested).
+- `POST /api/admin/recalls/replay` **404 unless `HEARTH_ADMIN_TOKEN` (24+ chars) is set**; rate limited; replays a notice already in the index so the alert pipeline can be demonstrated. It cannot create notices.
+- `/.well-known/security.txt` points to the private advisory form.
+- Structured JSON request logs carry a request id, route group and status; never headers, tokens or bodies.
 
 ## Operator knobs
 `HEARTH_MAX_ORDER`, `HEARTH_MAX_DAILY` (major units), `HEARTH_ALLOWED_HOSTS`, `HEARTH_ALLOWED_ORIGINS`, `HEARTH_TRUST_PROXY`,
-`HEARTH_RATE_REGISTER|TOKEN|AUTHORIZE`, `HEARTH_BEDROCK_DAILY_CALLS` (hard daily cap on paid model calls), `HEARTH_MAX_UPLOAD_MB`, `PUBLIC_URL`. Set `PUBLIC_URL` and `HEARTH_ALLOWED_HOSTS` when deploying behind a domain.
+`HEARTH_RATE_REGISTER|TOKEN|AUTHORIZE`, `HEARTH_BEDROCK_DAILY_CALLS` (hard daily cap on paid model calls), `HEARTH_ADMIN_TOKEN`, `HEARTH_METRICS_TOKEN`, `HEARTH_MAX_UPLOAD_MB`, `PUBLIC_URL`. Set `PUBLIC_URL` and `HEARTH_ALLOWED_HOSTS` when deploying behind a domain.
 
 ## Reporting
 Open a private security advisory on the GitHub repository.

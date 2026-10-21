@@ -13,6 +13,7 @@ Setup: `npm run sample && npm start`; open http://localhost:3939 in a fresh prof
 | 0:55-1:25 | Ask "What are we running low on?" Receipt prints. Point at a range bar | "Each item has a likely window, not a fake date. Toothpaste is overdue; dog food runs out today." |
 | 1:25-1:55 | Ask "Any recalls on what we own?" Recall slip prints; zoom on the evidence list and the stamp | "It matches my pressure cooker to a real CPSC recall on brand, type and model number OP302, and shows why. The blender is only 'possible' because I bought it after the recall date." |
 | 1:55-2:25 | Ask "Plan a restock under $60". Plan prints with struck-through items. Press Place order. Receipt + barcode appear | "It plans within budget and tells me what it left out. Nothing is bought until I press this. The card calls confirm_restock back over MCP." |
+| 2:05-2:25 | Terminal beside the browser: run `HEARTH_ADMIN_TOKEN=... npm run demo:recall -- Foodi`; the idle simulator shows the red NEW RECALL banner and speaks | "Now the part that matters. A recall is published. Hearth finds every owner and pushes it to Alexa+ over an MCP subscription, with nobody asking." |
 | 2:25-2:40 | Press Cancel order; barcode voids. Open MCP wire briefly | "Ten-minute undo, idempotent retries, full audit log." |
 | 2:40-2:55 | Terminal: `npm test` ending in 20 passing. Show `src/agent.ts` Bedrock call for 3 seconds | "20 end-to-end tests through the official MCP SDK. Claude on Amazon Bedrock can drive it. Open source, MIT." |
 
