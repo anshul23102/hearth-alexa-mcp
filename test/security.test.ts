@@ -311,3 +311,73 @@ test("F2 property: random activity by three households never leaks one household
   assert.ok(outputs.every((o) => o.some((x) => x.includes("brand") || x.includes("tron"))) , "each household did see its own data");
   await Promise.all(clients.map((c) => c.close()));
 });
+
+test("F5b one household cannot crowd out others: sessions are capped per household", async () => {
+  const { proc: p, base } = await startServer(3965, { HEARTH_MAX_SESSIONS_PER_HOUSEHOLD: "3" });
+  try {
+    const a = await link(base), b = await link(base);
+    const open = async (tok: Tokens) => {
+      const c = new Client({ name: "cap", version: "1" });
+      await c.connect(new StreamableHTTPClientTransport(new URL(`${base}/mcp`), { requestInit: { headers: { authorization: `Bearer ${tok.access_token}` } } }));
+      return c;
+    };
+    const other = await open(b);
+    const mine: Client[] = [];
+    for (let i = 0; i < 5; i++) mine.push(await open(a));
+    await assert.rejects(() => mine[0].callTool({ name: "activity_log", arguments: {} }), "the oldest session of the household over its cap is closed");
+    assert.ok(await mine[4].callTool({ name: "activity_log", arguments: {} }), "the newest still works");
+    assert.ok(await other.callTool({ name: "activity_log", arguments: {} }), "another household is unaffected");
+    await Promise.allSettled([...mine, other].map((c) => c.close()));
+  } finally { p.kill(); }
+});
+
+test("F5c bulk imports are limited in number, not just in size", async () => {
+  const { proc: p, base } = await startServer(3966, { HEARTH_AUTH: "off", HEARTH_MAX_CONCURRENT_IMPORTS: "1" });
+  try {
+    const slow = request({ host: "127.0.0.1", port: 3966, path: "/api/import", method: "POST", headers: { host: "localhost:3966", "content-type": "text/csv", "transfer-encoding": "chunked" } });
+    const slowDone = new Promise<number>((ok) => slow.on("response", (r) => { r.resume(); ok(r.statusCode!); }));
+    slow.on("error", () => {});
+    slow.write("Order ID,Order Date,Product Name,ASIN,Quantity,Unit Price,Order Status\n"); // an upload that is still in flight
+    await new Promise((r) => setTimeout(r, 300));
+    const second = await fetch(`${base}/api/import`, { method: "POST", body: "a,b\n1,2" });
+    assert.equal(second.status, 503);
+    assert.equal(second.headers.get("retry-after"), "30");
+    slow.end("114-1,2025-01-05,Tide PODS 81 Count,B0AAAAAAAA,1,$5,Delivered\n");
+    assert.equal(await slowDone, 200, "the first upload completes normally");
+    assert.equal((await fetch(`${base}/api/import`, { method: "POST", body: "Order ID,Order Date,Product Name\n1,2025-01-05,Tide PODS 81 Count" })).status, 200, "and the slot is released afterwards");
+  } finally { p.kill(); }
+});
+
+test("a misconfigured deployment cannot run with authentication off", async () => {
+  const { spawn } = await import("node:child_process");
+  const run = (env: Record<string, string>) => new Promise<{ code: number | null; err: string }>((ok) => {
+    const c = spawn("npx", ["tsx", "src/http.ts"], { env: { ...process.env, PORT: "3967", HEARTH_DB: ":memory:", HEARTH_RECALLS_SYNC: "off", HEARTH_AUTH: "off", ...env }, stdio: "pipe" });
+    let err = ""; c.stderr.on("data", (d) => (err += d));
+    c.on("exit", (code) => ok({ code, err }));
+    setTimeout(() => { if (c.exitCode === null) { c.kill(); } }, 6000);
+  });
+  const withUrl = await run({ PUBLIC_URL: "https://hearth.example.com" });
+  assert.equal(withUrl.code, 1);
+  assert.match(withUrl.err, /Refusing to start/);
+  const prod = await run({ NODE_ENV: "production" });
+  assert.equal(prod.code, 1);
+});
+
+test("privacy: erasing a household also erases its recall alerts", async () => {
+  const { openDb } = await import("../src/db.js");
+  const { ingestOrders } = await import("../src/ingest.js");
+  const { processNewRecalls, listAlerts } = await import("../src/alerts.js");
+  const { eraseHousehold } = await import("../src/actions.js");
+  const db = openDb(":memory:");
+  ingestOrders(db, "h", CSV);
+  processNewRecalls(db, [{ source: "cpsc", extId: "1", region: "US", date: "2026-10-20", title: "SharkNinja Recalls Foodi Pressure Cookers Due to Burn Hazard", product: "", text: "Foodi OP302", url: "https://www.cpsc.gov/x", hazard: "Burn", remedy: "Stop" }]);
+  assert.equal(listAlerts(db, "h").length, 1);
+  const out = eraseHousehold(db, "h");
+  assert.equal(out.alerts, 1);
+  assert.equal(listAlerts(db, "h").length, 0);
+  // Future-proof: every table that has a household column must be empty for that household after an erase.
+  const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[]).map((t) => t.name)
+    .filter((name) => (db.prepare(`PRAGMA table_info(${name})`).all() as { name: string }[]).some((c) => c.name === "household"));
+  assert.ok(["orders", "proposals", "prefs", "audit", "alerts", "oauth_tokens"].every((t) => tables.includes(t)), `found ${tables.join(",")}`);
+  for (const t of tables) assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE household = 'h'`).get() as { n: number }).n, 0, `${t} still holds the erased household's rows`);
+});

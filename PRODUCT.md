@@ -19,7 +19,7 @@ Not a Q&A wrapper: stateful across sessions, honest about uncertainty (± window
 Voice-first, glanceable screen on a kitchen counter, often evening light. Input data is a messy order-history CSV export. Judges run it locally; there is no real Alexa+ device or Amazon storefront access, so purchasing is a simulated StoreAdapter.
 
 ## Capabilities and Constraints
-Tools: import_order_history, household_runway, check_recalls, plan_restock, confirm_restock, undo_restock, remember_preference, activity_log. MCP Apps view at ui://hearth/runway. OAuth 2.1 + PKCE account linking. Sample data is SYNTHETIC; recall data is real (CPSC). No real purchases. Alexa+ add-on certification tooling is partner-only and out of scope.
+Tools: import_order_history, household_runway, check_recalls, recall_alerts, plan_restock, confirm_restock, undo_restock, remember_preference, activity_log, delete_household_data (app-only). Resource hearth://alerts (subscribable push). MCP Apps view at ui://hearth/runway. OAuth 2.1 + PKCE account linking. Sample data is SYNTHETIC; recall data is real (CPSC). No real purchases. Alexa+ add-on certification tooling is partner-only and out of scope.
 
 ## Evidence on Hand
 Real: live CPSC recall API responses (SharkNinja Foodi OP300 series recall, Cuisinart blender recall). Synthetic: data/sample-orders.csv. Absent: any Amazon customers, benchmarks, or user studies; never claim them.

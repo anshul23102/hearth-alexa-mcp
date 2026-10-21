@@ -10,6 +10,7 @@ self-audit, **not** a third-party penetration test.
 - **Trusted:** the server process and its operator configuration.
 
 ## Findings and fixes
+F1 to F11 came from the first pass; F12 to F16 from a second pass after proactive alerts, bulk import and operations endpoints were added. Database files are created owner-only (`0600`).
 | # | Severity | Finding (before) | Fix | Test |
 |---|---|---|---|---|
 | F1 | High | `/api/agent/step` (paid Bedrock call) was unauthenticated; anyone reaching the port could burn credits | Bearer auth, per-household rate limit, strict body validation and size caps | F1, agent validation |
@@ -22,6 +23,11 @@ self-audit, **not** a third-party penetration test.
 | F8 | Low | No CSP or security headers; one `innerHTML` with server text in the host | Hash-only CSP (the receipt view's script is allowed by SHA-256), nosniff, DENY framing, no-referrer; zero HTML sinks in host JS | F8, hygiene |
 | F9 | Low | No way for a customer to erase their data | `delete_household_data`: hidden from the model (`visibility: app`), exact confirmation phrase, elicitation when available, revokes tokens | privacy |
 | F11 | Low | The audit log was append-only by convention: a database editor could rewrite history unnoticed | SHA-256 hash chain per household (`seq`, `prev_hash`, `hash`, unique index); `activity_log` verifies it and says so if it fails; concurrent writers cannot fork it | F-audit (incl. race) |
+| F12 | Medium | One authenticated household could open thousands of MCP sessions and push others' sessions out | Per-household session cap (default 20); past it, that household's own oldest session is closed | F5b |
+| F13 | Medium | No limit on concurrent bulk imports, so many uploads could each start a worker thread | Global concurrency cap (default 3) with `503` and `Retry-After` | F5c |
+| F14 | Medium | `HEARTH_AUTH=off` makes every caller one shared household and could be set by mistake on a real deployment | The server refuses to start with auth off when `NODE_ENV=production` or `PUBLIC_URL` is set | misconfiguration test |
+| F15 | Low (privacy) | "Delete my data" did not remove recall alerts, which record what a household owns | Alerts are erased too; the test now checks *every* table with a `household` column, so a future table cannot be forgotten | privacy tests |
+| F16 | Medium (coverage) | After one feed outage at startup the bundled 4-notice snapshot was treated as fresh for 24 h, silently disabling recall coverage | A snapshot or failed sync is retried every 10 minutes; only a live download is trusted for a day; a failing feed never shrinks a good index | outage-fallback test |
 | F10 | Low | Client registration accepted `javascript:`, `data:` and remote `http:` redirect URIs | https or loopback only, no fragments, at most 5 | F10 |
 
 Also verified with tests: static server path traversal (7 encodings), SQL metacharacters in data and inputs, an
@@ -44,7 +50,7 @@ known vulnerabilities at time of writing.
 7. **Untested at hostile scale.** Rate limits are per node and in memory; there has been no load or fuzz campaign beyond the included tests.
 
 ## Operations endpoints
-- `GET /healthz` liveness, `GET /readyz` readiness (database answers and the recall index has data), both unauthenticated and free of data.
+- `GET /healthz` liveness, `GET /readyz` readiness (database answers and the recall index has data), both unauthenticated; `/readyz` returns only two aggregate counts (notices indexed, open sessions), never household data.
 - `GET /metrics` Prometheus text; **404 unless `HEARTH_METRICS_TOKEN` (16+ chars) is set**, then bearer-protected, constant-time compared. Labels are route groups, tool names and outcomes only: no household ids, tokens or arguments (tested).
 - `POST /api/admin/recalls/replay` **404 unless `HEARTH_ADMIN_TOKEN` (24+ chars) is set**; rate limited; replays a notice already in the index so the alert pipeline can be demonstrated. It cannot create notices.
 - `/.well-known/security.txt` points to the private advisory form.

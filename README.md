@@ -33,7 +33,7 @@ Numbers are in [docs/SCALE.md](docs/SCALE.md); the security review is [SECURITY.
 
 ## Run it
 
-Requires Node 22.13+ (uses the built-in `node:sqlite`).
+Requires Node 22.16+ (uses the built-in `node:sqlite`, including its online `backup`).
 
 ```bash
 npm install
@@ -85,9 +85,10 @@ An **Agent Skill** teaching an assistant the plan → read back → confirm disc
  ┌──────────────────────┐  Streamable   ┌──────────────────────────┐
  │ Alexa+ simulator     │──── HTTP ────▶│ MCP server (server.ts)   │──▶ recall index (CPSC + Health Canada,
  │  · OAuth/PKCE client │◀── JSON/SSE ──│  tools, ui:// resource   │    synced in background, fixture fallback)
- │  · MCP client (mcp.js)│              │ ingest → forecast → recalls
+ │  · MCP client (mcp.js)│              │ ingest → forecast → recalls (ask)
+ │  · alert listener    │◀── push ──────│ recall sync → owner lookup → alerts → hub
  │  · MCP Apps host     │              │ actions: propose/confirm/undo ──▶ StoreAdapter (simulated)
- │    (sandboxed iframe)│              │ SQLite (node:sqlite): orders, proposals, audit, prefs
+ │    (sandboxed iframe)│              │ SQLite (node:sqlite): orders, recalls, alerts, proposals, audit, prefs, oauth
  │  · agent loop        │──/api/agent──▶│ agent.ts ──▶ Amazon Bedrock Converse (optional)
  └──────────────────────┘              └──────────────────────────┘
 ```
@@ -100,7 +101,7 @@ real ordering API plugs in.
 ## Tests
 
 ```bash
-npm test         # 58 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 67 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
@@ -139,6 +140,7 @@ upload took 12.4 s while concurrent requests stayed at p99 13 ms. Full tables an
   Its consent step does not authenticate a person; production delegates to the household's real identity provider.
 - One node and SQLite. Scaling out means Postgres (the data access is plain SQL in `src/`), a shared rate-limit store, and a pub/sub for the alert push; none of that is built.
 - Every grant creates its own household; isolation is by `household` key in every query and is tested, but not at hostile scale.
+- The offline voice router understands English only (it is a small intent matcher); with the Bedrock brain Claude can interpret other languages, which is untested here. Replies are in English, Spanish or Hindi; the Spanish and Hindi strings need native review.
 - The synthetic households prove throughput, not forecast accuracy on real purchases. Spanish and Hindi strings should be reviewed by native speakers.
 - Recall matching is heuristic by design (it says `possible` when unsure). It is a prompt to check the product
   label, not a safety guarantee.

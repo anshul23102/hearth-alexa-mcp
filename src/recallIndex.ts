@@ -49,12 +49,26 @@ export function mapHealthCanada(r: HcRaw): RecallRecord {
   };
 }
 
+/** GET with a per-attempt timeout and bounded retries; large public feeds hiccup, one slow response must not sink a sync. */
+async function getJson<T>(f: typeof fetch, url: string, attempts = 3, timeoutMs = 45_000): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await f(url, { signal: AbortSignal.timeout(timeoutMs), headers: { accept: "application/json" } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return (await res.json()) as T;
+    } catch (e) { last = e; if (i < attempts - 1) await new Promise((r) => setTimeout(r, 500 * 2 ** i)); }
+  }
+  throw last instanceof Error ? last : new Error("fetch failed");
+}
+
 const cpscProvider: Provider = {
   source: "cpsc", region: "US",
   async fetchLive(f) {
-    const res = await f("https://www.saferproducts.gov/RestWebServices/Recall?format=json&RecallDateStart=2010-01-01", { signal: AbortSignal.timeout(60_000), headers: { accept: "application/json" } });
-    if (!res.ok) throw new Error(`CPSC ${res.status}`);
-    return ((await res.json()) as CpscRaw[]).map(mapCpsc);
+    // One request: measured against the live API, date-windowed queries are 10x slower in total than the single pull
+    // (about 20 s each for nine windows versus 2 to 16 s for everything), so retries are the right tool, not chunking.
+    const rows = await getJson<CpscRaw[]>(f, "https://www.saferproducts.gov/RestWebServices/Recall?format=json&RecallDateStart=2010-01-01", 3, 90_000);
+    return rows.map(mapCpsc);
   },
   fromFixture: () => (readFixture("recalls-fixture.json") as CpscRaw[]).map(mapCpsc),
 };
@@ -62,15 +76,16 @@ const cpscProvider: Provider = {
 const healthCanadaProvider: Provider = {
   source: "healthcanada", region: "CA",
   async fetchLive(f) {
-    const res = await f("https://recalls-rappels.canada.ca/sites/default/files/opendata-donneesouvertes/HCRSAMOpenData.json", { signal: AbortSignal.timeout(60_000) });
-    if (!res.ok) throw new Error(`Health Canada ${res.status}`);
-    return ((await res.json()) as HcRaw[]).filter((r) => r.Organization === "Consumer product safety" && r.Title).map(mapHealthCanada);
+    const rows = await getJson<HcRaw[]>(f, "https://recalls-rappels.canada.ca/sites/default/files/opendata-donneesouvertes/HCRSAMOpenData.json", 3, 60_000);
+    return rows.filter((r) => r.Organization === "Consumer product safety" && r.Title).map(mapHealthCanada);
   },
   fromFixture: () => (readFixture("recalls-hc-fixture.json") as HcRaw[]).filter((r) => r.Title).map(mapHealthCanada),
 };
 
 const DEFAULT_PROVIDERS: Provider[] = [cpscProvider, healthCanadaProvider];
 const DAY = 86_400_000;
+/** A feed that last failed or fell back to the bundled snapshot is retried soon; only a live download is trusted for a day. */
+const RETRY_MS = 10 * 60_000;
 
 export interface SyncResult { source: string; count: number; mode: "live" | "fixture" | "fresh" | "failed"; error?: string; /** Notices that were not in the index before this sync (empty on the very first sync). */ fresh: RecallRecord[] }
 
@@ -83,7 +98,7 @@ export async function syncRecalls(
   const results: SyncResult[] = [];
   for (const p of providers) {
     const last = db.prepare("SELECT synced_at, count, mode FROM recall_sync WHERE source = ?").get(p.source) as { synced_at: number; count: number; mode: string } | undefined;
-    if (last && !force && now - last.synced_at < DAY && last.mode !== "failed") { results.push({ source: p.source, count: last.count, mode: "fresh", fresh: [] }); continue; }
+    if (last && !force && now - last.synced_at < (last.mode === "live" ? DAY : RETRY_MS)) { results.push({ source: p.source, count: last.count, mode: "fresh", fresh: [] }); continue; }
     let records: RecallRecord[]; let mode: "live" | "fixture" = "live"; let error: string | undefined;
     try {
       if (offline) throw new Error("offline mode");

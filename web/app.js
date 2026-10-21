@@ -3,7 +3,7 @@ import { mountApp } from "./appHost.js";
 import { agentMode, remoteStep, localStep } from "./agent.js";
 
 const $ = (id) => document.getElementById(id);
-const shell = $("shell"), say = $("say"), heard = $("heard"), lightbar = $("lightbar"), paper = $("paper"), blank = $("blank");
+const say = $("say"), heard = $("heard"), lightbar = $("lightbar"), paper = $("paper"), blank = $("blank");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---- wire log ---------------------------------------------------------------
@@ -68,7 +68,6 @@ let brain = "local";
 
 const SUGGEST = ["What are we running low on?", "Any recalls on what we own?", "Plan a restock under $60", "Keep restocks under $80", "Speak Spanish"];
 
-function phase(p) { shell.dataset.phase = p; }
 function showChips() {
   const c = $("chips");
   c.hidden = false;
@@ -91,13 +90,11 @@ async function boot() {
     const r = await mcp.callTool("household_runway", { withinDays: 30 });
     if (r.structuredContent?.items?.length) { ready(); speak("Welcome back. I remember your household. Ask me what's running low."); }
     else {
-      phase("load");
       speak("I'm linked, but I don't know your household yet. Load your order history and I'll learn how fast you use things.");
       $("loadStep").hidden = false;
     }
   } catch (e) {
     if (e instanceof AuthRequired) {
-      phase("link");
       setStatus("", "Not linked");
       speak("Hi, I'm Alexa+. To remember your household I need to link Hearth to your account.");
       $("linkStep").hidden = false;
@@ -105,7 +102,6 @@ async function boot() {
   }
 }
 function ready() {
-  phase("ready");
   $("loadStep").hidden = true;
   $("askForm").hidden = false;
   showChips();
@@ -218,5 +214,8 @@ if (SR) {
   rec.onend = () => { mic.setAttribute("aria-pressed", "false"); if (!busy) setState("idle"); };
   mic.addEventListener("click", () => { ttsOn = true; mic.setAttribute("aria-pressed", "true"); setState("listening"); try { rec.start(); } catch { /* already started */ } });
 }
+
+// End the alert stream when the page goes away instead of letting it retry against a dead tab.
+addEventListener("pagehide", () => mcp.stop());
 
 boot();

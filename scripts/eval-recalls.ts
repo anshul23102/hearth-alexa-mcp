@@ -1,12 +1,18 @@
-// Evaluates recall matching against REAL notices. Usage: npx tsx scripts/eval-recalls.ts [db=/tmp/hearth-bench.db]
+// Evaluates recall matching against REAL notices. Usage: npm run eval [-- db-path]
+// Builds (or reuses) a local recall index first, so it works on a fresh clone with network access.
 //
 // Positives are built from real CPSC notices that name a product and list model numbers; negatives are the
 // cases that cause false alarms in practice. This is optimistic for positives (titles come from the notice
 // itself), so treat positive recall as an upper bound and the negative rates as the number to watch.
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { openDb } from "../src/db.js";
 import { matchOwned, brandOf, modelTokens } from "../src/recalls.js";
+import { syncRecalls } from "../src/recallIndex.js";
 
-const db = openDb(process.argv[2] ?? "/tmp/hearth-bench.db");
+const db = openDb(process.argv[2] ?? join(tmpdir(), "hearth-eval.db"));
+const synced = await syncRecalls(db);
+if (synced.some((s) => s.mode === "fixture")) console.warn("warning: a feed could not be reached; results below use the small bundled snapshot and are NOT comparable to the published numbers.\n");
 const rows = db.prepare("SELECT ext_id, date, title, product, text FROM recalls WHERE source = 'cpsc' AND date >= '2012-01-01'").all() as unknown as { ext_id: string; date: string; title: string; product: string; text: string }[];
 
 interface Case { title: string; last: string; recallId: string; kind: "pos" | "wrong-model" | "other-product" | "accessory" }

@@ -147,3 +147,53 @@ test("proposals never mix currencies", () => {
   assert.equal(p.currency, "INR");
   assert.match(p.dropped[0].why, /priced in USD/);
 });
+
+test("a flaky feed is retried before the sync gives up", async () => {
+  const db = openDb(":memory:");
+  let cpscCalls = 0, failures = 2; // fails twice, then succeeds: inside the retry budget of three attempts
+  const rows = Array.from({ length: 5 }, (_, i) => ({ RecallID: i + 1, RecallNumber: String(i), RecallDate: "2025-01-01T00:00:00", Title: `Acme Recalls Widget ${i} Due to Burn Hazard`, URL: "https://www.cpsc.gov/x", Products: [{ Name: "Acme Widget" }] }));
+  const fakeFetch = (async (url: string) => {
+    if (!String(url).includes("saferproducts.gov")) return new Response("[]", { status: 200 }); // Health Canada: empty feed, falls back to its snapshot
+    cpscCalls++;
+    if (failures-- > 0) throw new Error("socket hang up");
+    return new Response(JSON.stringify(rows), { status: 200 });
+  }) as unknown as typeof fetch;
+  const r = await syncRecalls(db, { fetchFn: fakeFetch, offline: false });
+  const cpsc = r.find((x) => x.source === "cpsc")!;
+  assert.equal(cpsc.mode, "live", `retries should have rescued the sync (${cpsc.error ?? ""})`);
+  assert.equal(cpscCalls, 3, "two failed attempts, then the successful one");
+  assert.equal(cpsc.count, 5);
+});
+
+test("a feed that keeps failing leaves the existing index untouched", async () => {
+  const db = openDb(":memory:");
+  const good = (async (url: string) => new Response(JSON.stringify(String(url).includes("saferproducts.gov") ? Array.from({ length: 30 }, (_, i) => ({ RecallID: i + 1, RecallNumber: String(i), RecallDate: "2025-01-01T00:00:00", Title: `Acme Recalls Widget ${i} Due to Burn Hazard`, URL: "https://www.cpsc.gov/x", Products: [{ Name: "Acme Widget" }] })) : []), { status: 200 })) as unknown as typeof fetch;
+  await syncRecalls(db, { fetchFn: good, offline: false });
+  const before = searchByBrand(db, "acme", ["US"]).length;
+  assert.ok(before > 0);
+  const down = (async () => { throw new Error("network down"); }) as unknown as typeof fetch;
+  const r = await syncRecalls(db, { fetchFn: down, offline: false, force: true });
+  assert.equal(r.find((x) => x.source === "cpsc")!.mode, "failed");
+  assert.equal(searchByBrand(db, "acme", ["US"]).length, before, "outage must not shrink the index");
+});
+
+test("an outage fallback is retried within minutes and upgraded to live data, not trusted for a day", async () => {
+  const db = openDb(":memory:");
+  const t0 = Date.parse("2026-10-21T10:00:00Z");
+  const rows = Array.from({ length: 40 }, (_, i) => ({ RecallID: i + 1, RecallNumber: String(i), RecallDate: "2025-01-01T00:00:00", Title: `Acme Recalls Widget ${i} Due to Burn Hazard`, URL: "https://www.cpsc.gov/x", Products: [{ Name: "Acme Widget" }] }));
+  let up = false;
+  const feed = (async (url: string) => {
+    if (!up) throw new Error("network down");
+    return new Response(String(url).includes("saferproducts.gov") ? JSON.stringify(rows) : "[]", { status: 200 });
+  }) as unknown as typeof fetch;
+  const first = await syncRecalls(db, { fetchFn: feed, offline: false, now: t0 });
+  assert.equal(first.find((x) => x.source === "cpsc")!.mode, "fixture", "outage: snapshot used");
+  const soon = await syncRecalls(db, { fetchFn: feed, offline: false, now: t0 + 5 * 60_000 });
+  assert.equal(soon.find((x) => x.source === "cpsc")!.mode, "fresh", "inside the retry window nothing is hammered");
+  up = true;
+  const later = await syncRecalls(db, { fetchFn: feed, offline: false, now: t0 + 11 * 60_000 });
+  assert.equal(later.find((x) => x.source === "cpsc")!.mode, "live", "after 10 minutes the live feed replaces the snapshot");
+  assert.equal(later.find((x) => x.source === "cpsc")!.count, 40);
+  const next = await syncRecalls(db, { fetchFn: feed, offline: false, now: t0 + 12 * 60_000 });
+  assert.equal(next.find((x) => x.source === "cpsc")!.mode, "fresh", "a live index is then trusted for a day");
+});
