@@ -80,15 +80,26 @@ export function fromConverse(msg: Message | undefined): WireMessage {
 
 export interface Converser { send(cmd: ConverseCommand): Promise<{ output?: { message?: Message } }> }
 
-export async function bedrockStep(client: Converser, messages: WireMessage[], tools: WireTool[], modelId = MODEL_ID): Promise<WireMessage> {
-  const out = await client.send(new ConverseCommand({
+/** Errors Bedrock documents as momentary (capacity, throttling, timeouts); anything else, such as AccessDenied, is not retried. */
+const TRANSIENT = new Set(["ServiceUnavailableException", "ThrottlingException", "ModelTimeoutException", "InternalServerException"]);
+const RETRY_DELAYS_MS = [400, 1200];
+
+export async function bedrockStep(client: Converser, messages: WireMessage[], tools: WireTool[], modelId = MODEL_ID, delays = RETRY_DELAYS_MS): Promise<WireMessage> {
+  const command = new ConverseCommand({
     modelId,
     system: [{ text: SYSTEM }],
     messages: toConverse(trimConversation(messages)),
     toolConfig: tools.length ? { tools: toTools(tools) } : undefined,
     inferenceConfig: { maxTokens: 400, temperature: 0.2 },
-  }));
-  return fromConverse(out.output?.message);
+  });
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return fromConverse((await client.send(command)).output?.message);
+    } catch (e) {
+      if (attempt >= delays.length || !TRANSIENT.has((e as Error).name)) throw e;
+      await new Promise((r) => setTimeout(r, delays[attempt]));
+    }
+  }
 }
 
 let shared: BedrockRuntimeClient | undefined;

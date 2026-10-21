@@ -198,7 +198,7 @@ async function ask(text, opts = {}) {
   try {
     let lastSpoken = "";
     for (let hop = 0; hop < 6; hop++) {
-      const raw = brain === "bedrock" ? await remoteStep(trimConversation(messages), mcp.tools, mcp.token) : localStep(messages, { sampleCsv });
+      const raw = brain === "bedrock" ? await remoteOrLocal() : localStep(messages, { sampleCsv });
       const reply = ensureSpoken(raw, lastSpoken);
       messages.push(reply);
       const calls = reply.content.filter((b) => b.type === "tool_use");
@@ -223,6 +223,15 @@ async function ask(text, opts = {}) {
   } finally {
     busy = false; setState("idle");
     if (pending) { const next = pending; pending = null; ask(next); } else voice.afterReply();
+  }
+}
+
+// If the model service hiccups, answer this turn with the offline router rather than failing the household's request.
+async function remoteOrLocal() {
+  try { return await remoteStep(trimConversation(messages), mcp.tools, mcp.token); } catch (e) {
+    console.warn("model unavailable, using the offline router for this turn:", e.message);
+    setStatus("ok", "Claude is unavailable right now · answering with the offline router");
+    return localStep(messages, { sampleCsv });
   }
 }
 

@@ -111,7 +111,7 @@ real ordering API plugs in.
 ## Tests
 
 ```bash
-npm test         # 95 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 96 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
