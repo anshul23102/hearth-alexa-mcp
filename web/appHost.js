@@ -2,7 +2,7 @@
 // View <-> Host JSON-RPC protocol over postMessage (ui/initialize, tool-input, tool-result,
 // size-changed, tools/call proxying, open-link).
 
-const OPEN_OK = /^https:\/\/(www\.)?cpsc\.gov\//;
+const OPEN_OK = /^https:\/\/((www\.)?cpsc\.gov|recalls-rappels\.canada\.ca)\//;
 
 export function mountApp({ html, mcp, toolName, args, result, onToolResult }) {
   const frame = document.createElement("iframe");

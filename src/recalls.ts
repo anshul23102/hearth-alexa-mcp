@@ -1,38 +1,20 @@
 import type { DatabaseSync } from "node:sqlite";
-import { readFileSync, existsSync } from "node:fs";
 import { audit } from "./db.js";
 import { friendlyName } from "./normalize.js";
-
-const API = "https://www.saferproducts.gov/RestWebServices/Recall";
-const TTL_MS = 24 * 3600_000;
-const FIXTURE = new URL("../data/recalls-fixture.json", import.meta.url);
-
-export interface CpscRecall {
-  RecallID: number;
-  RecallNumber: string;
-  RecallDate: string;
-  Title: string;
-  Description: string;
-  URL: string;
-  Products: { Name: string; Model?: string }[];
-  Hazards?: { Name: string }[];
-  Remedies?: { Name: string }[];
-  Images?: { URL: string; Caption: string }[];
-}
+import { ensureRecallIndex, searchByBrand, type Region, type RecallRecord } from "./recallIndex.js";
 
 export interface RecallMatch {
   owned: { title: string; name: string; lastPurchased: string; productKey: string };
   recall: {
-    id: number; number: string; date: string; title: string; url: string;
+    id: string; number: string; date: string; title: string; url: string; region: Region; source: string;
     hazard: string; hazardShort: string; remedy: string; image?: string;
   };
   level: "likely" | "possible";
   score: number;
   evidence: string[];
-  source: "live" | "cache" | "fixture";
 }
 
-const STOP = new Set(["the", "and", "with", "for", "in", "electric", "multi", "function", "quart", "qt", "stainless", "steel", "black", "white", "pro", "plus", "max"]);
+const STOP = new Set(["the", "and", "with", "for", "in", "electric", "multi", "function", "quart", "qt", "stainless", "steel", "black", "white", "pro", "plus", "max", "recalls", "recalled", "due", "hazard"]);
 const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w));
 
 /** "...Due to Serious Burn Hazard, Multiple..." -> "a burn hazard" (for speech). */
@@ -51,30 +33,32 @@ export function modelTokens(text: string): string[] {
   return [...out];
 }
 
-async function fetchBrand(db: DatabaseSync, brand: string, now: number): Promise<{ rows: CpscRecall[]; source: RecallMatch["source"] }> {
-  const q = brand.toLowerCase();
-  const cached = db.prepare("SELECT fetched_at, body FROM recall_cache WHERE query = ?").get(q) as { fetched_at: number; body: string } | undefined;
-  if (cached && now - cached.fetched_at < TTL_MS) return { rows: JSON.parse(cached.body), source: "cache" };
-  try {
-    const res = await fetch(`${API}?format=json&RecallDateStart=2018-01-01&ProductName=${encodeURIComponent(brand)}`, {
-      signal: AbortSignal.timeout(8000),
-      headers: { accept: "application/json" },
-    });
-    if (!res.ok) throw new Error(`CPSC ${res.status}`);
-    const rows = (await res.json()) as CpscRecall[];
-    db.prepare("INSERT OR REPLACE INTO recall_cache (query, fetched_at, body) VALUES (?, ?, ?)").run(q, now, JSON.stringify(rows));
-    return { rows, source: "live" };
-  } catch {
-    if (cached) return { rows: JSON.parse(cached.body), source: "cache" };
-    if (existsSync(FIXTURE)) {
-      const all = JSON.parse(readFileSync(FIXTURE, "utf8")) as CpscRecall[];
-      return { rows: all.filter((r) => `${r.Title} ${r.Products.map((p) => p.Name).join(" ")}`.toLowerCase().includes(q)), source: "fixture" };
-    }
-    return { rows: [], source: "fixture" };
-  }
+export function scoreMatch(owned: { title: string; last: string }, brand: string, r: RecallRecord): { score: number; evidence: string[] } | null {
+  const hay = `${r.title} ${r.product}`.toLowerCase();
+  const evidence: string[] = [];
+  let score = 0;
+  if (!hay.includes(brand.toLowerCase())) return null;
+  score += 2; evidence.push(`brand "${brand}" named in recall`);
+  // "Replacement battery for Dyson V6" is about a third party's part, not the brand's own product.
+  if (new RegExp(`\\b(for|fits|compatible with)\\s+(the\\s+)?${brand.toLowerCase()}`).test(hay) || /\breplacement\b/.test(hay)) { score -= 3; evidence.push("looks like an accessory or replacement part for this brand"); }
+  const ownedWords = words(owned.title);
+  const shared = ownedWords.filter((w) => w !== brand.toLowerCase() && hay.includes(w));
+  if (shared.length >= 2) { score += 2; evidence.push(`same product type (${shared.slice(0, 3).join(", ")})`); }
+  else if (shared.length === 0) return null;
+  const ownedModels = modelTokens(owned.title);
+  const recallModels = modelTokens(r.text);
+  const text = r.text.toUpperCase().replace(/-/g, "");
+  const hit = ownedModels.filter((m) => text.includes(m) || recallModels.some((rm) => rm.startsWith(m.slice(0, 5)) && m.slice(0, 5).length >= 4));
+  if (hit.length) { score += 3; evidence.push(`model ${hit[0]} matches recalled model range`); }
+  else if (ownedModels.length && recallModels.length) { score -= 1; evidence.push("model number not listed in recall — verify the label"); }
+  if (r.date < owned.last) { score -= 1; evidence.push("bought after recall date — may be a corrected unit"); }
+  return score >= 3 ? { score, evidence } : null;
 }
 
-export async function checkRecalls(db: DatabaseSync, household: string, now = Date.now()): Promise<{ matches: RecallMatch[]; checked: number; sources: string[] }> {
+export async function checkRecalls(
+  db: DatabaseSync, household: string, now = Date.now(), regions: Region[] = ["US", "CA"],
+): Promise<{ matches: RecallMatch[]; checked: number; regions: Region[]; indexed: number }> {
+  await ensureRecallIndex(db);
   const owned = db
     .prepare(
       `SELECT product_key, MAX(title) AS title, MAX(ordered_at) AS last FROM orders
@@ -83,43 +67,24 @@ export async function checkRecalls(db: DatabaseSync, household: string, now = Da
     .all(household) as unknown as { product_key: string; title: string; last: string }[];
 
   const matches: RecallMatch[] = [];
-  const sources = new Set<string>();
   for (const item of owned) {
     const brand = brandOf(item.title);
     if (brand.length < 3) continue;
-    const { rows, source } = await fetchBrand(db, brand, now);
-    sources.add(source);
-    const ownedWords = words(item.title);
-    const ownedModels = modelTokens(item.title);
-    for (const r of rows) {
-      const hay = `${r.Title} ${r.Products.map((p) => `${p.Name} ${p.Model ?? ""}`).join(" ")}`.toLowerCase();
-      const desc = `${r.Description ?? ""}`.toUpperCase().replace(/-/g, "");
-      const evidence: string[] = [];
-      let score = 0;
-      if (hay.includes(brand.toLowerCase())) { score += 2; evidence.push(`brand "${brand}" named in recall`); }
-      else continue;
-      const shared = ownedWords.filter((w) => w !== brand.toLowerCase() && hay.includes(w));
-      if (shared.length >= 2) { score += 2; evidence.push(`same product type (${shared.slice(0, 3).join(", ")})`); }
-      else if (shared.length === 0) continue;
-      const recallModels = modelTokens(`${r.Title} ${r.Products.map((p) => `${p.Name} ${p.Model ?? ""}`).join(" ")} ${r.Description ?? ""}`);
-      const hit = ownedModels.filter((m) => desc.includes(m) || recallModels.some((rm) => rm.startsWith(m.slice(0, 5)) && m.slice(0, 5).length >= 4));
-      if (hit.length) { score += 3; evidence.push(`model ${hit[0]} matches recalled model range`); }
-      else if (ownedModels.length && recallModels.length) { score -= 1; evidence.push("model number not listed in recall — verify the label"); }
-      if (r.RecallDate.slice(0, 10) < item.last) { score -= 1; evidence.push("bought after recall date — may be a corrected unit"); }
-      if (score < 3) continue;
-      matches.push({
+    const perItem: RecallMatch[] = [];
+    for (const r of searchByBrand(db, brand, regions)) {
+      const s = scoreMatch({ title: item.title, last: item.last }, brand, r);
+      if (!s) continue;
+      perItem.push({
         owned: { title: item.title, name: friendlyName(item.title), lastPurchased: item.last, productKey: item.product_key },
-        recall: {
-          id: r.RecallID, number: r.RecallNumber, date: r.RecallDate.slice(0, 10), title: r.Title, url: r.URL,
-          hazard: r.Hazards?.[0]?.Name ?? "See recall notice", hazardShort: shortHazard(r.Title), remedy: r.Remedies?.[0]?.Name ?? "See recall notice",
-          image: r.Images?.[0]?.URL,
-        },
-        level: score >= 6 ? "likely" : "possible",
-        score, evidence, source,
+        recall: { id: `${r.source}:${r.extId}`, number: r.extId, date: r.date, title: r.title, url: r.url, region: r.region, source: r.source, hazard: r.hazard, hazardShort: shortHazard(r.title), remedy: r.remedy, image: r.image },
+        level: s.score >= 6 ? "likely" : "possible", score: s.score, evidence: s.evidence,
       });
     }
+    perItem.sort((a, b) => b.score - a.score || (a.recall.date < b.recall.date ? 1 : -1));
+    matches.push(...perItem.slice(0, 3));
   }
   matches.sort((a, b) => b.score - a.score);
-  audit(db, household, "check_recalls", { checked: owned.length, matches: matches.length, sources: [...sources] }, now);
-  return { matches, checked: owned.length, sources: [...sources] };
+  const indexed = (db.prepare("SELECT COUNT(*) AS n FROM recalls").get() as { n: number }).n;
+  audit(db, household, "check_recalls", { checked: owned.length, matches: matches.length, regions, indexed }, now);
+  return { matches, checked: owned.length, regions, indexed };
 }

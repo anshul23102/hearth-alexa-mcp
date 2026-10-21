@@ -99,7 +99,9 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
 (() => {
   const app = document.getElementById("app");
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const usd = (c) => "$" + (c / 100).toFixed(2);
+  let LOC = "en";
+  const money = (minor, cur) => { try { const f = new Intl.NumberFormat(LOC, { style: "currency", currency: cur || "USD" }); return f.format(minor / 10 ** (f.resolvedOptions().maximumFractionDigits ?? 2)); } catch { return (minor / 100).toFixed(2) + " " + cur; } };
+  const SRC = { cpsc: "U.S. CPSC", healthcanada: "Health Canada" };
   const short = (t, n) => { if (n) return n;  const s = String(t).split(",")[0].replace(/\s+/g, " "); return s.length > 44 ? s.slice(0, 43).trimEnd() + "…" : s; };
   const hhmm = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
@@ -150,17 +152,17 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
   function recalls(sc) {
     const ms = sc.matches || [];
     if (!ms.length) return slip('<h1>All clear</h1><p class="sub">Checked ' + sc.checked + " products against current CPSC recalls. No matches.</p>");
-    const src = (sc.sources || []).join("+");
-    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>Recall notice ' + esc(m.recall.number) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul><button class="link" data-url="' + esc(m.recall.url) + '">Read the CPSC notice ↗</button></div><hr class="dots">').join("");
-    slip('<h1>' + ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at</h1><p class=\"sub\">Matched on brand, product type and model number against live U.S. CPSC data (" + esc(src) + ").</p><hr class=\"dots\">" + cards);
+    const src = (sc.regions || []).join(" + ");
+    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul><button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button></div><hr class="dots">').join("");
+    slip('<h1>' + ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at</h1><p class=\"sub\">Matched on brand, product type and model number against " + Number(sc.indexed || 0).toLocaleString(LOC) + " public recall notices (" + esc(src) + ").</p><hr class=\"dots\">" + cards);
     app.querySelectorAll("[data-url]").forEach((b) => b.addEventListener("click", () => request("ui/open-link", { url: b.dataset.url }).catch(() => {})));
   }
   function proposal(sc) {
     const p = sc.proposal; current = p;
     if (!p.lines.length) return slip('<h1>Nothing to order</h1><p class="sub">Everything is stocked for that window.</p>');
-    const lines = p.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + usd(l.packs * l.unitPriceCents) + '</span></div><div class="reason">' + esc(l.reason) + "</div>").join("");
+    const lines = p.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + money(l.packs * l.unitPriceCents, l.currency) + '</span></div><div class="reason">' + esc(l.reason) + "</div>").join("");
     const dropped = p.dropped.map((d) => '<div class="leader struck"><span class="t">' + esc(short(d.title, d.name)) + '</span></div><div class="reason">left out: ' + esc(d.why) + "</div>").join("");
-    slip('<h1>Restock plan</h1><p class="sub">Nothing is ordered until you say yes. Plan expires at ' + hhmm(p.expiresAt) + '.</p><hr class="dots">' + lines + dropped + '<hr class="solid"><div class="total"><small>Total</small><span>' + usd(p.totalCents) + '</span></div>' + (p.budgetCents ? '<div class="note">Budget ' + usd(p.budgetCents) + " · " + usd(p.budgetCents - p.totalCents) + " to spare</div>" : "") +
+    slip('<h1>Restock plan</h1><p class="sub">Nothing is ordered until you say yes. Plan expires at ' + hhmm(p.expiresAt) + '.</p><hr class="dots">' + lines + dropped + '<hr class="solid"><div class="total"><small>Total</small><span>' + money(p.totalCents, p.currency) + '</span></div>' + (p.budgetCents ? '<div class="note">Budget ' + money(p.budgetCents, p.currency) + " · " + money(p.budgetCents - p.totalCents, p.currency) + " to spare</div>" : "") +
       '<div class="tear"><button class="btn" id="place">Place order</button><button class="btn ghost" id="later">Not now</button></div><div class="note" id="msg" role="status"></div>');
     const place = document.getElementById("place"), later = document.getElementById("later"), msg = document.getElementById("msg");
     place.addEventListener("click", async () => {
@@ -186,8 +188,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
   function receipt(sc) {
     if (sc.declined) return slip('<h1>Not ordered</h1><p class="sub">Okay, I did not place that order.</p>');
     const r = sc.receipt, id = sc.proposalId;
-    const lines = r.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + usd(l.packs * l.unitPriceCents) + "</span></div>").join("");
-    slip('<h1>Ordered</h1><p class="sub ok">' + (sc.replayed ? "Already placed — no duplicate created." : "Placed through the simulated store.") + '</p><hr class="dots">' + lines + '<hr class="solid"><div class="total"><small>Paid</small><span>' + usd(r.totalCents) + "</span></div>" + code39(r.orderRef) + '<div class="center note">' + esc(r.orderRef) + '</div><div class="tear"><div style="flex:1"><div class="note" style="margin:0">Undo window</div><div class="timer" id="timer">—</div></div><button class="btn ghost" id="undo">Cancel order</button></div><div class="note" id="msg" role="status"></div>');
+    const lines = r.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + money(l.packs * l.unitPriceCents, l.currency) + "</span></div>").join("");
+    slip('<h1>Ordered</h1><p class="sub ok">' + (sc.replayed ? "Already placed — no duplicate created." : "Placed through the simulated store.") + '</p><hr class="dots">' + lines + '<hr class="solid"><div class="total"><small>Paid</small><span>' + money(r.totalCents, r.currency) + "</span></div>" + code39(r.orderRef) + '<div class="center note">' + esc(r.orderRef) + '</div><div class="tear"><div style="flex:1"><div class="note" style="margin:0">Undo window</div><div class="timer" id="timer">—</div></div><button class="btn ghost" id="undo">Cancel order</button></div><div class="note" id="msg" role="status"></div>');
     const t = document.getElementById("timer"), u = document.getElementById("undo"), msg = document.getElementById("msg");
     clearInterval(timer);
     const tick = () => { const s = Math.max(0, Math.round((r.undoUntil - Date.now()) / 1000)); t.textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); if (!s) { u.disabled = true; clearInterval(timer); } };
@@ -211,6 +213,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
 
   function render(result) {
     const sc = result && result.structuredContent;
+    if (sc && sc.locale) LOC = sc.locale;
     if (!sc) return slip('<h1>Hearth</h1><p class="sub">' + esc(result?.content?.[0]?.text || "") + "</p>");
     ({ runway, recalls, proposal, receipt, undo: undone, log }[sc.view] || (() => slip("<pre>" + esc(JSON.stringify(sc, null, 1)) + "</pre>")))(sc);
   }
