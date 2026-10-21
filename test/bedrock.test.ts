@@ -139,3 +139,55 @@ test("the browser speaks the tool's own sentence when the model has nothing to a
   const said = { role: "assistant", content: [{ type: "text", text: "Done." }] };
   assert.equal(ensureSpoken(said, "ignored"), said);
 });
+
+// ---- conversation length: the "context is in debt" bug --------------------------------------------------------------
+const turn = (i: number) => [
+  { role: "user", content: [{ type: "text", text: `question ${i}` }] },
+  { role: "assistant", content: [{ type: "tool_use", id: `t${i}`, name: "household_runway", input: {} }] },
+  { role: "user", content: [{ type: "tool_result", tool_use_id: `t${i}`, text: `result ${i}` }] },
+  { role: "assistant", content: [{ type: "text", text: `answer ${i}` }] },
+];
+
+function assertValidConverse(msgs: any[]) {
+  assert.equal(msgs[0].role, "user", "starts with the user");
+  assert.ok(msgs[0].content.some((b: any) => b.type === "text") && !msgs[0].content.some((b: any) => b.type === "tool_result"), "starts at a real question, never an orphaned result");
+  for (let i = 0; i < msgs.length; i++) {
+    for (const b of msgs[i].content) if (b.type === "tool_result") assert.ok(msgs[i - 1]?.content.some((x: any) => x.type === "tool_use" && x.id === b.tool_use_id), "every result follows its own call");
+  }
+}
+
+test("long conversations are trimmed on turn boundaries and never orphan a tool result (server)", async () => {
+  const { trimConversation, toConverse } = await import("../src/agent.js");
+  for (const turns of [1, 5, 7, 8, 9, 15, 40, 120]) {
+    const all = Array.from({ length: turns }, (_, i) => turn(i)).flat() as any[];
+    for (const max of [4, 5, 7, 10, 30]) {
+      const t = trimConversation(all, max);
+      assertValidConverse(t);
+      assert.ok(t[t.length - 1] === all[all.length - 1], "the newest message is always kept");
+      const c = toConverse(t as any);
+      assert.ok(c.every((m, i) => i === 0 || m.role !== c[i - 1].role), "roles alternate");
+    }
+  }
+});
+
+test("a 45-turn conversation (181 messages) is accepted by the live endpoint and reaches Bedrock trimmed", async () => {
+  const all = Array.from({ length: 45 }, (_, i) => turn(i)).flat();   // 180 messages, plus the new question
+  const before = seen.length;
+  const r = await fetch(`${base}/api/agent/step`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${tok.access_token}` }, body: JSON.stringify({ messages: [...all, { role: "user", content: [{ type: "text", text: "and one more thing" }] }], tools }) });
+  assert.ok([200, 429].includes(r.status), `status ${r.status}`); // 429 only if the daily test cap was already used up
+  if (r.status === 200) {
+    const sent = seen[before].body.messages;
+    assert.ok(sent.length <= 32, `trimmed to a recent window (${sent.length})`);
+    assert.equal(sent[0].role, "user");
+    assert.ok(sent[0].content[0].text, "begins with a real question");
+    assert.match(JSON.stringify(sent[sent.length - 1]), /and one more thing/);
+  }
+});
+
+test("the browser trims the same way (shared contract with the server)", async () => {
+  const { trimConversation } = await import("../web/agent.js" as string) as { trimConversation: (m: unknown[], max?: number) => any[] };
+  for (const turns of [3, 8, 9, 30, 100]) {
+    const all = Array.from({ length: turns }, (_, i) => turn(i)).flat();
+    for (const max of [6, 24]) { const t = trimConversation(all, max); assertValidConverse(t); assert.equal(t[t.length - 1], all[all.length - 1]); }
+  }
+});

@@ -180,7 +180,8 @@ test("agent request validation rejects oversized or malformed payloads", () => {
   assert.ok(validateAgentRequest({ ...ok, messages: [{ role: "system", content: [] }] }));
   assert.ok(validateAgentRequest({ ...ok, messages: [{ role: "user", content: [{ type: "text", text: "x".repeat(30_000) }] }] }));
   assert.ok(validateAgentRequest({ ...ok, tools: [{ name: "../evil", inputSchema: {} }] }));
-  assert.ok(validateAgentRequest({ messages: Array(41).fill(ok.messages[0]), tools: [] }));
+  assert.ok(validateAgentRequest({ messages: Array(201).fill(ok.messages[0]), tools: [] }));
+  assert.equal(validateAgentRequest({ messages: Array(60).fill(ok.messages[0]), tools: [] }), null, "long conversations are accepted and trimmed safely, not rejected")
   assert.ok(validateAgentRequest(null));
 });
 

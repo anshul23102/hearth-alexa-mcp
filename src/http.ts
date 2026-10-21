@@ -225,7 +225,7 @@ async function handleAgent(req: IncomingMessage, res: ServerResponse, url: URL):
       if (bad) { sendJson(res, 400, { error: bad }); return true; }
       const budget = reserveBedrockCall(db);
       if (!budget.ok) { sendJson(res, 429, { error: `Daily model-call limit reached (${budget.max}). The simulator will use its offline router; raise HEARTH_BEDROCK_DAILY_CALLS only if you accept the cost.` }); return true; }
-      sendJson(res, 200, await bedrockStep(bedrockClient(), (body.messages as WireMessage[]).slice(-20), body.tools as WireTool[]));
+      sendJson(res, 200, await bedrockStep(bedrockClient(), body.messages as WireMessage[], body.tools as WireTool[]));
     } catch (e) {
       if ((e as { status?: number }).status === 413) { sendJson(res, 413, { error: "request too large" }); return true; }
       console.error("bedrock:", (e as Error).name);

@@ -30,6 +30,19 @@ export function hasBedrockCredentials(env = process.env): boolean {
 }
 
 /**
+ * Keep the most recent turns without ever splitting a tool call from its result. A "turn" starts at a user message that
+ * carries real text (not a tool result). The returned history always begins at such a message, so Bedrock never sees an
+ * orphaned toolResult or a conversation that starts with the assistant.
+ */
+export function trimConversation<T extends { role: string; content: { type: string }[] }>(messages: T[], max = 30): T[] {
+  if (messages.length <= max) return messages;
+  const isTurnStart = (m: T) => m.role === "user" && m.content.some((b) => b.type === "text") && !m.content.some((b) => b.type === "tool_result");
+  for (let i = messages.length - max; i < messages.length; i++) if (isTurnStart(messages[i])) return messages.slice(i);
+  for (let i = messages.length - max - 1; i >= 0; i--) if (isTurnStart(messages[i])) return messages.slice(i); // a single very long turn: keep all of it
+  return messages.slice(-max);
+}
+
+/**
  * Wire messages -> Bedrock Converse. Bedrock rejects blank text and requires alternating roles, so a model reply that said
  * nothing (it sometimes has nothing to add after a tool call) must not poison the conversation: blank text is dropped and
  * adjacent same-role messages are merged.
@@ -69,7 +82,7 @@ export async function bedrockStep(client: Converser, messages: WireMessage[], to
   const out = await client.send(new ConverseCommand({
     modelId,
     system: [{ text: SYSTEM }],
-    messages: toConverse(messages),
+    messages: toConverse(trimConversation(messages)),
     toolConfig: tools.length ? { tools: toTools(tools) } : undefined,
     inferenceConfig: { maxTokens: 400, temperature: 0.2 },
   }));
@@ -84,7 +97,7 @@ export const bedrockClient = (): Converser => (shared ??= new BedrockRuntimeClie
 export function validateAgentRequest(body: unknown): string | null {
   const b = body as { messages?: unknown; tools?: unknown } | null;
   if (!b || !Array.isArray(b.messages) || !Array.isArray(b.tools)) return "messages and tools are required";
-  if (b.messages.length === 0 || b.messages.length > 40) return "between 1 and 40 messages";
+  if (b.messages.length === 0 || b.messages.length > 200) return "between 1 and 200 messages";
   if (b.tools.length > 20) return "at most 20 tools";
   let size = 0;
   for (const m of b.messages as WireMessage[]) {

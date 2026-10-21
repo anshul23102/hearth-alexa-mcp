@@ -26,6 +26,7 @@ answers literally print as receipts. Use scene: evening kitchen, glanceable from
 - **Label-tape chips** for suggestions (notched left edge).
 - **Range bar** per runway item: dotted 0-45 day track, ticks at today/7/14/30, whisker = likely window,
   dot = estimate. Red when due within a week or overdue.
+- **Voice bar**: two toggles (voice replies, "Say Alexa") and a language select, drawn as thin outlined mono buttons that invert when on; the light bar turns red while the mic is open.
 - **Alert bar** (thermal red, drops in above the light bar): appears only when the server pushes a new recall alert.
 - **Stamp** for recall match level: solid = likely, dashed = possible.
 - **MCP wire** drawer: monospace JSON-RPC trace, direction-coded.
