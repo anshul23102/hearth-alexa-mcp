@@ -40,7 +40,7 @@ body{min-height:100dvh;color:var(--paper);font:14px/1.5 var(--mono);background:
 
 /* ---- the device ---- */
 .device{display:flex;flex-direction:column;justify-content:center;gap:22px;max-width:640px;min-height:0}
-.alertbar{background:var(--red);color:#fff;font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:9px 12px;align-self:flex-start;max-width:100%;animation:drop .5s var(--ease) both}
+.alertbar{background:var(--red);color:var(--ink);font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:9px 12px;align-self:flex-start;max-width:100%;animation:drop .5s var(--ease) both}
 @keyframes drop{from{transform:translateY(-14px);opacity:0}to{transform:none;opacity:1}}
 .lightbar{display:flex;gap:6px;height:8px;margin-bottom:6px}
 .lightbar i{flex:0 0 clamp(36px,6vw,64px);background:var(--paper);border-radius:4px;opacity:.28;transform-origin:50% 100%}
@@ -65,7 +65,7 @@ small b{color:var(--paper);font-weight:600}
 
 .ask{display:flex;align-items:center;gap:8px;border-bottom:2px solid var(--paper);padding-bottom:6px;margin-top:6px}
 .ask input{flex:1;min-width:0;background:transparent;border:0;color:var(--paper);font:400 16px var(--mono);padding:10px 0;outline-offset:6px}
-.ask input::placeholder{color:#e1e8ff;opacity:.72}
+.ask input::placeholder{color:#d4dcff;opacity:1}
 .ask button{background:none;border:0;color:var(--paper);cursor:pointer;width:42px;height:42px;display:grid;place-items:center;font:600 20px var(--mono);transition:background .2s}
 .ask button:hover{background:#ffffff22}
 .ask .mic[aria-pressed=true]{background:var(--red);color:#fff}

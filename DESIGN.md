@@ -9,8 +9,8 @@ answers literally print as receipts. Use scene: evening kitchen, glanceable from
 ## Color (drenched, one hot ink)
 - Ground `#2236d9` cobalt, with a 7% noise grain so it reads as material, not a flat fill. Deep wells `#070f5c`.
 - Receipt paper `#f3f6f8` (cool thermal white, deliberately not cream). Ink `#0c1230`.
-- Thermal red `#d92b17` on paper / `#ff5a43` on cobalt: used only for overdue, recall and listening states.
-- Secondary text on cobalt `#c9d3ff` (>= 5.7:1).
+- Thermal red `#cc2512` on paper / `#ff5a43` on cobalt: used only for overdue, recall and listening states.
+- Secondary text on cobalt `#c9d3ff` (5.5:1); input placeholder `#d4dcff` (6.0:1); alert bar uses ink text on `#ff5a43` (5.9:1). All text pairs were computed against WCAG 4.5:1.
 
 ## Type
 - Display: **Bricolage Grotesque** 700, tight tracking, for Alexa's spoken line and receipt headlines.
@@ -26,6 +26,7 @@ answers literally print as receipts. Use scene: evening kitchen, glanceable from
 - **Label-tape chips** for suggestions (notched left edge).
 - **Range bar** per runway item: dotted 0-45 day track, ticks at today/7/14/30, whisker = likely window,
   dot = estimate. Red when due within a week or overdue.
+- **Alert bar** (thermal red, drops in above the light bar): appears only when the server pushes a new recall alert.
 - **Stamp** for recall match level: solid = likely, dashed = possible.
 - **MCP wire** drawer: monospace JSON-RPC trace, direction-coded.
 

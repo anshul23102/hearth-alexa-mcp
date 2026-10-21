@@ -20,12 +20,20 @@ import * as metrics from "./metrics.js";
 
 const PORT = Number(process.env.PORT ?? 3939);
 const AUTH = (process.env.HEARTH_AUTH ?? "on") !== "off";
+// Auth off makes every caller the same household. That is a local-experiment switch, never a deployment mode.
+if (!AUTH && (process.env.NODE_ENV === "production" || process.env.PUBLIC_URL)) {
+  console.error("Refusing to start: HEARTH_AUTH=off cannot be combined with NODE_ENV=production or PUBLIC_URL.");
+  process.exit(1);
+}
 const WEB = new URL("../web/", import.meta.url).pathname;
 const DB_PATH = process.env.HEARTH_DB ?? "data/hearth.db";
 const db = openDb(DB_PATH);
 const MAX_UPLOAD = Number(process.env.HEARTH_MAX_UPLOAD_MB ?? 250) * 1024 * 1024;
 const HOSTS = allowedHosts();
 const MAX_SESSIONS = 5000;
+const MAX_SESSIONS_PER_HOUSEHOLD = Number(process.env.HEARTH_MAX_SESSIONS_PER_HOUSEHOLD ?? 20);
+const MAX_CONCURRENT_IMPORTS = Number(process.env.HEARTH_MAX_CONCURRENT_IMPORTS ?? 3);
+let activeImports = 0;
 const SESSION_IDLE_MS = 30 * 60_000;
 
 interface Session { transport: StreamableHTTPServerTransport; household: string; last: number }
@@ -98,6 +106,9 @@ async function handleMcp(req: IncomingMessage & { auth?: AuthInfo }, res: Server
   if (session) session.last = Date.now();
   if (!session) {
     if (req.method === "POST" && !sid && isInitializeRequest(body)) {
+      // One household cannot crowd out the rest: past its cap, its own oldest session is closed.
+      const mine = [...sessions].filter(([, s]) => s.household === who.household).sort((a, b) => a[1].last - b[1].last);
+      for (const [id, s] of mine.slice(0, Math.max(0, mine.length - MAX_SESSIONS_PER_HOUSEHOLD + 1))) { void s.transport.close(); sessions.delete(id); }
       if (sessions.size >= MAX_SESSIONS) pruneSessions(true);
       if (sessions.size >= MAX_SESSIONS) return rpcError(res, 503, -32003, "Server busy");
       const transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({
@@ -132,6 +143,8 @@ async function handleImport(req: IncomingMessage, res: ServerResponse): Promise<
   if (!importLimit.allow(who.household)) return sendJson(res, 429, { error: "Too many imports; try again later." }, { "retry-after": String(importLimit.retryAfter(who.household)) });
   const declared = Number(req.headers["content-length"] ?? 0);
   if (declared > MAX_UPLOAD) return sendJson(res, 413, { error: `Upload larger than ${MAX_UPLOAD / 1024 / 1024} MB` });
+  if (activeImports >= MAX_CONCURRENT_IMPORTS) return sendJson(res, 503, { error: "The server is busy with other imports; retry shortly." }, { "retry-after": "30" });
+  activeImports++;
   const started = performance.now();
   try {
     const report = DB_PATH === ":memory:" ? await ingestStream(db, who.household, req, { maxBytes: MAX_UPLOAD }) : await importInWorker(req, who.household);
@@ -140,7 +153,7 @@ async function handleImport(req: IncomingMessage, res: ServerResponse): Promise<
   } catch (e) {
     console.error("import failed:", (e as Error).message);
     sendJson(res, 500, { error: "Import failed; nothing was saved for this upload." });
-  }
+  } finally { activeImports--; }
 }
 
 function importInWorker(req: IncomingMessage, household: string): Promise<IngestReport> {
@@ -292,7 +305,7 @@ const server = createServer(async (req, res) => {
 });
 server.listen(PORT, () => {
   setInterval(() => { pruneSessions(); pruneTokens(db); }, 5 * 60_000).unref();
-  // Keep the recall index fresh without ever blocking a request: sync at start (no-op if < 24h old), then every 6h.
+  // Keep the recall index fresh without ever blocking a request: check at start and every 30 minutes; live data is re-downloaded daily, a snapshot fallback is retried every 10 minutes.
   if (process.env.HEARTH_RECALLS_SYNC !== "off") {
     const run = () => syncRecalls(db)
       .then(async (r) => {
@@ -302,7 +315,7 @@ server.listen(PORT, () => {
       })
       .catch((e) => console.error("recall sync failed:", e.message));
     void run();
-    setInterval(run, 6 * 3600_000).unref();
+    setInterval(run, 30 * 60_000).unref(); // cheap: a live index younger than 24 h returns without touching the network
   }
   console.log(`Hearth MCP on http://localhost:${PORT}/mcp  (auth ${AUTH ? "on" : "off"})  simulator: http://localhost:${PORT}/`);
 });

@@ -1,5 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
-import { mkdirSync } from "node:fs";
+import { chmodSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { createHash } from "node:crypto";
 import { brandOf } from "./normalize.js";
@@ -7,6 +7,7 @@ import { brandOf } from "./normalize.js";
 export function openDb(path = process.env.HEARTH_DB ?? "data/hearth.db"): DatabaseSync {
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
+  if (path !== ":memory:") { try { chmodSync(path, 0o600); } catch { /* read-only mount or foreign owner: leave as is */ } } // order history is personal data: owner-only
   db.exec(`
     PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS orders (

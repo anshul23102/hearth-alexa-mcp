@@ -142,6 +142,7 @@ export function eraseHousehold(db: DatabaseSync, household: string) {
       orders: del("DELETE FROM orders WHERE household = ?"),
       proposals: del("DELETE FROM proposals WHERE household = ?"),
       preferences: del("DELETE FROM prefs WHERE household = ?"),
+      alerts: del("DELETE FROM alerts WHERE household = ?"),
       activity: del("DELETE FROM audit WHERE household = ?"),
       tokens: del("DELETE FROM oauth_tokens WHERE household = ?"),
     };

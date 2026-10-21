@@ -21,3 +21,12 @@ test("pushed alerts get their own subtitle instead of a recall-notice count they
   assert.match(script, /sc\.fromAlerts \? "Found the moment the notice was published/);
   assert.match(script, /sc\.fromAlerts \? "New recall alert"/);
 });
+
+test("documentation states the real number of automated tests", async () => {
+  const { readdirSync } = await import("node:fs");
+  const n = readdirSync(new URL("../test/", import.meta.url)).filter((f) => f.endsWith(".test.ts"))
+    .reduce((sum, f) => sum + (readFileSync(new URL(`../test/${f}`, import.meta.url), "utf8").match(/^test\(/gm)?.length ?? 0), 0);
+  for (const [file, needle] of [["README.md", `# ${n} tests:`], ["docs/DEVPOST_STORY.md", `${n} automated tests`], ["docs/DEMO-SCRIPT.md", `ending in ${n} passing`]] as const) {
+    assert.ok(readFileSync(new URL(`../${file}`, import.meta.url), "utf8").includes(needle), `${file} should say "${needle}" (the suite has ${n} tests)`);
+  }
+});

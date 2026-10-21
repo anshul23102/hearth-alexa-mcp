@@ -1,18 +1,18 @@
 # Scale and accuracy: measured, not claimed
 
-Everything here is reproducible from this repo. Machine: one MacBook, Node 26, SQLite file on local disk, no cache servers.
+Everything here is reproducible from this repo. Machine: one MacBook, Node 26, SQLite file on local disk, no cache servers. Laptop timings vary by 10 to 30% run to run, so ranges are given where two runs exist; treat every figure as an order of magnitude.
 
 ## Data volume
 - **10,505 real recall notices** indexed locally: 5,287 U.S. CPSC (2010 to Oct 2026) and 5,218 Health Canada consumer-product recalls.
-  One-time live sync of both feeds: about 12 to 16 s. Refreshed every 6 h in the background, never in a request.
+  One-time live sync of both feeds: about 12 to 16 s. Checked every 30 minutes in the background and re-downloaded daily; if a feed is down the bundled snapshot is used and the download is retried every 10 minutes. Never in a request.
 - **676,365 synthetic order rows across 5,000 households** (messy: mixed dates and currencies, duplicates, cancellations).
 
 ## Throughput and latency (`npm run bench -- 5000 200`)
 | Measurement | Result |
 |---|---|
-| Import, in-process, one transaction per household | 53,000 rows/s (676k rows in 12.7 s) |
-| Forecast for one household | p50 0.41 ms, p95 0.55 ms, p99 0.72 ms |
-| Recall check for one household (3 durables, 10.5k notices) | p50 0.18 ms, p95 0.24 ms, p99 1.0 ms (brand cache warm; 17 ms cold) |
+| Import, in-process, one transaction per household | 47,000 to 53,000 rows/s (676k rows in 12.7 to 14.3 s across two runs) |
+| Forecast for one household | p50 0.4 to 0.9 ms, p99 0.7 to 2.8 ms (two runs; the machine was also running other work) |
+| Recall check for one household (3 durables, 10.5k notices) | p50 0.18 ms in both runs, p99 1.0 to 2.5 ms (brand cache warm; 17 ms cold) |
 | Database | 631,652 order rows = 154 MB |
 
 ## Proactive alerts: one new recall, every owner (`test/alerts.test.ts`)
