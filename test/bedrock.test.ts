@@ -6,6 +6,7 @@ import type { ChildProcess } from "node:child_process";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { link, startServer, type Tokens } from "./helpers.js";
+import { bedrockStep, type Converser } from "../src/agent.js";
 
 // The Bedrock path cannot be exercised against AWS in CI, so these tests put a stand-in Converse server behind the real
 // HTTP endpoint and check what Hearth sends and enforces. Every bug found in the first live run is pinned here.
@@ -190,4 +191,24 @@ test("the browser trims the same way (shared contract with the server)", async (
     const all = Array.from({ length: turns }, (_, i) => turn(i)).flat();
     for (const max of [6, 24]) { const t = trimConversation(all, max); assertValidConverse(t); assert.equal(t[t.length - 1], all[all.length - 1]); }
   }
+});
+
+test("momentary Bedrock outages are retried; access errors are not", async () => {
+  const fail = (name: string) => Object.assign(new Error(name), { name });
+  const reply = { output: { message: { role: "assistant" as const, content: [{ text: "ok" }] } } };
+  let calls = 0;
+  const flaky: Converser = { send: async () => { if (++calls < 3) throw fail("ServiceUnavailableException"); return reply; } };
+  const out = await bedrockStep(flaky, [userMsg("hi") as any], [], "m", [0, 0]);
+  assert.equal(calls, 3);
+  assert.equal(out.content[0].text, "ok");
+
+  let denied = 0;
+  const noAccess: Converser = { send: async () => { denied++; throw fail("AccessDeniedException"); } };
+  await assert.rejects(bedrockStep(noAccess, [userMsg("hi") as any], [], "m", [0, 0]), /AccessDenied/);
+  assert.equal(denied, 1, "a permissions error is reported at once, not retried");
+
+  let down = 0;
+  const outage: Converser = { send: async () => { down++; throw fail("ServiceUnavailableException"); } };
+  await assert.rejects(bedrockStep(outage, [userMsg("hi") as any], [], "m", [0, 0]), /ServiceUnavailable/);
+  assert.equal(down, 3, "gives up after the initial call plus two retries");
 });
