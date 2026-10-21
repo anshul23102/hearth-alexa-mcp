@@ -1,4 +1,14 @@
-# Hearth: household memory for Alexa+
+# Hearth: recall alerts and safe reordering for Alexa+
+
+**In one sentence:** Hearth is an Alexa+ (MCP) add-on that tells a household *the day a product they own is recalled*, and
+that never spends their money without an explicit, undoable yes.
+
+| You are | Start here |
+|---|---|
+| A judge | [JUDGING.md](JUDGING.md): the four criteria, each with where to see the evidence (3 minutes) |
+| Running it | [Run it](#run-it) below: `npm install && npm start` |
+| Checking security | [SECURITY.md](SECURITY.md): 16 findings fixed, each with a test |
+
 
 **The problem.** Recalls are published, but owners are not reliably reached: CPSC's own FY2025 report puts the correction rate across consumer
 product recalls at 44.55%, and regulators are now ordering marketplaces to notify buyers directly. Separately, Alexa+ add-ons will
