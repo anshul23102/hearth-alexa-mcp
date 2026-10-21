@@ -52,6 +52,8 @@ test("negotiates the 2025-11-25 protocol and lists tools with annotations", asyn
   assert.deepEqual(names, ["activity_log", "check_recalls", "confirm_restock", "household_runway", "import_order_history", "plan_restock", "remember_preference", "undo_restock"]);
   assert.equal(tools.find((t) => t.name === "confirm_restock")!.annotations?.destructiveHint, true);
   assert.equal(tools.find((t) => t.name === "household_runway")!.annotations?.readOnlyHint, true);
+  const appCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("app")).map((t) => t.name).sort();
+  assert.deepEqual(appCallable, ["confirm_restock", "undo_restock"], "cards may only call the two approval-gated tools");
   const res = await client.listResources();
   assert.ok(res.resources.some((r) => r.uri === "ui://hearth/runway"));
 });

@@ -43,6 +43,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         "Safe to call repeatedly: rows already imported are ignored.",
       inputSchema: { csv: z.string().min(20).describe("Full CSV text including the header row") },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+      _meta: { ui: { visibility: ["model"] } },
     },
     async ({ csv }, extra) => {
       const report = ingestOrders(db, hh(extra), csv, now());
@@ -58,7 +59,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       description: "Forecast when each regularly bought item will run out, with an honest ± window and confidence.",
       inputSchema: { withinDays: z.number().int().min(1).max(365).default(30).describe("Only highlight items running out within this many days") },
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-      _meta: { ui: { resourceUri: RUNWAY_URI } },
+      _meta: { ui: { resourceUri: RUNWAY_URI, visibility: ["model"] } },
     },
     async ({ withinDays }, extra) => {
       const all = forecast(db, hh(extra), now());
@@ -80,7 +81,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       description: "Match durable products the household owns against live U.S. CPSC recall notices. Reports evidence and confidence; never claims a certain match without a model-number hit.",
       inputSchema: {},
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: true },
-      _meta: { ui: { resourceUri: RUNWAY_URI } },
+      _meta: { ui: { resourceUri: RUNWAY_URI, visibility: ["model"] } },
     },
     async (_a, extra) => {
       const { matches, checked, sources } = await checkRecalls(db, hh(extra), now());
@@ -102,7 +103,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         budgetUsd: z.number().positive().max(5000).optional().describe("Override the saved budget for this plan"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-      _meta: { ui: { resourceUri: RUNWAY_URI } },
+      _meta: { ui: { resourceUri: RUNWAY_URI, visibility: ["model"] } },
     },
     async ({ withinDays, budgetUsd }, extra) => {
       const h = hh(extra);
@@ -129,6 +130,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         userConfirmed: z.boolean().describe("true only if the user explicitly approved this plan in this conversation"),
       },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+      _meta: { ui: { visibility: ["model", "app"] } },
     },
     async ({ proposalId, userConfirmed }, extra) => {
       const h = hh(extra);
@@ -162,6 +164,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       description: "Cancel a restock order placed through Hearth, within the 10-minute undo window.",
       inputSchema: { proposalId: z.string() },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+      _meta: { ui: { visibility: ["model", "app"] } },
     },
     async ({ proposalId }, extra) => {
       const r = await undo(db, store, hh(extra), proposalId, now());
@@ -179,6 +182,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         value: z.string().describe("A dollar amount for budget_usd, or the product key (e.g. asin:B0000A2WMH) for skip_item"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+      _meta: { ui: { visibility: ["model"] } },
     },
     async ({ kind, value }, extra) => {
       const h = hh(extra);
@@ -201,6 +205,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       description: "Recent actions Hearth took or proposed, newest first, for transparency.",
       inputSchema: { limit: z.number().int().min(1).max(50).default(10) },
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      _meta: { ui: { visibility: ["model"] } },
     },
     async ({ limit }, extra) => {
       const items = recentAudit(db, hh(extra), limit);
