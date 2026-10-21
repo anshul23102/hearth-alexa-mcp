@@ -7,7 +7,8 @@
     "test": "node --import tsx --test test/*.test.ts",
     "start": "tsx src/http.ts",
     "sample": "tsx scripts/make-sample.ts",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "bedrock:check": "tsx scripts/bedrock-check.ts"
   },
   "keywords": [],
   "author": "",
