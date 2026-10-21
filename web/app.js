@@ -126,21 +126,34 @@ $("forget").addEventListener("click", async () => {
 });
 // A button press is a host action, not a question: call the import tool directly, whatever the brain is.
 // (With the Bedrock brain the model never sees the file, and 40 KB of CSV should not pass through a model anyway.)
-$("loadBtn").addEventListener("click", async () => {
-  $("loadBtn").disabled = true;
-  heard.textContent = "(loaded the sample order history)";
+const MAX_INLINE_CSV = 4 * 1024 * 1024; // larger exports go through the streaming upload endpoint
+async function importCsv(label, getText) {
+  $("loadBtn").disabled = $("fileBtn").disabled = true;
+  heard.textContent = `(loaded ${label})`;
   setState("thinking");
   try {
-    sampleCsv = sampleCsv || await (await fetch("/demo/sample-orders.csv")).text();
-    const r = await mcp.callTool("import_order_history", { csv: sampleCsv });
-    const text = r.content?.[0]?.text ?? "";
-    messages.push({ role: "user", content: [{ type: "text", text: "I loaded my order history." }] }, { role: "assistant", content: [{ type: "text", text }] });
-    await speak(text);
+    const text = await getText();
+    const r = await mcp.callTool("import_order_history", { csv: text });
+    const reply = r.content?.[0]?.text ?? "";
+    messages.push({ role: "user", content: [{ type: "text", text: "I loaded my order history." }] }, { role: "assistant", content: [{ type: "text", text: reply }] });
+    await speak(reply);
     ready();
   } catch (e) {
-    $("loadBtn").disabled = false;
+    $("loadBtn").disabled = $("fileBtn").disabled = false;
     await speak(e instanceof AuthRequired ? "Your session expired. Reload the page to link again." : `I couldn't load that: ${e.message}`);
   } finally { setState("idle"); }
+}
+$("loadBtn").addEventListener("click", () => {
+  const file = $("sampleSel").value;
+  importCsv("the sample order history", async () => (sampleCsv = await (await fetch(`/demo/${file}`)).text()));
+});
+$("fileBtn").addEventListener("click", () => $("fileIn").click());
+$("fileIn").addEventListener("change", () => {
+  const f = $("fileIn").files[0];
+  $("fileIn").value = "";
+  if (!f) return;
+  if (f.size > MAX_INLINE_CSV) { speak("That file is larger than 4 megabytes. Upload big exports with the import API; see the README."); return; }
+  importCsv(f.name, () => f.text());
 });
 
 // ---- proactive recall alerts (MCP resource subscription) ------------------------------------------------

@@ -76,21 +76,26 @@ const CONSUMABLE = [
   "paper towel", "toilet paper", "tissue", "detergent", "dish soap", "dishwasher", "trash bag", "coffee", "k cup",
   "pods", "diaper", "wipes", "shampoo", "conditioner", "toothpaste", "razor", "batteries", "filter", "cat litter",
   "dog food", "cat food", "vitamin", "protein", "olive oil", "oats", "rice", "sponge", "hand soap", "sunscreen",
-  "contact lens", "floss", "baby formula", "softener",
+  "contact lens", "floss", "baby formula", "infant formula", "softener", "sunflower oil", "cooking oil", "mustard oil",
+  "milk powder",
 ];
+/** Staples whose names are too short to match as substrings ("atta" is inside "attachment"). */
+const STAPLE_WORDS = /\b(atta|ghee|dal|flour|salt|cereal|oatmeal|sugar)\b/;
 const DURABLE = [
   "pressure cooker", "air fryer", "instant pot", "blender", "toaster", "kettle", "crib", "stroller", "high chair",
-  "space heater", "heater", "vacuum", "humidifier", "dehumidifier", "fan", "lamp", "treadmill", "bike", "helmet",
+  "space heater", "heater", "vacuum", "humidifier", "dehumidifier", "treadmill", "helmet",
   "car seat", "monitor", "charger", "power bank", "slow cooker", "rice cooker", "coffee maker", "mixer", "oven",
-  "dryer", "dishwasher machine", "robot", "scooter", "ladder", "grill", "bed rail", "bassinet", "swing", "airfryer",
+  "dryer", "dishwasher machine", "scooter", "ladder", "grill", "bed rail", "bassinet", "airfryer",
 ];
+/** Short names that are substrings of unrelated words: "fan" is inside "infant", "lamp" inside "clamp". */
+const DURABLE_WORDS = /\b(fans?|lamps?|bikes?|swings?|robots?)\b/;
 
 export type Kind = "consumable" | "durable" | "other";
 
 export function classify(title: string): Kind {
   const t = title.toLowerCase();
-  if (DURABLE.some((k) => t.includes(k)) && !/\bfilter\b|\bpod\b|\bliner\b/.test(t)) return "durable";
-  if (CONSUMABLE.some((k) => t.includes(k))) return "consumable";
+  if ((DURABLE.some((k) => t.includes(k)) || DURABLE_WORDS.test(t)) && !/\bfilter\b|\bpod\b|\bliner\b/.test(t)) return "durable";
+  if (CONSUMABLE.some((k) => t.includes(k)) || STAPLE_WORDS.test(t)) return "consumable";
   return "other";
 }
 

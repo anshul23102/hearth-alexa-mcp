@@ -28,8 +28,16 @@
       </div>
 
       <div class="load" id="loadStep" hidden>
+        <label class="sr" for="sampleSel">Sample household</label>
+        <select id="sampleSel">
+          <option value="sample-orders.csv">Home in the US (kitchen, cleaning, pets)</option>
+          <option value="sample-family.csv">Family with a baby (US)</option>
+          <option value="sample-india.csv">Household in India (₹, day-first dates)</option>
+        </select>
         <button class="primary" id="loadBtn">Load sample order history</button>
-        <small>200 rows of <b>synthetic</b> messy export: mixed date formats, duplicates, cancellations, retitled listings.</small>
+        <button id="fileBtn" type="button">Use my own export (.csv)</button>
+        <input type="file" id="fileIn" accept=".csv,text/csv" hidden>
+        <small>The samples are <b>synthetic</b> but messy like real exports: mixed date formats, duplicates, cancellations, retitled listings. Recalls are checked against real CPSC and Health Canada notices. Your own file is parsed by the server and never leaves it.</small>
       </div>
 
       <form class="ask" id="askForm" autocomplete="off" hidden>

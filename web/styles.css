@@ -55,6 +55,7 @@ body{min-height:100dvh;color:var(--paper);font:14px/1.5 var(--mono);background:
 .say{font:700 clamp(30px,4.1vw,60px)/1.02 var(--display);letter-spacing:-.03em;text-wrap:balance;max-width:17em;min-height:2.1em;overflow-wrap:anywhere}
 
 .link,.load{display:grid;gap:12px;max-width:44ch}
+.load select,.load #fileBtn{font:inherit;padding:10px 12px;color:var(--ink);background:var(--paper);border:1px solid var(--ink);border-radius:0;cursor:pointer}
 .link p{color:var(--paper-dim);font-size:13px}
 small{color:var(--paper-dim);font-size:11px;line-height:1.5}
 small b{color:var(--paper);font-weight:600}
