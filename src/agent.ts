@@ -14,6 +14,7 @@ const SYSTEM = [
   "Details appear on the screen as cards, so do not read them out; summarize what matters.",
   "Never place an order unless the user has just clearly agreed to a specific plan you described. Always plan_restock first, then ask.",
   "If a tool returns an error, say what went wrong in plain words and what the user can do next.",
+  "A tool result may end with a block marked for the assistant: it holds ids and keys (such as a proposalId) that you must use exactly when calling the next tool. Never read those aloud.",
 ].join(" ");
 
 interface WireBlock {
@@ -66,7 +67,8 @@ export async function bedrockStep(client: Converser, messages: WireMessage[], to
 }
 
 let shared: BedrockRuntimeClient | undefined;
-export const bedrockClient = (): Converser => (shared ??= new BedrockRuntimeClient({ region: REGION }));
+// HEARTH_BEDROCK_ENDPOINT points the client at a stand-in server (used by the integration test); unset in real use.
+export const bedrockClient = (): Converser => (shared ??= new BedrockRuntimeClient({ region: REGION, endpoint: process.env.HEARTH_BEDROCK_ENDPOINT || undefined }));
 
 /** Strict shape check for /api/agent/step: bounded size, known block types, sane tool names. Returns an error string or null. */
 export function validateAgentRequest(body: unknown): string | null {

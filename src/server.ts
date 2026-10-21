@@ -20,6 +20,12 @@ const UI_MIME = "text/html;profile=mcp-app";
 export const ALERTS_URI = "hearth://alerts";
 const MAX_CSV_CHARS = 5_000_000; // larger files go through the streaming upload endpoint
 
+/**
+ * A second content block for the model only (MCP content annotation audience ["assistant"]): the ids and keys it needs to
+ * call the next tool. The first block stays the sentence Alexa+ speaks; hosts must not speak or show assistant-only blocks.
+ */
+const forModel = (data: unknown) => ({ type: "text" as const, text: `[for the assistant, not to be read aloud] ${JSON.stringify(data)}`, annotations: { audience: ["assistant" as const], priority: 0.3 } });
+
 export interface Deps { db: DatabaseSync; store?: StoreAdapter; now?: () => number }
 
 function getPref(db: DatabaseSync, household: string, key: string): string | null {
@@ -97,7 +103,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         ? t(L, "alerts.none")
         : t(L, "alerts.new", { name: first.owned.name, hazard: first.recall.hazardShort }) + (rows.length > 1 ? t(L, "alerts.more", { k: rows.length - 1 }) : "");
       return {
-        content: [{ type: "text", text }],
+        content: [{ type: "text", text }, forModel({ alerts: rows.slice(0, 5).map((r) => ({ owned: r.match.owned.name, recall: r.match.recall.title.slice(0, 110), level: r.match.level, url: r.match.recall.url })) })],
         structuredContent: { view: "recalls", fromAlerts: true, matches: rows.map((r) => r.match), checked: rows.length, regions, indexed: 0, locale: LOCALES[L] },
       };
     },
@@ -144,7 +150,10 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         : due.length === 0
           ? t(L, "runway.clear", { days: withinDays, n: all.length })
           : t(L, "runway.some", { due: due.length, n: all.length, days: withinDays, list: due.slice(0, 3).map(phrase).join(", ") });
-      return { content: [{ type: "text", text }], structuredContent: { view: "runway", withinDays, items: all, dueCount: due.length, locale: LOCALES[L] } };
+      return {
+        content: [{ type: "text", text }, forModel({ dueItems: due.slice(0, 8).map((r) => ({ name: r.name, productKey: r.productKey, daysLeft: r.daysLeft, confidence: r.confidence })) })],
+        structuredContent: { view: "runway", withinDays, items: all, dueCount: due.length, locale: LOCALES[L] },
+      };
     },
   );
 
@@ -168,7 +177,10 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         ? t(L, "recall.none", { n: checked, k: indexed, regions: regions.join(", ") })
         : (likely.length ? t(L, "recall.heads", { name: likely[0].owned.name, hazard: likely[0].recall.hazardShort }) : "") +
           t(L, "recall.found", { m: matches.length, matches: matches.length === 1 ? t(L, "match") : t(L, "matches"), n: checked });
-      return { content: [{ type: "text", text }], structuredContent: { view: "recalls", matches, checked, regions, indexed, locale: LOCALES[L] } };
+      return {
+        content: [{ type: "text", text }, forModel({ matches: matches.slice(0, 5).map((m) => ({ owned: m.owned.name, recall: m.recall.title.slice(0, 110), level: m.level, region: m.recall.region, url: m.recall.url })) })],
+        structuredContent: { view: "recalls", matches, checked, regions, indexed, locale: LOCALES[L] },
+      };
     },
   );
 
@@ -203,7 +215,10 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
             budget: p.budgetCents ? t(L, "plan.budget", { budget: fmtMoney(p.budgetCents, p.currency, loc) }) : "",
             dropped: p.dropped.length ? t(L, "plan.dropped", { k: p.dropped.length }) : "",
           });
-      return { content: [{ type: "text", text }], structuredContent: { view: "proposal", proposal: p, locale: loc } };
+      return {
+        content: [{ type: "text", text }, forModel({ proposalId: p.id, total: fmtMoney(p.totalCents, p.currency, loc), items: p.lines.map((l) => `${l.packs}x ${l.name}`), leftOutForBudget: p.dropped.map((d) => d.title), expiresAt: new Date(p.expiresAt).toISOString(), howToOrder: "after the user says yes to this plan, call confirm_restock with this proposalId and userConfirmed true" })],
+        structuredContent: { view: "proposal", proposal: p, locale: loc },
+      };
     },
   );
 
@@ -238,7 +253,10 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       if (!res.ok) return { isError: true, content: [{ type: "text", text: res.error }] };
       const r = res.receipt;
       const text = t(L, "confirm.done", { prefix: t(L, res.replayed ? "confirm.prefixReplay" : "confirm.prefixNew"), ref: r.orderRef, total: fmtMoney(r.totalCents, r.currency, LOCALES[L]) });
-      return { content: [{ type: "text", text }], structuredContent: { view: "receipt", proposalId, receipt: r, replayed: res.replayed, locale: LOCALES[L] } };
+      return {
+        content: [{ type: "text", text }, forModel({ proposalId, orderRef: r.orderRef, undoUntil: new Date(r.undoUntil).toISOString(), howToUndo: "if the user asks to cancel, call undo_restock with this proposalId" })],
+        structuredContent: { view: "receipt", proposalId, receipt: r, replayed: res.replayed, locale: LOCALES[L] },
+      };
     },
   );
 
