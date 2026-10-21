@@ -20,7 +20,7 @@ export interface Provider {
 
 const FIXTURES = (name: string) => new URL(`../data/${name}`, import.meta.url);
 const readFixture = (name: string): unknown[] => (existsSync(FIXTURES(name)) ? JSON.parse(readFileSync(FIXTURES(name), "utf8")) : []);
-const clip = (s: unknown, n: number) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+const clip = (s: unknown, n: number) => String(s ?? "").replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
 
 interface CpscRaw {
   RecallID: number; RecallNumber: string; RecallDate: string; Title: string; Description?: string; URL: string;
@@ -31,10 +31,12 @@ export function mapCpsc(r: CpscRaw): RecallRecord {
   return {
     source: "cpsc", extId: String(r.RecallID), region: "US", date: String(r.RecallDate).slice(0, 10),
     title: clip(r.Title, 300), product: clip(product, 300), text: clip(`${r.Title} ${product} ${r.Description ?? ""}`, 4000),
-    url: r.URL, hazard: clip(r.Hazards?.[0]?.Name ?? shortIssue(r.Title), 200), remedy: clip(r.Remedies?.[0]?.Name ?? "See the recall notice", 200),
+    url: safeUrl(r.URL), hazard: clip(r.Hazards?.[0]?.Name ?? shortIssue(r.Title), 200), remedy: clip(r.Remedies?.[0]?.Name ?? "See the recall notice", 200),
     image: r.Images?.[0]?.URL,
   };
 }
+/** Only https links to the regulators we index ever reach the UI. */
+const safeUrl = (u: string) => (/^https:\/\/((www\.)?cpsc\.gov|recalls-rappels\.canada\.ca)\//.test(String(u)) ? String(u) : "");
 const shortIssue = (title: string) => (title.match(/due to (.*?)(?:[;,]|$)/i)?.[1] ?? "See the recall notice");
 
 interface HcRaw { NID: string; Title: string | null; URL: string; Organization: string; Product: string | null; Issue: string | null; "What you should do": string | null; "Last updated": string }
@@ -42,7 +44,7 @@ export function mapHealthCanada(r: HcRaw): RecallRecord {
   return {
     source: "healthcanada", extId: String(r.NID), region: "CA", date: clip(r["Last updated"], 10),
     title: clip(r.Title, 300), product: clip(r.Product, 300), text: clip(`${r.Title ?? ""} ${r.Product ?? ""}`, 1500),
-    url: r.URL, hazard: clip(r.Issue ?? "See the recall notice", 200),
+    url: safeUrl(r.URL), hazard: clip(r.Issue ?? "See the recall notice", 200),
     remedy: clip((r["What you should do"] ?? "").split(/(?<=\.)\s/)[0] || "See the recall notice", 220),
   };
 }
@@ -103,6 +105,7 @@ export async function syncRecalls(
 }
 
 function storeRecalls(db: DatabaseSync, source: string, records: RecallRecord[]) {
+  brandCache.clear();
   const ins = db.prepare(
     "INSERT OR REPLACE INTO recalls (source, ext_id, region, date, title, product, text, url, hazard, remedy, image, search) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
@@ -120,9 +123,23 @@ export function recallStats(db: DatabaseSync) {
   return db.prepare("SELECT source, region, COUNT(*) AS n, MAX(date) AS newest FROM recalls GROUP BY source, region").all() as unknown as { source: string; region: Region; n: number; newest: string }[];
 }
 
+// Brands repeat across households, so cache brand lookups; any sync clears it.
+const brandCache = new Map<string, RecallRecord[]>();
+const BRAND_CACHE_MAX = 5000;
+
 export function searchByBrand(db: DatabaseSync, brand: string, regions: Region[]): RecallRecord[] {
   const b = brand.toLowerCase();
   if (b.length < 3) return [];
+  const ck = `${b}|${regions.join(",")}`;
+  const hit = brandCache.get(ck);
+  if (hit) return hit;
+  const found = searchUncached(db, b, regions);
+  if (brandCache.size >= BRAND_CACHE_MAX) brandCache.clear();
+  brandCache.set(ck, found);
+  return found;
+}
+
+function searchUncached(db: DatabaseSync, b: string, regions: Region[]): RecallRecord[] {
   const rows = db
     .prepare(`SELECT * FROM recalls WHERE instr(search, ?) > 0 AND region IN (${regions.map(() => "?").join(",")}) ORDER BY date DESC LIMIT 200`)
     .all(b, ...regions) as unknown as Record<string, string>[];

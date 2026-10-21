@@ -1,7 +1,7 @@
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
-import { spawn, type ChildProcess } from "node:child_process";
-import { createHash, randomBytes } from "node:crypto";
+import type { ChildProcess } from "node:child_process";
+import { approve, consentNonce, link, pkce, register, startServer } from "./helpers.js";
 import { readFileSync } from "node:fs";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -12,24 +12,15 @@ let proc: ChildProcess;
 let client: Client;
 
 before(async () => {
-  proc = spawn("npx", ["tsx", "src/http.ts"], { env: { ...process.env, PORT: String(PORT), HEARTH_DB: ":memory:", HEARTH_RECALLS_OFFLINE: "1", HEARTH_RECALLS_SYNC: "off" }, stdio: "pipe" });
-  for (let i = 0; i < 60; i++) {
-    try { if ((await fetch(`${BASE}/healthz`)).ok) break; } catch { /* retry */ }
-    await new Promise((r) => setTimeout(r, 250));
-  }
-  // Full OAuth 2.1 + PKCE dance, like an account-linking client would do.
-  const reg = await (await fetch(`${BASE}/register`, { method: "POST", body: JSON.stringify({ redirect_uris: ["http://localhost/cb"] }) })).json() as { client_id: string };
-  const verifier = randomBytes(32).toString("base64url");
-  const challenge = createHash("sha256").update(verifier).digest("base64url");
-  const form = new URLSearchParams({ client_id: reg.client_id, redirect_uri: "http://localhost/cb", state: "s1", code_challenge: challenge });
-  const approve = await fetch(`${BASE}/authorize`, { method: "POST", body: form, redirect: "manual" });
-  assert.equal(approve.status, 302);
-  const code = new URL(approve.headers.get("location")!).searchParams.get("code")!;
-  const bad = await fetch(`${BASE}/token`, { method: "POST", body: new URLSearchParams({ grant_type: "authorization_code", code, client_id: reg.client_id, redirect_uri: "http://localhost/cb", code_verifier: "wrong" }) });
+  ({ proc } = await startServer(PORT));
+  // The wrong PKCE verifier must be refused (and burns the code).
+  const redirect = "http://localhost/cb";
+  const cid = await register(BASE, redirect);
+  const { verifier, challenge } = pkce();
+  const code = new URL((await approve(BASE, await consentNonce(BASE, cid, challenge, redirect))).headers.get("location")!).searchParams.get("code")!;
+  const bad = await fetch(`${BASE}/token`, { method: "POST", body: new URLSearchParams({ grant_type: "authorization_code", code, client_id: cid, redirect_uri: redirect, code_verifier: "w".repeat(43) }) });
   assert.equal(bad.status, 400, "wrong PKCE verifier must fail");
-  const approve2 = await fetch(`${BASE}/authorize`, { method: "POST", body: form, redirect: "manual" });
-  const code2 = new URL(approve2.headers.get("location")!).searchParams.get("code")!;
-  const tok = await (await fetch(`${BASE}/token`, { method: "POST", body: new URLSearchParams({ grant_type: "authorization_code", code: code2, client_id: reg.client_id, redirect_uri: "http://localhost/cb", code_verifier: verifier }) })).json() as { access_token: string };
+  const tok = await link(BASE);
   client = new Client({ name: "e2e", version: "1" });
   await client.connect(new StreamableHTTPClientTransport(new URL(`${BASE}/mcp`), { requestInit: { headers: { authorization: `Bearer ${tok.access_token}` } } }));
 });
@@ -49,11 +40,13 @@ test("negotiates the 2025-11-25 protocol and lists tools with annotations", asyn
   assert.equal(client.getServerVersion()?.name, "hearth");
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name).sort();
-  assert.deepEqual(names, ["activity_log", "check_recalls", "confirm_restock", "household_runway", "import_order_history", "plan_restock", "remember_preference", "undo_restock"]);
+  assert.deepEqual(names, ["activity_log", "check_recalls", "confirm_restock", "delete_household_data", "household_runway", "import_order_history", "plan_restock", "remember_preference", "undo_restock"]);
   assert.equal(tools.find((t) => t.name === "confirm_restock")!.annotations?.destructiveHint, true);
   assert.equal(tools.find((t) => t.name === "household_runway")!.annotations?.readOnlyHint, true);
   const appCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("app")).map((t) => t.name).sort();
-  assert.deepEqual(appCallable, ["confirm_restock", "undo_restock"], "cards may only call the two approval-gated tools");
+  assert.deepEqual(appCallable, ["confirm_restock", "delete_household_data", "undo_restock"], "cards may only call the approval-gated tools");
+  const modelCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("model")).map((t) => t.name);
+  assert.ok(!modelCallable.includes("delete_household_data"), "the model must never be offered the erase tool");
   const res = await client.listResources();
   assert.ok(res.resources.some((r) => r.uri === "ui://hearth/runway"));
 });

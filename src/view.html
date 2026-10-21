@@ -98,7 +98,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
 <script>
 (() => {
   const app = document.getElementById("app");
-  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   let LOC = "en";
   const money = (minor, cur) => { try { const f = new Intl.NumberFormat(LOC, { style: "currency", currency: cur || "USD" }); return f.format(minor / 10 ** (f.resolvedOptions().maximumFractionDigits ?? 2)); } catch { return (minor / 100).toFixed(2) + " " + cur; } };
   const SRC = { cpsc: "U.S. CPSC", healthcanada: "Health Canada" };
@@ -153,7 +153,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
     const ms = sc.matches || [];
     if (!ms.length) return slip('<h1>All clear</h1><p class="sub">Checked ' + sc.checked + " products against current CPSC recalls. No matches.</p>");
     const src = (sc.regions || []).join(" + ");
-    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul><button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button></div><hr class="dots">').join("");
+    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul>' + (m.recall.url ? '<button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button>' : "") + '</div><hr class="dots">').join("");
     slip('<h1>' + ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at</h1><p class=\"sub\">Matched on brand, product type and model number against " + Number(sc.indexed || 0).toLocaleString(LOC) + " public recall notices (" + esc(src) + ").</p><hr class=\"dots\">" + cards);
     app.querySelectorAll("[data-url]").forEach((b) => b.addEventListener("click", () => request("ui/open-link", { url: b.dataset.url }).catch(() => {})));
   }

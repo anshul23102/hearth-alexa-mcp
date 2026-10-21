@@ -30,6 +30,8 @@ body{min-height:100dvh;color:var(--paper);font:14px/1.5 var(--mono);background:
 .word{font:700 22px/1 var(--display);letter-spacing:-.02em}
 .tag{font-size:11px;color:var(--paper-dim);letter-spacing:.04em;border-left:1px solid #ffffff55;padding-left:12px}
 .status{font-size:11px;color:var(--paper-dim);display:flex;align-items:center;gap:8px}
+.forget{background:none;border:0;border-bottom:1px solid #ffffff66;color:var(--paper-dim);font:400 11px var(--mono);padding:0 0 1px;margin-left:10px;cursor:pointer}
+.forget:hover{color:var(--paper);border-color:var(--paper)}
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#8b97e6}
 .dot.ok{background:#7dffb2;box-shadow:0 0 0 3px #7dffb233}
 .dot.bad{background:var(--red)}
