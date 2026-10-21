@@ -29,7 +29,7 @@ Numbers are in [docs/SCALE.md](docs/SCALE.md); the security review is [SECURITY.
 > The Alexa+ add-on developer tools are partner-only, so there is no real Alexa+ device here. The web page in
 > `web/` is a **real MCP client** (OAuth + PKCE, Streamable HTTP/SSE, MCP Apps host) standing in for it, which
 > the hackathon FAQ explicitly allows. The storefront is a **simulated** `StoreAdapter`; no real purchases occur.
-> `data/sample-orders.csv` is **synthetic**. The recall data is **real** (CPSC).
+> The three sample households in `data/` (`sample-orders.csv` US home, `sample-family.csv` family with a baby, `sample-india.csv` INR with day-first dates) are **synthetic**. The recall data is **real** (CPSC and Health Canada). You can also import your own Amazon export from the page.
 
 ## Run it
 
@@ -101,7 +101,7 @@ real ordering API plugs in.
 ## Tests
 
 ```bash
-npm test         # 91 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 95 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 

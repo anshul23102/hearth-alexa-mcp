@@ -237,8 +237,9 @@ async function handleAgent(req: IncomingMessage, res: ServerResponse, url: URL):
 }
 
 function serveStatic(url: URL, res: ServerResponse) {
-  if (url.pathname === "/demo/sample-orders.csv") {
-    res.writeHead(200, { "content-type": "text/csv" }).end(readFileSync(new URL("../data/sample-orders.csv", import.meta.url)));
+  const sample = /^\/demo\/(sample-(?:orders|family|india)\.csv)$/.exec(url.pathname);
+  if (sample) {
+    res.writeHead(200, { "content-type": "text/csv" }).end(readFileSync(new URL(`../data/${sample[1]}`, import.meta.url)));
     return;
   }
   const rel = normalize(url.pathname === "/" ? "/index.html" : url.pathname).replace(/^(\.\.[/\\])+/, "");
