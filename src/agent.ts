@@ -4,8 +4,9 @@ import { BedrockRuntimeClient, ConverseCommand, type Message, type ContentBlock,
 // Server-side brain for the simulated Alexa+: Claude on Amazon Bedrock (Converse API with tool use).
 // The browser stays the real MCP client — it executes every tool call and sends results back.
 
-export const MODEL_ID = process.env.BEDROCK_MODEL_ID ?? "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
 export const REGION = process.env.AWS_REGION ?? "us-east-1";
+// Default to the cheapest Claude tier; the profile prefix must match the region (au. for Sydney, us. for US).
+export const MODEL_ID = process.env.BEDROCK_MODEL_ID ?? (REGION.startsWith("ap-southeast-2") ? "au.anthropic.claude-haiku-5-5" : "us.anthropic.claude-haiku-4-5-20251001-v1:0");
 
 export const SYSTEM = [
   "You are Alexa+ speaking in a kitchen. Replies are spoken aloud: one or two short sentences, no markdown, no lists.",
