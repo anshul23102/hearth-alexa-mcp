@@ -47,8 +47,8 @@ export function processNewRecalls(db: DatabaseSync, records: RecallRecord[], now
 
 export function listAlerts(db: DatabaseSync, household: string, opts: { onlyNew?: boolean; limit?: number; regions?: Region[] } = {}): AlertRow[] {
   const rows = db
-    .prepare(`SELECT id, status, created_at, match FROM alerts WHERE household = ? ${opts.onlyNew ? "AND status = 'new'" : ""} ORDER BY created_at DESC, id DESC LIMIT ?`)
-    .all(household, Math.min(opts.limit ?? 20, 100)) as unknown as { id: number; status: string; created_at: number; match: string }[];
+    .prepare("SELECT id, status, created_at, match FROM alerts WHERE household = ? AND (? = 0 OR status = 'new') ORDER BY created_at DESC, id DESC LIMIT ?")
+    .all(household, opts.onlyNew ? 1 : 0, Math.min(opts.limit ?? 20, 100)) as unknown as { id: number; status: string; created_at: number; match: string }[];
   const out = rows.map((r) => ({ id: r.id, status: r.status, createdAt: r.created_at, match: JSON.parse(r.match) as RecallMatch }));
   return opts.regions ? out.filter((a) => opts.regions!.includes(a.match.recall.region)) : out;
 }
