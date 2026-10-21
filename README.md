@@ -57,7 +57,7 @@ claude mcp add --transport http hearth http://localhost:3939/mcp
 With AWS credentials in the environment (or `HEARTH_AGENT=bedrock`), the simulator's reasoning runs on Claude
 through the Bedrock **Converse API** with tool use (`src/agent.ts`). The browser still executes every tool call
 as the MCP client. Without credentials it uses a small deterministic offline router, so judges can run
-everything with no AWS account. Configure `AWS_REGION` and `BEDROCK_MODEL_ID` (see `.env.example`).
+everything with no AWS account. Configure `AWS_REGION` and `BEDROCK_MODEL_ID` (see `.env.example`). To stay inside a free plan, model calls are capped per day (`HEARTH_BEDROCK_DAILY_CALLS`, default 150); past the cap the simulator falls back to the offline router. Check your setup with `npm run bedrock:check`.
 
 ## Tools
 

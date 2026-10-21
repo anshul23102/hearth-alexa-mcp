@@ -11,7 +11,7 @@ import { ingestStream, type IngestReport } from "./ingest.js";
 import { recallStats, syncRecalls } from "./recallIndex.js";
 import { createHearthServer } from "./server.js";
 import { baseUrl, handleOAuth, pruneTokens, verifyToken } from "./oauth.js";
-import { bedrockClient, bedrockStep, hasBedrockCredentials, validateAgentRequest, MODEL_ID, REGION, type WireMessage, type WireTool } from "./agent.js";
+import { bedrockClient, bedrockStep, hasBedrockCredentials, validateAgentRequest, reserveBedrockCall, MODEL_ID, REGION, type WireMessage, type WireTool } from "./agent.js";
 import { RateLimiter, allowedHosts, clientIp, csp, hostAllowed, originAllowed, readBody, securityHeaders, sha256b64 } from "./security.js";
 import { RUNWAY_HTML } from "./ui.js";
 
@@ -168,7 +168,9 @@ async function handleAgent(req: IncomingMessage, res: ServerResponse, url: URL):
       const body = JSON.parse((await readBody(req, 400_000)) || "null");
       const bad = validateAgentRequest(body);
       if (bad) { sendJson(res, 400, { error: bad }); return true; }
-      sendJson(res, 200, await bedrockStep(bedrockClient(), (body.messages as WireMessage[]).slice(-30), body.tools as WireTool[]));
+      const budget = reserveBedrockCall(db);
+      if (!budget.ok) { sendJson(res, 429, { error: `Daily model-call limit reached (${budget.max}). The simulator will use its offline router; raise HEARTH_BEDROCK_DAILY_CALLS only if you accept the cost.` }); return true; }
+      sendJson(res, 200, await bedrockStep(bedrockClient(), (body.messages as WireMessage[]).slice(-20), body.tools as WireTool[]));
     } catch (e) {
       if ((e as { status?: number }).status === 413) { sendJson(res, 413, { error: "request too large" }); return true; }
       console.error("bedrock:", (e as Error).name);
