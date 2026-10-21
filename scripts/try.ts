@@ -1,0 +1,11 @@
+import { readFileSync } from "node:fs";
+import { openDb } from "../src/db.js";
+import { ingestOrders } from "../src/ingest.js";
+import { forecast } from "../src/forecast.js";
+import { checkRecalls } from "../src/recalls.js";
+const db = openDb(":memory:");
+const rep = ingestOrders(db, "demo", readFileSync("data/sample-orders.csv", "utf8"));
+console.log(JSON.stringify(rep, null, 1).slice(0, 900));
+for (const r of forecast(db, "demo")) console.log(r.status.padEnd(10), String(r.daysLeft).padStart(4), `±${r.windowDays}`, r.confidence.padEnd(6), r.productKey);
+const rc = await checkRecalls(db, "demo");
+console.log(rc.sources, rc.checked); for (const m of rc.matches) console.log(m.level, m.score, m.owned.title, "=>", m.recall.title.slice(0, 70), m.evidence);
