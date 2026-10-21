@@ -63,11 +63,12 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
     async ({ withinDays }, extra) => {
       const all = forecast(db, hh(extra), now());
       const due = all.filter((r) => r.daysLeft <= withinDays);
+      const phrase = (r: (typeof all)[number]) => r.daysLeft < 0 ? `${r.name} is overdue` : r.daysLeft === 0 ? `${r.name} runs out today` : `${r.name} in ${r.daysLeft} days`;
       const text = all.length === 0
         ? "I don't have enough order history yet. Import your order export and I'll start forecasting."
         : due.length === 0
           ? `Nothing runs out in the next ${withinDays} days. I'm tracking ${all.length} items.`
-          : `${due.length} of ${all.length} items run out within ${withinDays} days. Soonest: ${due.slice(0, 3).map((r) => `${r.title.split(",")[0]} ${r.daysLeft < 0 ? "is overdue" : r.daysLeft === 0 ? "today" : `in ${r.daysLeft} days`}`).join("; ")}.`;
+          : `${due.length} of ${all.length} items run out within ${withinDays} days. Soonest: ${due.slice(0, 3).map(phrase).join(", ")}.`;
       return { content: [{ type: "text", text }], structuredContent: { view: "runway", withinDays, items: all, dueCount: due.length } };
     },
   );
@@ -86,7 +87,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       const likely = matches.filter((m) => m.level === "likely");
       const text = matches.length === 0
         ? `I checked ${checked} products against current CPSC recalls and found no matches.`
-        : `${likely.length ? `Heads up: your ${likely[0].owned.title.split(" ").slice(0, 3).join(" ")} looks like it is covered by a recall for ${likely[0].recall.hazard.toLowerCase()}. ` : ""}I found ${matches.length} possible recall ${matches.length === 1 ? "match" : "matches"} across ${checked} products.`;
+        : `${likely.length ? `Heads up: your ${likely[0].owned.name} looks like it is covered by a recall for ${likely[0].recall.hazardShort}. ` : ""}I found ${matches.length} possible recall ${matches.length === 1 ? "match" : "matches"} across ${checked} products.`;
       return { content: [{ type: "text", text }], structuredContent: { view: "recalls", matches, checked, sources } };
     },
   );

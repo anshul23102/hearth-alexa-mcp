@@ -1,8 +1,10 @@
+import { friendlyName } from "./normalize.js";
 import type { DatabaseSync } from "node:sqlite";
 
 export interface Runway {
   productKey: string;
   title: string;
+  name: string;
   purchases: number;
   unitsPerDay: number;
   lastPurchase: string;
@@ -72,6 +74,7 @@ export function forecast(db: DatabaseSync, household: string, now = Date.now()):
     out.push({
       productKey: key,
       title: last.title,
+      name: friendlyName(last.title),
       purchases: list.length,
       unitsPerDay: Math.round((1 / dpu) * 1000) / 1000,
       lastPurchase: last.ordered_at,

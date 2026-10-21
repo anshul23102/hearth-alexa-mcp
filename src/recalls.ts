@@ -1,6 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
 import { readFileSync, existsSync } from "node:fs";
 import { audit } from "./db.js";
+import { friendlyName } from "./normalize.js";
 
 const API = "https://www.saferproducts.gov/RestWebServices/Recall";
 const TTL_MS = 24 * 3600_000;
@@ -20,10 +21,10 @@ export interface CpscRecall {
 }
 
 export interface RecallMatch {
-  owned: { title: string; lastPurchased: string; productKey: string };
+  owned: { title: string; name: string; lastPurchased: string; productKey: string };
   recall: {
     id: number; number: string; date: string; title: string; url: string;
-    hazard: string; remedy: string; image?: string;
+    hazard: string; hazardShort: string; remedy: string; image?: string;
   };
   level: "likely" | "possible";
   score: number;
@@ -34,13 +35,19 @@ export interface RecallMatch {
 const STOP = new Set(["the", "and", "with", "for", "in", "electric", "multi", "function", "quart", "qt", "stainless", "steel", "black", "white", "pro", "plus", "max"]);
 const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w));
 
+/** "...Due to Serious Burn Hazard, Multiple..." -> "a burn hazard" (for speech). */
+export function shortHazard(title: string): string {
+  const m = title.match(/due to (?:the )?(?:risk of )?(?:serious |possible |potential )?([^,;]+?)(?:[,;]|$)/i);
+  const h = (m?.[1] ?? "a safety hazard").toLowerCase().trim();
+  return /^(a|an) /.test(h) ? h : h.endsWith("hazard") || h.endsWith("hazards") ? `a ${h.replace(/hazards$/, "hazard")}` : h;
+}
 export function brandOf(title: string): string {
   return (title.trim().split(/\s+/)[0] ?? "").replace(/[^A-Za-z0-9]/g, "");
 }
-/** Tokens that look like model numbers: mixed letters+digits or 4+ digit runs. */
+/** Tokens that look like model numbers: letters followed by digits (OP302, KY-318B) or 4+ digit runs. */
 export function modelTokens(text: string): string[] {
   const out = new Set<string>();
-  for (const m of text.matchAll(/\b[A-Za-z]{0,5}\d{2,}[A-Za-z0-9-]*\b/g)) out.add(m[0].toUpperCase().replace(/-/g, ""));
+  for (const m of text.matchAll(/\b[A-Za-z]{1,5}-?\d{2,}[A-Za-z0-9-]*\b|\b\d{4,}\b/g)) out.add(m[0].toUpperCase().replace(/-/g, ""));
   return [...out];
 }
 
@@ -101,10 +108,10 @@ export async function checkRecalls(db: DatabaseSync, household: string, now = Da
       if (r.RecallDate.slice(0, 10) < item.last) { score -= 1; evidence.push("bought after recall date — may be a corrected unit"); }
       if (score < 3) continue;
       matches.push({
-        owned: { title: item.title, lastPurchased: item.last, productKey: item.product_key },
+        owned: { title: item.title, name: friendlyName(item.title), lastPurchased: item.last, productKey: item.product_key },
         recall: {
           id: r.RecallID, number: r.RecallNumber, date: r.RecallDate.slice(0, 10), title: r.Title, url: r.URL,
-          hazard: r.Hazards?.[0]?.Name ?? "See recall notice", remedy: r.Remedies?.[0]?.Name ?? "See recall notice",
+          hazard: r.Hazards?.[0]?.Name ?? "See recall notice", hazardShort: shortHazard(r.Title), remedy: r.Remedies?.[0]?.Name ?? "See recall notice",
           image: r.Images?.[0]?.URL,
         },
         level: score >= 6 ? "likely" : "possible",

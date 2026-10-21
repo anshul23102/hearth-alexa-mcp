@@ -109,3 +109,19 @@ export function sameProduct(a: string, b: string): boolean {
   for (const w of A) if (B.has(w)) inter++;
   return inter / (A.size + B.size - inter) >= 0.6;
 }
+
+/** "BOUNTY Paper Towels Select a Size 12 Triple Rolls" -> "Bounty paper towels": what a person would say aloud. */
+export function friendlyName(title: string): string {
+  const clean = title.replace(/\(.*?\)/g, " ").replace(/\s+/g, " ").trim();
+  const words = clean.split(" ");
+  let brand = words[0] ?? "";
+  if (brand.length > 1 && brand === brand.toUpperCase()) brand = brand[0] + brand.slice(1).toLowerCase();
+  const lower = clean.toLowerCase();
+  let best: { at: number; text: string } | null = null;
+  for (const k of [...CONSUMABLE, ...DURABLE, "toothpaste", "toothbrush", "dog food", "blender", "vacuum"]) {
+    const at = lower.indexOf(k);
+    if (at > 0 && (!best || at < best.at)) best = { at, text: clean.slice(at, at + k.length + (lower[at + k.length] === "s" ? 1 : 0)).toLowerCase() };
+  }
+  if (best) return `${brand} ${best.text}`;
+  return words.slice(0, 3).join(" ");
+}

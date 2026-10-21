@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseDate, parseMoneyCents, productKey, packUnits, classify, sameProduct } from "../src/normalize.ts";
-import { parseCsv } from "../src/csv.ts";
+import { parseDate, parseMoneyCents, productKey, packUnits, classify, sameProduct } from "../src/normalize.js";
+import { parseCsv } from "../src/csv.js";
 
 test("parseDate handles the formats seen in exports", () => {
   assert.equal(parseDate("2025-03-04T10:00:00Z"), "2025-03-04");

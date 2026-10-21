@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hearth slip</title>
+<style>
+@font-face{font-family:"Bricolage";src:url(fonts/bricolage-500.woff2) format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"Bricolage";src:url(fonts/bricolage-700.woff2) format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"Martian";src:url(fonts/martian-400.woff2) format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Martian";src:url(fonts/martian-600.woff2) format("woff2");font-weight:600;font-display:swap}
+
+:root{
+  --paper:#f3f6f8; --ink:#0c1230; --muted:#4b5470; --rule:#b9c2d0;
+  --red:#d92b17; --blue:#2236d9; --ok:#0b6b4a;
+  --display:"Bricolage",ui-sans-serif,system-ui,sans-serif;
+  --mono:"Martian",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0}
+html,body{background:transparent}
+body{font:12px/1.55 var(--mono);color:var(--ink);padding:0 0 14px}
+.slip{position:relative;background:var(--paper);padding:22px 20px 26px;
+  filter:drop-shadow(0 10px 18px rgba(5,12,70,.38)) drop-shadow(0 1px 0 rgba(5,12,70,.25));
+  -webkit-mask:linear-gradient(#000 0 0) top/100% calc(100% - 7px) no-repeat,
+    conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/12px 7px repeat-x;
+  mask:linear-gradient(#000 0 0) top/100% calc(100% - 7px) no-repeat,
+    conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) bottom/12px 7px repeat-x}
+.print>*{animation:print .55s var(--ease) both;animation-delay:calc(var(--i,0)*38ms)}
+@keyframes print{from{clip-path:inset(0 0 100% 0);opacity:.2;transform:translateY(-4px)}to{clip-path:inset(0);opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.print>*{animation:none}}
+
+.mast{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.mast b{color:var(--ink);font-weight:600}
+h1{font:700 40px/.95 var(--display);letter-spacing:-.025em;margin:14px 0 4px;text-wrap:balance}
+.sub{color:var(--muted);font-size:11px;max-width:34ch}
+.dots{border:0;border-top:2px dotted var(--rule);margin:16px 0}
+.solid{border:0;border-top:2px solid var(--ink);margin:14px 0}
+
+.row{padding:10px 0;border-bottom:1px dotted var(--rule)}
+.row:last-of-type{border-bottom:0}
+.line{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.name{font:500 15px/1.25 var(--display);letter-spacing:-.005em}
+.when{font-weight:600;white-space:nowrap}
+.when.over{background:var(--red);color:#fff;padding:1px 6px}
+.when.soon{color:var(--red)}
+.meta{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:2px}
+
+.scale{display:block;width:100%;height:22px;margin-top:6px;overflow:visible}
+.scale text{font:400 8px var(--mono);fill:var(--muted)}
+
+.leader{display:flex;gap:6px;align-items:baseline}
+.leader .t{flex:0 1 auto}
+.leader .d{flex:1;border-bottom:2px dotted var(--rule);transform:translateY(-3px);min-width:12px}
+.leader .p{font-weight:600;white-space:nowrap}
+.reason{color:var(--muted);font-size:10.5px;margin:0 0 8px}
+.struck{text-decoration:line-through;color:var(--muted)}
+.total{font:700 30px/1 var(--display);letter-spacing:-.02em;display:flex;justify-content:space-between;align-items:baseline}
+.total small{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.note{color:var(--muted);font-size:10.5px;margin-top:6px}
+
+.banner{background:var(--red);color:#fff;padding:7px 10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;display:flex;justify-content:space-between}
+.stamp{display:inline-block;border:2px solid var(--red);color:var(--red);font-weight:600;padding:2px 8px;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-3deg);font-size:11px}
+.stamp.poss{border-style:dashed}
+.rc h2{font:700 21px/1.12 var(--display);letter-spacing:-.015em;margin:12px 0 6px;text-wrap:balance}
+.rc p{font-size:11.5px;margin:6px 0}
+.rc ul{list-style:none;padding:0;margin:8px 0}
+.rc li{padding-left:16px;position:relative;font-size:11px;margin:2px 0}
+.rc li::before{content:"✓";position:absolute;left:0;font-weight:600;color:var(--ok)}
+.rc li.warn::before{content:"?";color:var(--red)}
+.rc .lbl{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+.rc a,.link{color:var(--blue);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;background:none;border:0;font:inherit;padding:0}
+.rc + .rc{margin-top:6px}
+
+.tear{margin:18px -20px 0;border-top:2px dashed var(--rule);padding:16px 20px 0;display:flex;gap:10px}
+button.btn{flex:1;font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:13px 10px;border:2px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;transition:transform .18s var(--ease),background .18s,box-shadow .18s;box-shadow:3px 3px 0 var(--blue)}
+button.btn.ghost{background:transparent;color:var(--ink);box-shadow:none}
+button.btn:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--blue)}
+button.btn.ghost:hover:not(:disabled){box-shadow:3px 3px 0 var(--rule)}
+button.btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:0 0 0 var(--blue)}
+button.btn:disabled{opacity:.45;cursor:default}
+button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.ok{color:var(--ok);font-weight:600}
+.err{color:var(--red);font-weight:600}
+.barcode{display:block;width:100%;height:46px;margin:12px 0 2px}
+.center{text-align:center}
+.barcode{transition:opacity .4s var(--ease)}
+.timer{font:700 22px var(--display);letter-spacing:-.01em}
+.empty{padding:18px 0;color:var(--muted)}
+.logrow{display:grid;grid-template-columns:54px 1fr;gap:8px;padding:6px 0;border-bottom:1px dotted var(--rule);font-size:11px}
+.logrow time{color:var(--muted)}
+.skeleton{height:14px;background:linear-gradient(90deg,#e1e7ee 25%,#eef2f6 50%,#e1e7ee 75%);background-size:200% 100%;animation:sk 1.2s linear infinite;margin:10px 0}
+@keyframes sk{to{background-position:-200% 0}}
+</style>
+</head>
+<body>
+<div id="app"><div class="slip"><div class="skeleton" style="width:40%"></div><div class="skeleton"></div><div class="skeleton" style="width:70%"></div></div></div>
+<script>
+(() => {
+  const app = document.getElementById("app");
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const usd = (c) => "$" + (c / 100).toFixed(2);
+  const short = (t, n) => { if (n) return n;  const s = String(t).split(",")[0].replace(/\s+/g, " "); return s.length > 44 ? s.slice(0, 43).trimEnd() + "…" : s; };
+  const hhmm = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+  // ---- JSON-RPC over postMessage (MCP Apps) ---------------------------------
+  let nextId = 1; const pending = new Map();
+  const send = (m) => parent.postMessage({ jsonrpc: "2.0", ...m }, "*");
+  const request = (method, params) => new Promise((ok, bad) => { const id = nextId++; pending.set(id, { ok, bad }); send({ id, method, params }); });
+  const callTool = async (name, args) => {
+    const r = await request("tools/call", { name, arguments: args });
+    return r;
+  };
+  let lastCall = null, current = null, timer = null;
+
+  window.addEventListener("message", (e) => {
+    const m = e.data; if (!m || m.jsonrpc !== "2.0") return;
+    if (m.id !== undefined && !m.method) { const p = pending.get(m.id); if (!p) return; pending.delete(m.id); m.error ? p.bad(new Error(m.error.message)) : p.ok(m.result); return; }
+    if (m.method === "ui/notifications/tool-input") lastCall = m.params;
+    if (m.method === "ui/notifications/tool-result") render(m.params);
+    if (m.method === "ui/notifications/host-context-changed") { /* single theme */ }
+  });
+
+  function fit() { requestAnimationFrame(() => send({ method: "ui/notifications/size-changed", params: { width: document.documentElement.clientWidth, height: document.documentElement.scrollHeight } })); }
+  function slip(inner, title) {
+    const now = new Date();
+    app.innerHTML = '<div class="slip print"><div class="mast" style="--i:0"><b>HEARTH · household ledger</b><span>' + now.toLocaleDateString([], { month: "short", day: "numeric" }).toUpperCase() + " " + hhmm(now) + "</span></div>" + inner + "</div>";
+    [...app.querySelectorAll(".print > *")].forEach((el, i) => el.style.setProperty("--i", i));
+    fit();
+  }
+
+  // ---- views ----------------------------------------------------------------
+  function scale(i) {
+    const W = 360, min = -14, max = 45, x = (d) => ((Math.max(min, Math.min(max, d)) - min) / (max - min)) * W;
+    const ticks = [0, 7, 14, 30].map((d) => '<line x1="' + x(d) + '" x2="' + x(d) + '" y1="4" y2="14" stroke="' + (d === 0 ? "#0c1230" : "#b9c2d0") + '" stroke-width="' + (d === 0 ? 2 : 1) + '"/><text x="' + x(d) + '" y="22" text-anchor="middle">' + (d === 0 ? "today" : d + "d") + "</text>").join("");
+    const lo = x(i.daysLeft - i.windowDays), hi = x(i.daysLeft + i.windowDays), c = x(i.daysLeft);
+    const col = i.status === "overdue" || i.status === "this_week" ? "#d92b17" : "#0c1230";
+    return '<svg class="scale" viewBox="0 0 ' + W + ' 24" preserveAspectRatio="none" role="img" aria-label="' + esc(short(i.title, i.name)) + " runs out " + (i.daysLeft < 0 ? Math.abs(i.daysLeft) + " days ago" : "in " + i.daysLeft + " days") + ", give or take " + i.windowDays + ' days"><line x1="0" x2="' + W + '" y1="9" y2="9" stroke="#b9c2d0" stroke-dasharray="2 3"/>' + ticks + '<line x1="' + lo + '" x2="' + hi + '" y1="9" y2="9" stroke="' + col + '" stroke-width="3"/><line x1="' + lo + '" x2="' + lo + '" y1="5" y2="13" stroke="' + col + '" stroke-width="2"/><line x1="' + hi + '" x2="' + hi + '" y1="5" y2="13" stroke="' + col + '" stroke-width="2"/><circle cx="' + c + '" cy="9" r="4.5" fill="' + col + '"/></svg>';
+  }
+  function runway(sc) {
+    const items = sc.items || [];
+    if (!items.length) return slip('<h1>No history yet</h1><p class="sub empty">Link an order export and I will start learning your pace.</p>');
+    const due = items.filter((i) => i.daysLeft <= sc.withinDays).length;
+    const rows = items.map((i) => {
+      const w = i.daysLeft < 0 ? '<span class="when over">OVERDUE ' + Math.abs(i.daysLeft) + "D</span>" : i.daysLeft === 0 ? '<span class="when soon">TODAY</span>' : '<span class="when ' + (i.daysLeft <= 7 ? "soon" : "") + '">IN ' + i.daysLeft + "D</span>";
+      return '<div class="row"><div class="line"><span class="name">' + esc(short(i.title, i.name)) + "</span>" + w + '</div><div class="meta"><span>±' + i.windowDays + "d · " + i.confidence + " confidence</span><span>" + i.purchases + " orders</span></div>" + scale(i) + "</div>";
+    }).join("");
+    slip('<h1>Running low</h1><p class="sub">' + due + " of " + items.length + " items run out within " + sc.withinDays + ' days. Bars show the likely window, not a promise.</p><hr class="dots">' + rows);
+  }
+  function recalls(sc) {
+    const ms = sc.matches || [];
+    if (!ms.length) return slip('<h1>All clear</h1><p class="sub">Checked ' + sc.checked + " products against current CPSC recalls. No matches.</p>");
+    const src = (sc.sources || []).join("+");
+    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>Recall notice ' + esc(m.recall.number) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul><button class="link" data-url="' + esc(m.recall.url) + '">Read the CPSC notice ↗</button></div><hr class="dots">').join("");
+    slip('<h1>' + ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at</h1><p class=\"sub\">Matched on brand, product type and model number against live U.S. CPSC data (" + esc(src) + ").</p><hr class=\"dots\">" + cards);
+    app.querySelectorAll("[data-url]").forEach((b) => b.addEventListener("click", () => request("ui/open-link", { url: b.dataset.url }).catch(() => {})));
+  }
+  function proposal(sc) {
+    const p = sc.proposal; current = p;
+    if (!p.lines.length) return slip('<h1>Nothing to order</h1><p class="sub">Everything is stocked for that window.</p>');
+    const lines = p.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + usd(l.packs * l.unitPriceCents) + '</span></div><div class="reason">' + esc(l.reason) + "</div>").join("");
+    const dropped = p.dropped.map((d) => '<div class="leader struck"><span class="t">' + esc(short(d.title, d.name)) + '</span></div><div class="reason">left out: ' + esc(d.why) + "</div>").join("");
+    slip('<h1>Restock plan</h1><p class="sub">Nothing is ordered until you say yes. Plan expires at ' + hhmm(p.expiresAt) + '.</p><hr class="dots">' + lines + dropped + '<hr class="solid"><div class="total"><small>Total</small><span>' + usd(p.totalCents) + '</span></div>' + (p.budgetCents ? '<div class="note">Budget ' + usd(p.budgetCents) + " · " + usd(p.budgetCents - p.totalCents) + " to spare</div>" : "") +
+      '<div class="tear"><button class="btn" id="place">Place order</button><button class="btn ghost" id="later">Not now</button></div><div class="note" id="msg" role="status"></div>');
+    const place = document.getElementById("place"), later = document.getElementById("later"), msg = document.getElementById("msg");
+    place.addEventListener("click", async () => {
+      place.disabled = later.disabled = true; place.textContent = "Placing…";
+      try {
+        const r = await callTool("confirm_restock", { proposalId: p.id, userConfirmed: true });
+        if (r.isError) throw new Error(r.content?.[0]?.text || "Could not place order");
+        render(r);
+      } catch (e) { msg.innerHTML = '<span class="err">' + esc(e.message) + "</span>"; place.disabled = later.disabled = false; place.textContent = "Try again"; fit(); }
+    });
+    later.addEventListener("click", () => { place.disabled = later.disabled = true; msg.textContent = "Okay — plan kept until it expires."; fit(); });
+  }
+  function code39(text) {
+    const P = { "0": "nnnwwnwnn", "1": "wnnwnnnnw", "2": "nnwwnnnnw", "3": "wnwwnnnnn", "4": "nnnwwnnnw", "5": "wnnwwnnnn", "6": "nnwwwnnnn", "7": "nnnwnnwnw", "8": "wnnwnnwnn", "9": "nnwwnnwnn", "A": "wnnnnwnnw", "B": "nnwnnwnnw", "C": "wnwnnwnnn", "D": "nnnnwwnnw", "E": "wnnnwwnnn", "F": "nnwnwwnnn", "G": "nnnnnwwnw", "H": "wnnnnwwnn", "I": "nnwnnwwnn", "J": "nnnnwwwnn", "K": "wnnnnnnww", "L": "nnwnnnnww", "M": "wnwnnnnwn", "N": "nnnnwnnww", "O": "wnnnwnnwn", "P": "nnwnwnnwn", "Q": "nnnnnnwww", "R": "wnnnnnwwn", "S": "nnwnnnwwn", "T": "nnnnwnwwn", "U": "wwnnnnnnw", "V": "nwwnnnnnw", "W": "wwwnnnnnn", "X": "nwnnwnnnw", "Y": "wwnnwnnnn", "Z": "nwwnwnnnn", "-": "nwnnnnwnw", "*": "nwnnwnwnn" };
+    let x = 0, out = "";
+    for (const ch of ("*" + text.toUpperCase().replace(/[^0-9A-Z-]/g, "") + "*")) {
+      const pat = P[ch]; if (!pat) continue;
+      for (let i = 0; i < 9; i++) { const w = pat[i] === "w" ? 3 : 1; if (i % 2 === 0) out += '<rect x="' + x + '" y="0" width="' + w + '" height="46"/>'; x += w; }
+      x += 1;
+    }
+    return '<svg class="barcode" viewBox="0 0 ' + x + ' 46" preserveAspectRatio="none" fill="#0c1230" aria-hidden="true">' + out + "</svg>";
+  }
+  function receipt(sc) {
+    if (sc.declined) return slip('<h1>Not ordered</h1><p class="sub">Okay, I did not place that order.</p>');
+    const r = sc.receipt, id = sc.proposalId;
+    const lines = r.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + usd(l.packs * l.unitPriceCents) + "</span></div>").join("");
+    slip('<h1>Ordered</h1><p class="sub ok">' + (sc.replayed ? "Already placed — no duplicate created." : "Placed through the simulated store.") + '</p><hr class="dots">' + lines + '<hr class="solid"><div class="total"><small>Paid</small><span>' + usd(r.totalCents) + "</span></div>" + code39(r.orderRef) + '<div class="center note">' + esc(r.orderRef) + '</div><div class="tear"><div style="flex:1"><div class="note" style="margin:0">Undo window</div><div class="timer" id="timer">—</div></div><button class="btn ghost" id="undo">Cancel order</button></div><div class="note" id="msg" role="status"></div>');
+    const t = document.getElementById("timer"), u = document.getElementById("undo"), msg = document.getElementById("msg");
+    clearInterval(timer);
+    const tick = () => { const s = Math.max(0, Math.round((r.undoUntil - Date.now()) / 1000)); t.textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); if (!s) { u.disabled = true; clearInterval(timer); } };
+    tick(); timer = setInterval(tick, 1000);
+    u.addEventListener("click", async () => {
+      u.disabled = true;
+      try {
+        const res = await callTool("undo_restock", { proposalId: id });
+        const txt = res.content?.[0]?.text || "";
+        if (res.isError) throw new Error(txt);
+        clearInterval(timer); msg.innerHTML = '<span class="ok">' + esc(txt) + "</span>"; t.textContent = "CANCELLED";
+        const bc = app.querySelector(".barcode"); if (bc) { bc.style.opacity = ".14"; bc.insertAdjacentHTML("afterend", '<div class="center" style="margin-top:-38px;position:relative"><span class="stamp">void</span></div>'); } fit();
+      } catch (e) { msg.innerHTML = '<span class="err">' + esc(e.message) + "</span>"; fit(); }
+    });
+  }
+  function undone(sc) { slip('<h1>' + (sc.ok ? "Cancelled" : "Could not cancel") + '</h1><p class="sub ' + (sc.ok ? "ok" : "err") + '">' + esc(sc.message) + "</p>"); }
+  function log(sc) {
+    const items = sc.items || [];
+    slip("<h1>What I've done</h1><p class=\"sub\">Every action, newest first.</p><hr class=\"dots\">" + (items.length ? items.map((i) => '<div class="logrow"><time>' + hhmm(Date.parse(i.at)) + "</time><span>" + esc(i.action.replace(/_/g, " ")) + "</span></div>").join("") : '<div class="empty">Nothing yet.</div>'));
+  }
+
+  function render(result) {
+    const sc = result && result.structuredContent;
+    if (!sc) return slip('<h1>Hearth</h1><p class="sub">' + esc(result?.content?.[0]?.text || "") + "</p>");
+    ({ runway, recalls, proposal, receipt, undo: undone, log }[sc.view] || (() => slip("<pre>" + esc(JSON.stringify(sc, null, 1)) + "</pre>")))(sc);
+  }
+
+  new ResizeObserver(fit).observe(document.body);
+  request("ui/initialize", { protocolVersion: "2026-01-26", appCapabilities: { availableDisplayModes: ["inline"] }, clientInfo: { name: "hearth-slip", version: "0.1.0" } })
+    .then(() => send({ method: "ui/notifications/initialized", params: {} }));
+})();
+</script>
+</body>
+</html>

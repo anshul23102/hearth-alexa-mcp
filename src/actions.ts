@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { audit } from "./db.js";
 import type { Runway } from "./forecast.js";
 
-export interface Line { productKey: string; title: string; packs: number; unitPriceCents: number; reason: string }
+export interface Line { productKey: string; title: string; name: string; packs: number; unitPriceCents: number; reason: string }
 export interface Proposal {
   id: string; household: string; status: "pending" | "confirmed" | "expired" | "cancelled" | "undone";
   createdAt: number; expiresAt: number; lines: Line[]; totalCents: number; budgetCents: number | null; dropped: { title: string; why: string }[];
@@ -36,12 +36,12 @@ export function propose(db: DatabaseSync, household: string, runway: Runway[], o
     const packs = Math.max(1, Math.round(unitsNeeded / Math.max(1, r.packUnits)));
     const cost = packs * r.unitPriceCents;
     if (opts.budgetCents !== undefined && total + cost > opts.budgetCents) {
-      dropped.push({ title: r.title, why: `would exceed budget by $${((total + cost - opts.budgetCents) / 100).toFixed(2)}` });
+      dropped.push({ title: r.name, why: `would exceed budget by $${((total + cost - opts.budgetCents) / 100).toFixed(2)}` });
       continue;
     }
     total += cost;
     lines.push({
-      productKey: r.productKey, title: r.title, packs, unitPriceCents: r.unitPriceCents,
+      productKey: r.productKey, title: r.title, name: r.name, packs, unitPriceCents: r.unitPriceCents,
       reason: r.daysLeft < 0 ? `ran out ~${-r.daysLeft}d ago by your usual pace` : `about ${r.daysLeft}d left (±${r.windowDays})`,
     });
   }

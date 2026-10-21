@@ -120,3 +120,22 @@ test("unknown proposals and bad inputs fail cleanly", async () => {
   const b = await call("remember_preference", { kind: "budget_usd", value: "-5" });
   assert.equal((b as any).isError, true);
 });
+
+test("asks for approval through MCP elicitation when the client supports it", async () => {
+  // Second client that declares elicitation and approves/declines on demand.
+  const { ElicitRequestSchema } = await import("@modelcontextprotocol/sdk/types.js");
+  const form = async (c: Client) => { const p = sc(await c.callTool({ name: "plan_restock", arguments: { withinDays: 21, budgetUsd: 40 } })).proposal; return p.id as string; };
+  const token = (client as any)._transport?._requestInit?.headers?.authorization as string;
+  assert.ok(token);
+  let answer: "accept" | "decline" = "decline";
+  const c2 = new Client({ name: "elicit", version: "1" }, { capabilities: { elicitation: {} } });
+  c2.setRequestHandler(ElicitRequestSchema, async () => answer === "accept" ? { action: "accept", content: { approve: true } } : { action: "decline" });
+  await c2.connect(new StreamableHTTPClientTransport(new URL(`${BASE}/mcp`), { requestInit: { headers: { authorization: token } } }));
+  const id = await form(c2);
+  const declined = sc(await c2.callTool({ name: "confirm_restock", arguments: { proposalId: id, userConfirmed: true } }));
+  assert.equal(declined.declined, true, "declining the elicitation must not place the order");
+  answer = "accept";
+  const placed = sc(await c2.callTool({ name: "confirm_restock", arguments: { proposalId: id, userConfirmed: true } }));
+  assert.match(placed.receipt.orderRef, /^SIM-/);
+  await c2.close();
+});
