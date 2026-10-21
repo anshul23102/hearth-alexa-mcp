@@ -18,3 +18,9 @@ Setup: `npm run sample && npm start`; open http://localhost:3939 in a fresh prof
 | 2:40-2:55 | Terminal: `npm test` ending in 20 passing. Show `src/agent.ts` Bedrock call for 3 seconds | "20 end-to-end tests through the official MCP SDK. Claude on Amazon Bedrock can drive it. Open source, MIT." |
 
 Do not show: real credentials, real Amazon trademarks beyond the word "Alexa+" used descriptively, any real orders.
+
+## Dry run (measured on the live app, 2026-10-21)
+App time per step, from sending the question to the end of the spoken reply: load sample history 1.4 s, "running low" 1.9 s,
+recalls 2.2 s, plan 1.7 s, place order 1.0 s, undo 0.8 s, activity log 0.7 s; account linking about 2 s; operator command to
+on-screen alert 0.5 s. Total app time for the whole script is roughly 12 s, so the video length is set by narration, not the app.
+Also exercised live: "Forget my data" erased the household, revoked the token and returned the app to the unlinked screen.
