@@ -77,11 +77,16 @@ export async function handleOAuth(req: IncomingMessage, res: ServerResponse, url
     const hidden = ["client_id", "redirect_uri", "state", "code_challenge"].map((k) => `<input type=hidden name=${k} value="${esc(q.get(k) ?? "")}">`).join("");
     res.writeHead(200, { "content-type": "text/html" });
     res.end(`<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Link Hearth</title>
-<style>body{font:16px/1.5 system-ui;background:#f6f1e9;color:#241b14;display:grid;place-items:center;min-height:100vh;margin:0}
-main{background:#fffdf9;border:1px solid #e4d9c8;border-radius:16px;padding:32px;max-width:380px;box-shadow:0 8px 30px #3a2a1a14}
-h1{font-size:22px;margin:0 0 8px}p{color:#6b5b4a;margin:0 0 20px}button{width:100%;padding:12px;border:0;border-radius:10px;background:#b4471c;color:#fff;font:600 16px system-ui;cursor:pointer}</style>
-<main><h1>Link Hearth to Alexa+</h1><p>Hearth will read your order history and plan restocks. It will never order without your yes.</p>
-<form method=post action=/authorize>${hidden}<button>Link account</button></form></main>`);
+<style>@font-face{font-family:B;src:url(/fonts/bricolage-700.woff2)}@font-face{font-family:M;src:url(/fonts/martian-400.woff2)}
+body{font:14px/1.55 M,ui-monospace,monospace;background:#2236d9;color:#f3f6f8;display:grid;place-items:center;min-height:100vh;margin:0;padding:20px}
+main{background:#f3f6f8;color:#0c1230;padding:32px 28px;max-width:400px;filter:drop-shadow(0 12px 22px #05084a66)}
+h1{font:700 34px/1 B,system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 12px}p{margin:0 0 10px;color:#4b5470}ul{margin:0 0 22px;padding:0;list-style:none;border-top:2px dotted #b9c2d0}
+li{padding:8px 0;border-bottom:2px dotted #b9c2d0;color:#0c1230;font-size:12.5px}
+button{width:100%;padding:15px;border:2px solid #0c1230;background:#0c1230;color:#f3f6f8;font:600 12px M,monospace;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;box-shadow:4px 4px 0 #2236d9}
+button:hover{transform:translate(-1px,-1px)}button:focus-visible{outline:3px solid #2236d9;outline-offset:3px}</style>
+<main><h1>Link Hearth to Alexa+</h1><p>Hearth is asking to:</p>
+<ul><li>Read your imported order history</li><li>Plan restocks for you to approve</li><li>Place an order only after you say yes</li></ul>
+<form method=post action=/authorize>${hidden}<button>Allow and link</button></form></main>`);
     return true;
   }
   if (p === "/authorize" && req.method === "POST") {

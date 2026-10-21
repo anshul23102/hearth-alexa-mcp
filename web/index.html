@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hearth — Alexa+ simulator</title>
+<meta name="description" content="A web MCP client standing in for an Alexa+ device, talking to the Hearth MCP server over Streamable HTTP.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="shell" id="shell" data-phase="boot">
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span class="word">Hearth</span><span class="tag">household memory for Alexa+</span></div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+  </header>
+
+  <main class="stage">
+    <section class="device" aria-label="Alexa+ simulator">
+      <div class="lightbar" id="lightbar" data-state="idle" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="heard" id="heard" aria-live="polite"></div>
+      <h2 class="say" id="say" aria-live="polite"></h2>
+
+      <div class="link" id="linkStep" hidden>
+        <p>Alexa+ needs permission to read your order history and plan restocks. Hearth never orders without a yes.</p>
+        <button class="primary" id="linkBtn">Link Hearth to Alexa+</button>
+        <small>Runs a real OAuth 2.1 + PKCE account-linking flow against the local server.</small>
+      </div>
+
+      <div class="load" id="loadStep" hidden>
+        <button class="primary" id="loadBtn">Load sample order history</button>
+        <small>200 rows of <b>synthetic</b> messy export: mixed date formats, duplicates, cancellations, retitled listings.</small>
+      </div>
+
+      <form class="ask" id="askForm" autocomplete="off" hidden>
+        <label class="sr" for="ask">Ask Hearth</label>
+        <input id="ask" name="ask" type="text" placeholder="Alexa, what are we running low on?" enterkeyhint="send" spellcheck="false">
+        <button type="button" class="mic" id="mic" aria-label="Speak" aria-pressed="false" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V22h2v-3.08A7 7 0 0 0 19 12h-2Z" fill="currentColor"/></svg></button>
+        <button type="submit" class="send" aria-label="Send">↵</button>
+      </form>
+      <div class="chips" id="chips" hidden></div>
+    </section>
+
+    <section class="printer" aria-label="Screen output">
+      <div class="slot" aria-hidden="true"><span class="led" id="led"></span></div>
+      <div class="paper" id="paper"></div>
+      <p class="blank" id="blank">Cards Alexa+ shows on screen print here.</p>
+    </section>
+  </main>
+
+  <footer class="wire" id="wire" data-open="false">
+    <button class="wiretoggle" id="wireToggle" aria-expanded="false" aria-controls="wireLog">
+      <span>MCP wire</span><span class="count" id="wireCount">0 messages</span><span class="proto" id="proto"></span>
+    </button>
+    <ol class="wirelog" id="wireLog" aria-label="JSON-RPC messages"></ol>
+  </footer>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

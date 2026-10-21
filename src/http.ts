@@ -8,6 +8,7 @@ import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { openDb } from "./db.js";
 import { createHearthServer } from "./server.js";
 import { baseUrl, handleOAuth, verifyToken } from "./oauth.js";
+import { bedrockClient, bedrockStep, hasBedrockCredentials, MODEL_ID, REGION, type WireMessage, type WireTool } from "./agent.js";
 
 const PORT = Number(process.env.PORT ?? 3939);
 const AUTH = (process.env.HEARTH_AUTH ?? "on") !== "off";
@@ -65,6 +66,27 @@ async function handleMcp(req: IncomingMessage & { auth?: AuthInfo }, res: Server
   await transport.handleRequest(req, res, body);
 }
 
+async function handleAgent(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
+  const send = (status: number, body: unknown) => { res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(body)); };
+  if (url.pathname === "/api/agent/status") {
+    send(200, { mode: hasBedrockCredentials() ? "bedrock" : "local", model: hasBedrockCredentials() ? MODEL_ID : null, region: REGION });
+    return true;
+  }
+  if (url.pathname === "/api/agent/step" && req.method === "POST") {
+    if (!hasBedrockCredentials()) { send(503, { error: "Bedrock is not configured; the simulator uses its offline router." }); return true; }
+    try {
+      const body = (await readJson(req)) as { messages: WireMessage[]; tools: WireTool[] };
+      if (!Array.isArray(body?.messages) || !Array.isArray(body?.tools)) { send(400, { error: "messages and tools are required" }); return true; }
+      send(200, await bedrockStep(bedrockClient(), body.messages.slice(-30), body.tools));
+    } catch (e) {
+      console.error("bedrock:", e);
+      send(502, { error: `Bedrock call failed: ${(e as Error).name}. Check AWS credentials, region and model access.` });
+    }
+    return true;
+  }
+  return false;
+}
+
 function serveStatic(url: URL, res: ServerResponse) {
   if (url.pathname === "/demo/sample-orders.csv") {
     res.writeHead(200, { "content-type": "text/csv" }).end(readFileSync(new URL("../data/sample-orders.csv", import.meta.url)));
@@ -83,6 +105,7 @@ createServer(async (req, res) => {
   try {
     if (url.pathname === "/mcp") return await handleMcp(req, res);
     if (await handleOAuth(req, res, url)) return;
+    if (await handleAgent(req, res, url)) return;
     if (url.pathname === "/healthz") { res.writeHead(200).end("ok"); return; }
     serveStatic(url, res);
   } catch (e) {
