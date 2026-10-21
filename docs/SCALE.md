@@ -7,7 +7,7 @@ Everything here is reproducible from this repo. Machine: one MacBook, Node 26, S
   One-time live sync of both feeds: about 12 to 16 s. Refreshed every 6 h in the background, never in a request.
 - **676,365 synthetic order rows across 5,000 households** (messy: mixed dates and currencies, duplicates, cancellations).
 
-## Throughput and latency (`npx tsx scripts/bench.ts 5000 200`)
+## Throughput and latency (`npm run bench -- 5000 200`)
 | Measurement | Result |
 |---|---|
 | Import, in-process, one transaction per household | 53,000 rows/s (676k rows in 12.7 s) |
@@ -23,7 +23,7 @@ With 5,000 households each owning one of four durables, a new notice is matched 
 A single **500,000-row, 43.5 MB CSV** streamed over HTTP imported in **12.4 s**. A second client probing `/healthz` every 50 ms
 during the upload saw **p50 3 ms, p99 13 ms, max 38 ms** (1,024 probes), so a huge import does not stall other households.
 
-## Recall-matching accuracy (`npx tsx scripts/eval-recalls.ts`)
+## Recall-matching accuracy (`npm run eval`)
 Cases are generated from 4,612 real CPSC notices. Positives are built from the notice's own product name and model, so
 positive numbers are an **upper bound**; the negatives are the number to watch.
 
