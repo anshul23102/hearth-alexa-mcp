@@ -19,6 +19,11 @@ Everything here is reproducible from this repo. Machine: one MacBook, Node 26, S
 With 5,000 households each owning one of four durables, a new notice is matched to its 1,250 owners and 1,250 alerts are written in
 **37 ms** (brand index lookup, then the same scorer as the "ask" path). The push then goes only to those households' open MCP sessions.
 
+## Alert latency, end to end (real browser, local server)
+Operator command run -> alert banner visible in the idle simulator: **525 ms**; first word spoken: **758 ms**. That includes starting
+the Node CLI that sends the command, so the push itself is faster. Path: index lookup of owners, alert row, MCP
+`notifications/resources/updated`, the client calls `recall_alerts`, renders the card, speaks.
+
 ## Big upload while the server keeps serving (`POST /api/import`, worker thread)
 A single **500,000-row, 43.5 MB CSV** streamed over HTTP imported in **12.4 s**. A second client probing `/healthz` every 50 ms
 during the upload saw **p50 3 ms, p99 13 ms, max 38 ms** (1,024 probes), so a huge import does not stall other households.
