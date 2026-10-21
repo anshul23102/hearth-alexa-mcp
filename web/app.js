@@ -114,11 +114,23 @@ $("forget").addEventListener("click", async () => {
   try { sessionStorage.clear(); } catch { /* private mode */ }
   location.assign("/");
 });
+// A button press is a host action, not a question: call the import tool directly, whatever the brain is.
+// (With the Bedrock brain the model never sees the file, and 40 KB of CSV should not pass through a model anyway.)
 $("loadBtn").addEventListener("click", async () => {
   $("loadBtn").disabled = true;
-  sampleCsv = sampleCsv || await (await fetch("/demo/sample-orders.csv")).text();
-  await ask("Load my order history", { quiet: false });
-  ready();
+  heard.textContent = "(loaded the sample order history)";
+  setState("thinking");
+  try {
+    sampleCsv = sampleCsv || await (await fetch("/demo/sample-orders.csv")).text();
+    const r = await mcp.callTool("import_order_history", { csv: sampleCsv });
+    const text = r.content?.[0]?.text ?? "";
+    messages.push({ role: "user", content: [{ type: "text", text: "I loaded my order history." }] }, { role: "assistant", content: [{ type: "text", text }] });
+    await speak(text);
+    ready();
+  } catch (e) {
+    $("loadBtn").disabled = false;
+    await speak(e instanceof AuthRequired ? "Your session expired. Reload the page to link again." : `I couldn't load that: ${e.message}`);
+  } finally { setState("idle"); }
 });
 
 // ---- proactive recall alerts (MCP resource subscription) ------------------------------------------------
@@ -157,7 +169,7 @@ async function ask(text, opts = {}) {
   messages.push({ role: "user", content: [{ type: "text", text }] });
   try {
     for (let hop = 0; hop < 6; hop++) {
-      const reply = brain === "bedrock" ? await remoteStep(messages, mcp.tools) : localStep(messages, { sampleCsv });
+      const reply = brain === "bedrock" ? await remoteStep(messages, mcp.tools, mcp.token) : localStep(messages, { sampleCsv });
       messages.push(reply);
       const calls = reply.content.filter((b) => b.type === "tool_use");
       if (!calls.length) { await speak(reply.content.filter((b) => b.type === "text").map((b) => b.text).join(" ")); break; }
@@ -167,7 +179,9 @@ async function ask(text, opts = {}) {
         let r;
         try { r = await mcp.callTool(c.name, c.input); } catch (e) { r = { isError: true, content: [{ type: "text", text: e.message }] }; }
         const spoken = r.content?.[0]?.text ?? "";
-        results.push({ type: "tool_result", tool_use_id: c.id, text: spoken, isError: !!r.isError, structured: r.structuredContent });
+        // The model also gets any assistant-audience blocks (ids it needs next); only the first block is ever spoken or shown.
+        const modelText = (r.content ?? []).filter((b) => b.type === "text" && (b.annotations?.audience ?? ["user", "assistant"]).includes("assistant")).map((b) => b.text).join("\n");
+        results.push({ type: "tool_result", tool_use_id: c.id, text: spoken, modelText, isError: !!r.isError, structured: r.structuredContent });
         await showCard(c.name, c.input, r);
       }
       messages.push({ role: "user", content: results });

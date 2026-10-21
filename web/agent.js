@@ -7,10 +7,16 @@ export async function agentMode() {
   try { return (await (await fetch("/api/agent/status")).json()).mode; } catch { return "local"; }
 }
 
-export async function remoteStep(messages, tools) {
-  const r = await fetch("/api/agent/step", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ messages, tools: tools.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })) }) });
+/** The model endpoint is authenticated (it spends money), so the same bearer token as /mcp must accompany every step. */
+export async function remoteStep(messages, tools, token) {
+  const r = await fetch("/api/agent/step", { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ messages: messages.map(toWire), tools: tools.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })) }) });
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `Agent error ${r.status}`);
   return r.json();
+}
+
+/** Local-only fields (structured results, UI state) never leave the browser; the model gets text, plus assistant-only data for tool results. */
+function toWire(m) {
+  return { role: m.role, content: m.content.map((b) => (b.type === "tool_result" ? { type: b.type, tool_use_id: b.tool_use_id, isError: b.isError, text: b.modelText ?? b.text } : b)) };
 }
 
 const money = (t) => { const m = t.match(/\$\s?(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:dollars|bucks)/i); return m ? Number(m[1] ?? m[2]) : null; };
