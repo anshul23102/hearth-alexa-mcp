@@ -110,3 +110,32 @@ test("the daily model-call cap is enforced by the live endpoint", async () => {
   await step(tok.access_token, { messages: [userMsg("four")], tools });
   assert.equal(seen.length, calls, "past the cap nothing reaches the model");
 });
+
+test("a silent model reply cannot poison the conversation (bug 4 from the live run)", async () => {
+  const { toConverse } = await import("../src/agent.js");
+  const wire = [
+    { role: "user", content: [{ type: "text", text: "speak Spanish" }] },
+    { role: "assistant", content: [{ type: "tool_use", id: "t1", name: "remember_preference", input: { kind: "language", value: "es" } }] },
+    { role: "user", content: [{ type: "tool_result", tool_use_id: "t1", text: "De acuerdo.", isError: false }] },
+    { role: "assistant", content: [{ type: "text", text: "   " }] },           // the model said nothing
+    { role: "user", content: [{ type: "text", text: "¿Qué se nos está acabando?" }] },
+  ] as any;
+  const out = toConverse(wire);
+  const roles = out.map((m) => m.role);
+  assert.ok(roles.every((r, i) => i === 0 || r !== roles[i - 1]), `roles must alternate: ${roles.join(",")}`);
+  assert.ok(!JSON.stringify(out).includes('"text":"   "') && !out.some((m) => (m.content ?? []).some((b) => "text" in b && !String(b.text).trim())), "no blank text blocks");
+  assert.equal(out[0].role, "user");
+  assert.ok(out.flatMap((m) => m.content ?? []).some((b) => "toolResult" in b), "the tool result is kept");
+  const merged = out[out.length - 1];
+  assert.equal(merged.role, "user", "the tool result and the next question merge into one user turn");
+});
+
+test("the browser speaks the tool's own sentence when the model has nothing to add", async () => {
+  const { ensureSpoken } = await import("../web/agent.js" as string) as { ensureSpoken: (r: unknown, f: string) => { content: { type: string; text?: string }[] } };
+  assert.equal(ensureSpoken({ role: "assistant", content: [] }, "De acuerdo, hablaré en español.").content[0].text, "De acuerdo, hablaré en español.");
+  assert.equal(ensureSpoken({ role: "assistant", content: [{ type: "text", text: "  " }] }, "").content[0].text, "Okay.");
+  const withCall = { role: "assistant", content: [{ type: "tool_use", id: "x", name: "n", input: {} }] };
+  assert.equal(ensureSpoken(withCall, "ignored"), withCall, "a tool call is left alone");
+  const said = { role: "assistant", content: [{ type: "text", text: "Done." }] };
+  assert.equal(ensureSpoken(said, "ignored"), said);
+});

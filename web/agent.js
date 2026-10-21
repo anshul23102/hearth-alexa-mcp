@@ -19,6 +19,14 @@ function toWire(m) {
   return { role: m.role, content: m.content.map((b) => (b.type === "tool_result" ? { type: b.type, tool_use_id: b.tool_use_id, isError: b.isError, text: b.modelText ?? b.text } : b)) };
 }
 
+/** A model that has nothing to add after a tool call returns an empty reply. Speak the tool's own sentence instead of silence. */
+export function ensureSpoken(reply, fallback) {
+  const hasCall = reply.content.some((b) => b.type === "tool_use");
+  const text = reply.content.filter((b) => b.type === "text").map((b) => b.text).join(" ").trim();
+  if (hasCall || text) return reply;
+  return { role: "assistant", content: [{ type: "text", text: fallback || "Okay." }] };
+}
+
 const money = (t) => { const m = t.match(/\$\s?(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:dollars|bucks)/i); return m ? Number(m[1] ?? m[2]) : null; };
 const days = (t) => { const m = t.match(/(\d+)\s*(day|week)/i); return m ? Number(m[1]) * (/week/i.test(m[2]) ? 7 : 1) : null; };
 

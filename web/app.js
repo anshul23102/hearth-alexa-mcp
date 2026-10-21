@@ -1,6 +1,6 @@
 import { McpClient, AuthRequired } from "./mcp.js";
 import { mountApp } from "./appHost.js";
-import { agentMode, remoteStep, localStep } from "./agent.js";
+import { agentMode, remoteStep, localStep, ensureSpoken } from "./agent.js";
 
 const $ = (id) => document.getElementById(id);
 const say = $("say"), heard = $("heard"), lightbar = $("lightbar"), paper = $("paper"), blank = $("blank");
@@ -168,8 +168,10 @@ async function ask(text, opts = {}) {
   if (!sampleCsv && /\b(load|import|history|sample|upload)\b/i.test(text)) sampleCsv = await (await fetch("/demo/sample-orders.csv")).text();
   messages.push({ role: "user", content: [{ type: "text", text }] });
   try {
+    let lastSpoken = "";
     for (let hop = 0; hop < 6; hop++) {
-      const reply = brain === "bedrock" ? await remoteStep(messages, mcp.tools, mcp.token) : localStep(messages, { sampleCsv });
+      const raw = brain === "bedrock" ? await remoteStep(messages, mcp.tools, mcp.token) : localStep(messages, { sampleCsv });
+      const reply = ensureSpoken(raw, lastSpoken);
       messages.push(reply);
       const calls = reply.content.filter((b) => b.type === "tool_use");
       if (!calls.length) { await speak(reply.content.filter((b) => b.type === "text").map((b) => b.text).join(" ")); break; }
@@ -184,6 +186,7 @@ async function ask(text, opts = {}) {
         results.push({ type: "tool_result", tool_use_id: c.id, text: spoken, modelText, isError: !!r.isError, structured: r.structuredContent });
         await showCard(c.name, c.input, r);
       }
+      lastSpoken = results.map((x) => x.text).filter(Boolean).join(" ");
       messages.push({ role: "user", content: results });
     }
   } catch (e) {

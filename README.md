@@ -55,7 +55,7 @@ claude mcp add --transport http hearth http://localhost:3939/mcp
 
 ### Optional: Claude on Amazon Bedrock as the brain
 
-With AWS credentials in the environment (or `HEARTH_AGENT=bedrock`), the simulator's reasoning runs on Claude
+With AWS credentials in the environment (or `HEARTH_AGENT=bedrock`; verified live with Claude Haiku 4.5, see [docs/BEDROCK.md](docs/BEDROCK.md)), the simulator's reasoning runs on Claude
 through the Bedrock **Converse API** with tool use (`src/agent.ts`). The browser still executes every tool call
 as the MCP client. Without credentials it uses a small deterministic offline router, so judges can run
 everything with no AWS account. Configure `AWS_REGION` and `BEDROCK_MODEL_ID` (see `.env.example`). To stay inside a free plan, model calls are capped per day (`HEARTH_BEDROCK_DAILY_CALLS`, default 150); past the cap the simulator falls back to the offline router. Check your setup with `npm run bedrock:check`; if your account cannot use a model, `npm run bedrock:probe` tries a short list of cheap ones and says which work.
@@ -101,7 +101,7 @@ real ordering API plugs in.
 ## Tests
 
 ```bash
-npm test         # 73 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 75 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
@@ -135,7 +135,7 @@ upload took 12.4 s while concurrent requests stayed at p99 13 ms. Full tables an
 ## Honest limitations
 
 - No real Alexa+ device or add-on certification (tooling is partner-only); no real storefront (`StoreAdapter` is simulated).
-- The Bedrock path is unit-tested against a stubbed client; run it with your own credentials to exercise it live.
+- Bedrock was exercised live once (Claude Haiku 4.5, one account, one session of 36 calls; [docs/BEDROCK.md](docs/BEDROCK.md)); CI runs it only against a stand-in server.
 - OAuth is a minimal authorization server for demonstrating account linking (tokens hashed in SQLite, rotation, PKCE).
   Its consent step does not authenticate a person; production delegates to the household's real identity provider.
 - One node and SQLite. Scaling out means Postgres (the data access is plain SQL in `src/`), a shared rate-limit store, and a pub/sub for the alert push; none of that is built.
