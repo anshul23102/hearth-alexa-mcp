@@ -16,7 +16,8 @@ try {
     inferenceConfig: { maxTokens: 30, temperature: 0 },
   }));
   console.log(`\nOK in ${Math.round(performance.now() - t0)} ms: ${out.output?.message?.content?.[0]?.text}`);
-  console.log(`tokens: in ${out.usage?.inputTokens} / out ${out.usage?.outputTokens}`);
+  const u = (out as { usage?: { inputTokens?: number; outputTokens?: number } }).usage;
+  console.log(`tokens: in ${u?.inputTokens} / out ${u?.outputTokens}`);
 } catch (e) {
   const err = e as Error & { $metadata?: { httpStatusCode?: number } };
   console.log(`\nFAILED: ${err.name} (HTTP ${err.$metadata?.httpStatusCode ?? "?"})\n${err.message}`);
