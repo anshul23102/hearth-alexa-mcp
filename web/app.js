@@ -17,8 +17,10 @@ function wire({ dir, body, label }) {
   const name = label ?? (body.method ? body.method : body.error ? `error ${body.error.code}` : body.result?.tools ? `result · ${body.result.tools.length} tools` : body.result?.serverInfo ? "result · initialize" : "result");
   const extra = body.params?.name ? ` ${body.params.name}` : "";
   const head = document.createElement("div");
-  head.innerHTML = `<span class="ar">${arrow}</span><span class="nm"></span><time>${new Date().toLocaleTimeString([], { hour12: false })}</time>`;
-  head.querySelector(".nm").textContent = name + extra;
+  const ar = Object.assign(document.createElement("span"), { className: "ar", textContent: arrow });
+  const nm = Object.assign(document.createElement("span"), { className: "nm", textContent: name + extra });
+  const tm = Object.assign(document.createElement("time"), { textContent: new Date().toLocaleTimeString([], { hour12: false }) });
+  head.append(ar, nm, tm);
   const pre = document.createElement("pre");
   const text = JSON.stringify(body, null, 1);
   pre.textContent = text.length > 2400 ? text.slice(0, 2400) + "\n… (" + text.length + " chars)" : text;
@@ -35,7 +37,10 @@ $("wireToggle").addEventListener("click", () => {
 
 // ---- ui helpers -------------------------------------------------------------
 const setState = (s) => { lightbar.dataset.state = s; };
-const setStatus = (html) => { $("status").innerHTML = html; };
+const setStatus = (kind, text) => {
+  const dot = Object.assign(document.createElement("i"), { className: `dot ${kind}`.trim() });
+  $("status").replaceChildren(dot, document.createTextNode(text));
+};
 let typing = 0;
 async function speak(text) {
   const id = ++typing;
@@ -61,7 +66,7 @@ let busy = false;
 let sampleCsv = "";
 let brain = "local";
 
-const SUGGEST = ["What are we running low on?", "Any recalls on what we own?", "Plan a restock under $60", "Keep restocks under $80"];
+const SUGGEST = ["What are we running low on?", "Any recalls on what we own?", "Plan a restock under $60", "Keep restocks under $80", "Speak Spanish"];
 
 function phase(p) { shell.dataset.phase = p; }
 function showChips() {
@@ -80,7 +85,8 @@ async function boot() {
   try {
     const init = await mcp.connect();
     $("proto").textContent = `MCP ${init.protocolVersion}`;
-    setStatus(`<i class="dot ok"></i>Linked · ${init.serverInfo.name} ${init.serverInfo.version} · ${brain === "bedrock" ? "Claude on Amazon Bedrock" : "offline router"}`);
+    setStatus("ok", `Linked · ${init.serverInfo.name} ${init.serverInfo.version} · ${brain === "bedrock" ? "Claude on Amazon Bedrock" : "offline router"}`);
+    $("forget").hidden = false;
     const r = await mcp.callTool("household_runway", { withinDays: 30 });
     if (r.structuredContent?.items?.length) { ready(); speak("Welcome back. I remember your household. Ask me what's running low."); }
     else {
@@ -91,10 +97,10 @@ async function boot() {
   } catch (e) {
     if (e instanceof AuthRequired) {
       phase("link");
-      setStatus('<i class="dot"></i>Not linked');
+      setStatus("", "Not linked");
       speak("Hi, I'm Alexa+. To remember your household I need to link Hearth to your account.");
       $("linkStep").hidden = false;
-    } else { setStatus('<i class="dot bad"></i>Server unreachable'); speak("I can't reach the Hearth server. Is it running?"); console.error(e); }
+    } else { setStatus("bad", "Server unreachable"); speak("I can't reach the Hearth server. Is it running?"); console.error(e); }
   }
 }
 function ready() {
@@ -105,6 +111,12 @@ function ready() {
 }
 
 $("linkBtn").addEventListener("click", () => mcp.startLinking());
+$("forget").addEventListener("click", async () => {
+  if (!confirm("Erase all of this household's data from Hearth and sign out? This cannot be undone.")) return;
+  try { const r = await mcp.callTool("delete_household_data", { confirm: "DELETE MY DATA" }); if (r.isError) throw new Error(r.content?.[0]?.text); } catch (e) { speak(`I couldn't erase it: ${e.message}`); return; }
+  try { sessionStorage.clear(); } catch { /* private mode */ }
+  location.assign("/");
+});
 $("loadBtn").addEventListener("click", async () => {
   $("loadBtn").disabled = true;
   sampleCsv = sampleCsv || await (await fetch("/demo/sample-orders.csv")).text();

@@ -63,6 +63,20 @@ export function openDb(path = process.env.HEARTH_DB ?? "data/hearth.db"): Databa
       action TEXT NOT NULL,
       detail TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS oauth_clients (
+      id TEXT PRIMARY KEY,
+      redirect_uris TEXT NOT NULL,
+      name TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS oauth_tokens (
+      hash TEXT PRIMARY KEY,
+      kind TEXT NOT NULL,
+      client_id TEXT NOT NULL,
+      household TEXT NOT NULL,
+      exp INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS oauth_tokens_hh ON oauth_tokens (household, client_id);
     CREATE TABLE IF NOT EXISTS prefs (
       household TEXT NOT NULL,
       key TEXT NOT NULL,

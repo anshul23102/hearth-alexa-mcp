@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
-import { confirm, propose, recentAudit, undo, simulatedStore, type StoreAdapter } from "./actions.js";
+import { confirm, eraseHousehold, propose, recentAudit, undo, simulatedStore, type StoreAdapter } from "./actions.js";
 import { audit } from "./db.js";
 import { forecast } from "./forecast.js";
 import { LANGS, LOCALES, isLang, t, type Lang } from "./i18n.js";
@@ -260,6 +260,30 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
     async ({ limit }, extra) => {
       const items = recentAudit(db, hh(extra), limit);
       return { content: [{ type: "text", text: items.length ? `Last action: ${items[0].action.replace(/_/g, " ")}.` : "Nothing yet." }], structuredContent: { view: "log", items } };
+    },
+  );
+
+  server.registerTool(
+    "delete_household_data",
+    {
+      title: "Delete everything Hearth knows about this household",
+      description:
+        "Permanently erase orders, preferences, plans and activity for this household and sign it out. Hidden from the model on purpose: only a card or settings screen the user presses may call it.",
+      inputSchema: { confirm: z.literal("DELETE MY DATA") },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
+      _meta: { ui: { visibility: ["app"] } },
+    },
+    async (_a, extra) => {
+      const h = hh(extra);
+      if (server.server.getClientCapabilities()?.elicitation) {
+        const ans = await server.server.elicitInput({
+          message: "Erase all of this household's data? This cannot be undone.",
+          requestedSchema: { type: "object", properties: { approve: { type: "boolean", title: "Erase everything" } }, required: ["approve"] },
+        });
+        if (ans.action !== "accept" || !ans.content?.approve) return { content: [{ type: "text", text: "Okay, nothing was erased." }], structuredContent: { erased: false } };
+      }
+      const counts = eraseHousehold(db, h);
+      return { content: [{ type: "text", text: `Done. I erased ${counts.orders} orders and everything else I held for this household.` }], structuredContent: { erased: true, ...counts } };
     },
   );
 

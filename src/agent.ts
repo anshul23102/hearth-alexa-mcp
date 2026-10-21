@@ -65,3 +65,27 @@ export async function bedrockStep(client: Converser, messages: WireMessage[], to
 
 let shared: BedrockRuntimeClient | undefined;
 export const bedrockClient = (): Converser => (shared ??= new BedrockRuntimeClient({ region: REGION }));
+
+/** Strict shape check for /api/agent/step: bounded size, known block types, sane tool names. Returns an error string or null. */
+export function validateAgentRequest(body: unknown): string | null {
+  const b = body as { messages?: unknown; tools?: unknown } | null;
+  if (!b || !Array.isArray(b.messages) || !Array.isArray(b.tools)) return "messages and tools are required";
+  if (b.messages.length === 0 || b.messages.length > 40) return "between 1 and 40 messages";
+  if (b.tools.length > 20) return "at most 20 tools";
+  let size = 0;
+  for (const m of b.messages as WireMessage[]) {
+    if (!m || (m.role !== "user" && m.role !== "assistant") || !Array.isArray(m.content) || m.content.length > 50) return "malformed message";
+    for (const blk of m.content) {
+      if (!blk || !["text", "tool_use", "tool_result"].includes(blk.type)) return "unknown content block";
+      if (blk.text !== undefined && (typeof blk.text !== "string" || blk.text.length > 20_000)) return "text too long";
+      if (blk.type === "tool_use" && (typeof blk.name !== "string" || !/^[\w-]{1,64}$/.test(blk.name) || typeof blk.id !== "string" || blk.id.length > 100)) return "malformed tool_use";
+      if (blk.type === "tool_result" && (typeof blk.tool_use_id !== "string" || blk.tool_use_id.length > 100)) return "malformed tool_result";
+      size += JSON.stringify(blk).length;
+    }
+  }
+  if (size > 200_000) return "conversation too large";
+  for (const t of b.tools as WireTool[]) {
+    if (!t || typeof t.name !== "string" || !/^[\w-]{1,64}$/.test(t.name) || (t.description !== undefined && String(t.description).length > 2000) || typeof t.inputSchema !== "object") return "malformed tool";
+  }
+  return null;
+}

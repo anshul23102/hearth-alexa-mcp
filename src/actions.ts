@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { audit } from "./db.js";
 import type { Runway } from "./forecast.js";
 import { fmtMoney } from "./money.js";
+import { minorDigits } from "./normalize.js";
 
 export interface Line { productKey: string; title: string; name: string; packs: number; unitPriceCents: number; currency: string; reason: string }
 export interface Proposal {
@@ -22,6 +23,16 @@ export const simulatedStore: StoreAdapter = {
 };
 
 const PROPOSAL_TTL = 30 * 60_000;
+const MAX_LINES = 25;
+const DAY_MS = 86_400_000;
+
+/**
+ * Hard spending ceilings, set by the operator (env), never by a tool: a prompt-injected or confused model can
+ * lower its own budget but cannot raise these. Amounts are in major units of the order's currency.
+ */
+export function spendLimits(env = process.env) {
+  return { perOrder: Number(env.HEARTH_MAX_ORDER ?? 500), perDay: Number(env.HEARTH_MAX_DAILY ?? 1500) };
+}
 const UNDO_WINDOW = 10 * 60_000;
 
 /** Pick what to reorder: items running out inside `withinDays`, cheapest-need-first, capped by budget. */
@@ -32,6 +43,7 @@ export function propose(db: DatabaseSync, household: string, runway: Runway[], o
   const dropped: Proposal["dropped"] = [];
   let total = 0;
   for (const r of due) {
+    if (lines.length >= MAX_LINES) { dropped.push({ title: r.name, why: `plans are limited to ${MAX_LINES} items` }); continue; }
     if (r.currency !== currency) { dropped.push({ title: r.name, why: `priced in ${r.currency}; this household orders in ${currency}` }); continue; }
     // One cycle's worth, rounded to whole packs, minimum 1.
     const cycleDays = 30;
@@ -79,6 +91,18 @@ export async function confirm(db: DatabaseSync, store: StoreAdapter, household: 
     return { ok: false, error: "Proposal expired. Ask me to plan it again so prices are fresh." };
   }
   if (p.lines.length === 0) return { ok: false, error: "Nothing to order in this proposal." };
+  const lim = spendLimits();
+  const unit = 10 ** minorDigits(p.currency);
+  if (p.totalCents > lim.perOrder * unit) {
+    audit(db, household, "confirm_blocked", { id, reason: "per-order limit", totalCents: p.totalCents }, now);
+    return { ok: false, error: `That order is over the ${fmtMoney(lim.perOrder * unit, p.currency)} per-order safety limit, so I can't place it. Ask for a smaller plan.` };
+  }
+  const recent = db.prepare("SELECT receipt FROM proposals WHERE household = ? AND status = 'confirmed' AND created_at > ?").all(household, now - 2 * DAY_MS) as unknown as { receipt: string }[];
+  const spent24h = recent.map((r) => JSON.parse(r.receipt) as Receipt).filter((r) => r.currency === p.currency && r.placedAt > now - DAY_MS).reduce((a, r) => a + r.totalCents, 0);
+  if (spent24h + p.totalCents > lim.perDay * unit) {
+    audit(db, household, "confirm_blocked", { id, reason: "daily limit", spent24h }, now);
+    return { ok: false, error: `That would take today's total over the ${fmtMoney(lim.perDay * unit, p.currency)} daily safety limit. Try again tomorrow or order less.` };
+  }
   const { orderRef } = await store.place(p.lines, id.replace("prop_", ""));
   const receipt: Receipt = { orderRef, placedAt: now, currency: p.currency, totalCents: p.totalCents, undoUntil: now + UNDO_WINDOW, lines: p.lines };
   db.prepare("UPDATE proposals SET status = 'confirmed', receipt = ? WHERE id = ?").run(JSON.stringify(receipt), id);
@@ -104,4 +128,21 @@ export function recentAudit(db: DatabaseSync, household: string, limit = 20) {
   return (db.prepare("SELECT ts, action, detail FROM audit WHERE household = ? ORDER BY id DESC LIMIT ?").all(household, limit) as unknown as { ts: number; action: string; detail: string }[]).map((r) => ({
     at: new Date(r.ts).toISOString(), action: r.action, detail: JSON.parse(r.detail),
   }));
+}
+
+/** Privacy: remove everything Hearth holds for a household. Returns row counts so the caller can say what was erased. */
+export function eraseHousehold(db: DatabaseSync, household: string) {
+  const del = (sql: string) => Number(db.prepare(sql).run(household).changes);
+  db.exec("BEGIN");
+  try {
+    const out = {
+      orders: del("DELETE FROM orders WHERE household = ?"),
+      proposals: del("DELETE FROM proposals WHERE household = ?"),
+      preferences: del("DELETE FROM prefs WHERE household = ?"),
+      activity: del("DELETE FROM audit WHERE household = ?"),
+      tokens: del("DELETE FROM oauth_tokens WHERE household = ?"),
+    };
+    db.exec("COMMIT");
+    return out;
+  } catch (e) { db.exec("ROLLBACK"); throw e; }
 }

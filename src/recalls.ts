@@ -55,6 +55,24 @@ export function scoreMatch(owned: { title: string; last: string }, brand: string
   return score >= 3 ? { score, evidence } : null;
 }
 
+/** Match one owned product against the index. Exported so the evaluation harness exercises the exact production path. */
+export function matchOwned(db: DatabaseSync, item: { title: string; last: string; productKey: string }, regions: Region[]): RecallMatch[] {
+  const brand = brandOf(item.title);
+  if (brand.length < 3) return [];
+  const perItem: RecallMatch[] = [];
+  for (const r of searchByBrand(db, brand, regions)) {
+    const s = scoreMatch({ title: item.title, last: item.last }, brand, r);
+    if (!s) continue;
+    perItem.push({
+      owned: { title: item.title, name: friendlyName(item.title), lastPurchased: item.last, productKey: item.productKey },
+      recall: { id: `${r.source}:${r.extId}`, number: r.extId, date: r.date, title: r.title, url: r.url, region: r.region, source: r.source, hazard: r.hazard, hazardShort: shortHazard(r.title), remedy: r.remedy, image: r.image },
+      level: s.score >= 6 ? "likely" : "possible", score: s.score, evidence: s.evidence,
+    });
+  }
+  perItem.sort((a, b) => b.score - a.score || (a.recall.date < b.recall.date ? 1 : -1));
+  return perItem.slice(0, 3);
+}
+
 export async function checkRecalls(
   db: DatabaseSync, household: string, now = Date.now(), regions: Region[] = ["US", "CA"],
 ): Promise<{ matches: RecallMatch[]; checked: number; regions: Region[]; indexed: number }> {
@@ -67,22 +85,7 @@ export async function checkRecalls(
     .all(household) as unknown as { product_key: string; title: string; last: string }[];
 
   const matches: RecallMatch[] = [];
-  for (const item of owned) {
-    const brand = brandOf(item.title);
-    if (brand.length < 3) continue;
-    const perItem: RecallMatch[] = [];
-    for (const r of searchByBrand(db, brand, regions)) {
-      const s = scoreMatch({ title: item.title, last: item.last }, brand, r);
-      if (!s) continue;
-      perItem.push({
-        owned: { title: item.title, name: friendlyName(item.title), lastPurchased: item.last, productKey: item.product_key },
-        recall: { id: `${r.source}:${r.extId}`, number: r.extId, date: r.date, title: r.title, url: r.url, region: r.region, source: r.source, hazard: r.hazard, hazardShort: shortHazard(r.title), remedy: r.remedy, image: r.image },
-        level: s.score >= 6 ? "likely" : "possible", score: s.score, evidence: s.evidence,
-      });
-    }
-    perItem.sort((a, b) => b.score - a.score || (a.recall.date < b.recall.date ? 1 : -1));
-    matches.push(...perItem.slice(0, 3));
-  }
+  for (const item of owned) matches.push(...matchOwned(db, { title: item.title, last: item.last, productKey: item.product_key }, regions));
   matches.sort((a, b) => b.score - a.score);
   const indexed = (db.prepare("SELECT COUNT(*) AS n FROM recalls").get() as { n: number }).n;
   audit(db, household, "check_recalls", { checked: owned.length, matches: matches.length, regions, indexed }, now);

@@ -34,6 +34,8 @@ export function localStep(messages, { sampleCsv }) {
   const call = (name, input) => ({ role: "assistant", content: [{ type: "tool_use", id: `local_${Math.random().toString(36).slice(2, 9)}`, name, input }] });
   const say = (s) => ({ role: "assistant", content: [{ type: "text", text: s }] });
 
+  const lang = t.match(/\b(spanish|español|espanol|hindi|हिन्दी|english)\b/);
+  if (lang && /\b(speak|talk|switch|reply|respond|habla|बात|in)\b/.test(t)) return call("remember_preference", { kind: "language", value: /span|espa/.test(lang[1]) ? "es" : /hindi|हिन्दी/.test(lang[1]) ? "hi" : "en" });
   if (/\b(load|import|sample|history|upload)\w*/.test(t)) return call("import_order_history", { csv: sampleCsv });
   if (/\b(recall|unsafe|safe|dangerous|burn|hazard)\w*/.test(t)) return call("check_recalls", {});
   if (/\b(undo|cancel)\w*/.test(t)) {
