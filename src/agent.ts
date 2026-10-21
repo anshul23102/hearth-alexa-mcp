@@ -29,15 +29,25 @@ export function hasBedrockCredentials(env = process.env): boolean {
   return Boolean(env.HEARTH_AGENT === "bedrock" || env.AWS_BEARER_TOKEN_BEDROCK || env.AWS_ACCESS_KEY_ID || env.AWS_PROFILE || env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI);
 }
 
+/**
+ * Wire messages -> Bedrock Converse. Bedrock rejects blank text and requires alternating roles, so a model reply that said
+ * nothing (it sometimes has nothing to add after a tool call) must not poison the conversation: blank text is dropped and
+ * adjacent same-role messages are merged.
+ */
 export function toConverse(messages: WireMessage[]): Message[] {
-  return messages.map((m) => ({
-    role: m.role,
-    content: m.content.map((b): ContentBlock => {
-      if (b.type === "text") return { text: b.text || " " };
-      if (b.type === "tool_use") return { toolUse: { toolUseId: b.id!, name: b.name!, input: (b.input ?? {}) as Record<string, never> } };
-      return { toolResult: { toolUseId: b.tool_use_id!, content: [{ text: b.text || "(empty)" }], status: b.isError ? "error" : "success" } };
-    }),
-  }));
+  const out: Message[] = [];
+  for (const m of messages) {
+    const content: ContentBlock[] = [];
+    for (const b of m.content) {
+      if (b.type === "text") { if (b.text && b.text.trim()) content.push({ text: b.text }); }
+      else if (b.type === "tool_use") content.push({ toolUse: { toolUseId: b.id!, name: b.name!, input: (b.input ?? {}) as Record<string, never> } });
+      else content.push({ toolResult: { toolUseId: b.tool_use_id!, content: [{ text: b.text && b.text.trim() ? b.text : "(no output)" }], status: b.isError ? "error" : "success" } });
+    }
+    if (!content.length) continue;
+    const prev = out[out.length - 1];
+    if (prev && prev.role === m.role) prev.content!.push(...content); else out.push({ role: m.role, content });
+  }
+  return out;
 }
 
 function toTools(tools: WireTool[]): Tool[] {
