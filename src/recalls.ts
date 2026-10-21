@@ -1,6 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
 import { audit } from "./db.js";
-import { friendlyName } from "./normalize.js";
+import { brandOf, friendlyName } from "./normalize.js";
+export { brandOf };
 import { ensureRecallIndex, searchByBrand, type Region, type RecallRecord } from "./recallIndex.js";
 
 export interface RecallMatch {
@@ -22,9 +23,6 @@ export function shortHazard(title: string): string {
   const m = title.match(/due to (?:the )?(?:risk of )?(?:serious |possible |potential )?([^,;]+?)(?:[,;]|$)/i);
   const h = (m?.[1] ?? "a safety hazard").toLowerCase().trim();
   return /^(a|an) /.test(h) ? h : h.endsWith("hazard") || h.endsWith("hazards") ? `a ${h.replace(/hazards$/, "hazard")}` : h;
-}
-export function brandOf(title: string): string {
-  return (title.trim().split(/\s+/)[0] ?? "").replace(/[^A-Za-z0-9]/g, "");
 }
 /** Tokens that look like model numbers: letters followed by digits (OP302, KY-318B) or 4+ digit runs. */
 export function modelTokens(text: string): string[] {
@@ -55,6 +53,14 @@ export function scoreMatch(owned: { title: string; last: string }, brand: string
   return score >= 3 ? { score, evidence } : null;
 }
 
+export function buildMatch(item: { title: string; last: string; productKey: string }, r: RecallRecord, s: { score: number; evidence: string[] }): RecallMatch {
+  return {
+    owned: { title: item.title, name: friendlyName(item.title), lastPurchased: item.last, productKey: item.productKey },
+    recall: { id: `${r.source}:${r.extId}`, number: r.extId, date: r.date, title: r.title, url: r.url, region: r.region, source: r.source, hazard: r.hazard, hazardShort: shortHazard(r.title), remedy: r.remedy, image: r.image },
+    level: s.score >= 6 ? "likely" : "possible", score: s.score, evidence: s.evidence,
+  };
+}
+
 /** Match one owned product against the index. Exported so the evaluation harness exercises the exact production path. */
 export function matchOwned(db: DatabaseSync, item: { title: string; last: string; productKey: string }, regions: Region[]): RecallMatch[] {
   const brand = brandOf(item.title);
@@ -63,11 +69,7 @@ export function matchOwned(db: DatabaseSync, item: { title: string; last: string
   for (const r of searchByBrand(db, brand, regions)) {
     const s = scoreMatch({ title: item.title, last: item.last }, brand, r);
     if (!s) continue;
-    perItem.push({
-      owned: { title: item.title, name: friendlyName(item.title), lastPurchased: item.last, productKey: item.productKey },
-      recall: { id: `${r.source}:${r.extId}`, number: r.extId, date: r.date, title: r.title, url: r.url, region: r.region, source: r.source, hazard: r.hazard, hazardShort: shortHazard(r.title), remedy: r.remedy, image: r.image },
-      level: s.score >= 6 ? "likely" : "possible", score: s.score, evidence: s.evidence,
-    });
+    perItem.push(buildMatch({ title: item.title, last: item.last, productKey: item.productKey }, r, s));
   }
   perItem.sort((a, b) => b.score - a.score || (a.recall.date < b.recall.date ? 1 : -1));
   return perItem.slice(0, 3);

@@ -49,7 +49,7 @@ export function mapHealthCanada(r: HcRaw): RecallRecord {
   };
 }
 
-export const cpscProvider: Provider = {
+const cpscProvider: Provider = {
   source: "cpsc", region: "US",
   async fetchLive(f) {
     const res = await f("https://www.saferproducts.gov/RestWebServices/Recall?format=json&RecallDateStart=2010-01-01", { signal: AbortSignal.timeout(60_000), headers: { accept: "application/json" } });
@@ -59,7 +59,7 @@ export const cpscProvider: Provider = {
   fromFixture: () => (readFixture("recalls-fixture.json") as CpscRaw[]).map(mapCpsc),
 };
 
-export const healthCanadaProvider: Provider = {
+const healthCanadaProvider: Provider = {
   source: "healthcanada", region: "CA",
   async fetchLive(f) {
     const res = await f("https://recalls-rappels.canada.ca/sites/default/files/opendata-donneesouvertes/HCRSAMOpenData.json", { signal: AbortSignal.timeout(60_000) });
@@ -69,10 +69,10 @@ export const healthCanadaProvider: Provider = {
   fromFixture: () => (readFixture("recalls-hc-fixture.json") as HcRaw[]).filter((r) => r.Title).map(mapHealthCanada),
 };
 
-export const DEFAULT_PROVIDERS: Provider[] = [cpscProvider, healthCanadaProvider];
+const DEFAULT_PROVIDERS: Provider[] = [cpscProvider, healthCanadaProvider];
 const DAY = 86_400_000;
 
-export interface SyncResult { source: string; count: number; mode: "live" | "fixture" | "fresh" | "failed"; error?: string }
+export interface SyncResult { source: string; count: number; mode: "live" | "fixture" | "fresh" | "failed"; error?: string; /** Notices that were not in the index before this sync (empty on the very first sync). */ fresh: RecallRecord[] }
 
 export async function syncRecalls(
   db: DatabaseSync,
@@ -83,7 +83,7 @@ export async function syncRecalls(
   const results: SyncResult[] = [];
   for (const p of providers) {
     const last = db.prepare("SELECT synced_at, count, mode FROM recall_sync WHERE source = ?").get(p.source) as { synced_at: number; count: number; mode: string } | undefined;
-    if (last && !force && now - last.synced_at < DAY && last.mode !== "failed") { results.push({ source: p.source, count: last.count, mode: "fresh" }); continue; }
+    if (last && !force && now - last.synced_at < DAY && last.mode !== "failed") { results.push({ source: p.source, count: last.count, mode: "fresh", fresh: [] }); continue; }
     let records: RecallRecord[]; let mode: "live" | "fixture" = "live"; let error: string | undefined;
     try {
       if (offline) throw new Error("offline mode");
@@ -94,18 +94,20 @@ export async function syncRecalls(
     }
     if (mode === "fixture" && last && last.mode === "live" && last.count > records.length) {
       // Never replace a good live index with a smaller fixture because of a transient outage.
-      results.push({ source: p.source, count: last.count, mode: "failed", error });
+      results.push({ source: p.source, count: last.count, mode: "failed", error, fresh: [] });
       continue;
     }
-    storeRecalls(db, p.source, records);
+    const fresh = storeRecalls(db, p.source, records);
     db.prepare("INSERT OR REPLACE INTO recall_sync (source, synced_at, count, mode) VALUES (?, ?, ?, ?)").run(p.source, now, records.length, mode);
-    results.push({ source: p.source, count: records.length, mode, error });
+    results.push({ source: p.source, count: records.length, mode, error, fresh });
   }
   return results;
 }
 
-function storeRecalls(db: DatabaseSync, source: string, records: RecallRecord[]) {
+/** Replace a source's notices atomically; returns the ones that are new (nothing is "new" on an empty index). */
+export function storeRecalls(db: DatabaseSync, source: string, records: RecallRecord[]): RecallRecord[] {
   brandCache.clear();
+  const before = new Set((db.prepare("SELECT ext_id FROM recalls WHERE source = ?").all(source) as unknown as { ext_id: string }[]).map((r) => r.ext_id));
   const ins = db.prepare(
     "INSERT OR REPLACE INTO recalls (source, ext_id, region, date, title, product, text, url, hazard, remedy, image, search) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
@@ -117,6 +119,7 @@ function storeRecalls(db: DatabaseSync, source: string, records: RecallRecord[])
     }
     db.exec("COMMIT");
   } catch (e) { db.exec("ROLLBACK"); throw e; }
+  return before.size === 0 ? [] : records.filter((r) => !before.has(r.extId));
 }
 
 export function recallStats(db: DatabaseSync) {

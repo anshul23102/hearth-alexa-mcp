@@ -8,7 +8,7 @@ export const REGION = process.env.AWS_REGION ?? "us-east-1";
 // Default to the cheapest Claude tier; the profile prefix must match the region (au. for Sydney, us. for US).
 export const MODEL_ID = process.env.BEDROCK_MODEL_ID ?? (REGION.startsWith("ap-southeast-2") ? "au.anthropic.claude-haiku-5-5" : "us.anthropic.claude-haiku-4-5-20251001-v1:0");
 
-export const SYSTEM = [
+const SYSTEM = [
   "You are Alexa+ speaking in a kitchen. Replies are spoken aloud: one or two short sentences, no markdown, no lists.",
   "You have Hearth tools that remember the household's purchases. Use them instead of guessing.",
   "Details appear on the screen as cards, so do not read them out; summarize what matters.",
@@ -16,7 +16,7 @@ export const SYSTEM = [
   "If a tool returns an error, say what went wrong in plain words and what the user can do next.",
 ].join(" ");
 
-export interface WireBlock {
+interface WireBlock {
   type: "text" | "tool_use" | "tool_result";
   text?: string; id?: string; name?: string; input?: unknown; tool_use_id?: string; isError?: boolean;
 }
@@ -39,7 +39,7 @@ export function toConverse(messages: WireMessage[]): Message[] {
   }));
 }
 
-export function toTools(tools: WireTool[]): Tool[] {
+function toTools(tools: WireTool[]): Tool[] {
   return tools.map((t) => ({ toolSpec: { name: t.name, description: t.description ?? "", inputSchema: { json: t.inputSchema as never } } }));
 }
 

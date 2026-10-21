@@ -151,3 +151,8 @@ export function toMinor(raw: string, currency: string): number | null {
   const d = minorDigits(currency);
   return d === 2 ? cents : Math.round((cents / 100) * 10 ** d);
 }
+
+/** The first word of a product title, letters and digits only: how brands are compared across orders and recalls. */
+export function brandOf(title: string): string {
+  return (title.trim().split(/\s+/)[0] ?? "").replace(/[^A-Za-z0-9]/g, "");
+}

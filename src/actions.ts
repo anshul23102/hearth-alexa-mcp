@@ -1,11 +1,12 @@
 import type { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 import { audit } from "./db.js";
+import * as metrics from "./metrics.js";
 import type { Runway } from "./forecast.js";
 import { fmtMoney } from "./money.js";
 import { minorDigits } from "./normalize.js";
 
-export interface Line { productKey: string; title: string; name: string; packs: number; unitPriceCents: number; currency: string; reason: string }
+interface Line { productKey: string; title: string; name: string; packs: number; unitPriceCents: number; currency: string; reason: string }
 export interface Proposal {
   id: string; household: string; status: "pending" | "confirmed" | "expired" | "cancelled" | "undone";
   createdAt: number; expiresAt: number; currency: string; lines: Line[]; totalCents: number; budgetCents: number | null; dropped: { title: string; why: string }[];
@@ -30,7 +31,7 @@ const DAY_MS = 86_400_000;
  * Hard spending ceilings, set by the operator (env), never by a tool: a prompt-injected or confused model can
  * lower its own budget but cannot raise these. Amounts are in major units of the order's currency.
  */
-export function spendLimits(env = process.env) {
+function spendLimits(env = process.env) {
   return { perOrder: Number(env.HEARTH_MAX_ORDER ?? 500), perDay: Number(env.HEARTH_MAX_DAILY ?? 1500) };
 }
 const UNDO_WINDOW = 10 * 60_000;
@@ -95,12 +96,14 @@ export async function confirm(db: DatabaseSync, store: StoreAdapter, household: 
   const unit = 10 ** minorDigits(p.currency);
   if (p.totalCents > lim.perOrder * unit) {
     audit(db, household, "confirm_blocked", { id, reason: "per-order limit", totalCents: p.totalCents }, now);
+    metrics.inc("hearth_orders_blocked_total", { reason: "per_order" });
     return { ok: false, error: `That order is over the ${fmtMoney(lim.perOrder * unit, p.currency)} per-order safety limit, so I can't place it. Ask for a smaller plan.` };
   }
   const recent = db.prepare("SELECT receipt FROM proposals WHERE household = ? AND status = 'confirmed' AND created_at > ?").all(household, now - 2 * DAY_MS) as unknown as { receipt: string }[];
   const spent24h = recent.map((r) => JSON.parse(r.receipt) as Receipt).filter((r) => r.currency === p.currency && r.placedAt > now - DAY_MS).reduce((a, r) => a + r.totalCents, 0);
   if (spent24h + p.totalCents > lim.perDay * unit) {
     audit(db, household, "confirm_blocked", { id, reason: "daily limit", spent24h }, now);
+    metrics.inc("hearth_orders_blocked_total", { reason: "daily" });
     return { ok: false, error: `That would take today's total over the ${fmtMoney(lim.perDay * unit, p.currency)} daily safety limit. Try again tomorrow or order less.` };
   }
   const { orderRef } = await store.place(p.lines, id.replace("prop_", ""));

@@ -2,7 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { createHash } from "node:crypto";
 import { CsvStream, parseCsv } from "./csv.js";
 import { audit } from "./db.js";
-import { classify, normalizeStatus, packUnits, parseCurrency, parseDate, productKey, sameProduct, toMinor } from "./normalize.js";
+import { brandOf, classify, normalizeStatus, packUnits, parseCurrency, parseDate, productKey, sameProduct, toMinor } from "./normalize.js";
 
 const HEADERS: Record<string, string[]> = {
   order_id: ["order id", "order-id", "order number", "order #", "orderid"],
@@ -59,7 +59,7 @@ function detectDayFirst(rows: string[][], col: number): { dayFirst: boolean; lab
  * Row-at-a-time importer shared by the in-memory path (MCP tool) and the streaming path (bulk upload).
  * Never throws on bad data: every problem becomes a counted, sampled report entry.
  */
-export class OrderImporter {
+class OrderImporter {
   readonly report: IngestReport = {
     rowsRead: 0, imported: 0, duplicates: 0, skipped: [], skippedCount: 0, repaired: [], repairedCount: 0,
     dateOrder: "unambiguous", firstDate: null, lastDate: null, kinds: {}, currencies: {}, truncated: false,
@@ -76,8 +76,8 @@ export class OrderImporter {
     for (const r of db.prepare("SELECT DISTINCT product_key FROM orders WHERE household = ?").all(household) as unknown as { product_key: string }[]) this.known.set(r.product_key, true);
     this.insert = db.prepare(
       `INSERT OR IGNORE INTO orders
-       (household, order_id, ordered_at, title, asin, qty, pack_units, unit_price_cents, currency, status, product_key, kind, dedupe)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (household, order_id, ordered_at, title, asin, qty, pack_units, unit_price_cents, currency, status, product_key, kind, brand, dedupe)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
   }
 
@@ -130,7 +130,7 @@ export class OrderImporter {
     const asinRaw = c.asin !== undefined ? (r[c.asin] ?? "").trim().slice(0, 20) || null : null;
     const key = this.resolveKey(asinRaw, titleKey);
     const dedupe = createHash("sha1").update(`${orderId}|${key}|${date}|${qty}`).digest("hex").slice(0, 20);
-    const res = this.insert.run(this.household, orderId, date, title, asinRaw, qty, packUnits(title), price, currency, status, key, kind, dedupe);
+    const res = this.insert.run(this.household, orderId, date, title, asinRaw, qty, packUnits(title), price, currency, status, key, kind, kind === "durable" ? brandOf(title).toLowerCase() : "", dedupe);
     if (res.changes === 0) { this.report.duplicates++; return; }
     this.report.imported++;
     this.report.kinds[kind] = (this.report.kinds[kind] ?? 0) + 1;

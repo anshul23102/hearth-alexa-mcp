@@ -6,6 +6,7 @@ be able to spend customers' money, and there is no standard safety pattern for t
 answers, built as a self-hosted **MCP server** (spec **2025-11-25**, **Streamable HTTP**, OAuth 2.1 + PKCE) for Alexa+.
 The evidence, and what is *not* claimed, are in [docs/PROBLEM.md](docs/PROBLEM.md).
 
+- **Proactive: the day a recall is published, its owners are told.** A background sync spots *new* notices, finds every household that owns the product through a brand index (1,250 owners of one product among 5,000 households in 37 ms), stores an alert, and pushes `notifications/resources/updated` over MCP to those households' open sessions. This is the "notify purchasers on publication" obligation regulators are putting on marketplaces. `npm run demo:recall` replays a real notice to show it live.
 - **Owner-level recall matching across regulators.** Syncs the full public feeds (U.S. CPSC and Health Canada, **10,505 real notices**)
   into a local index and matches each household's appliances on brand, product type and model number, with the evidence.
   Measured on 1,669 cases built from real notices: **85.4%** of recalls surfaced, **0%** false alerts on unrelated products
@@ -65,6 +66,7 @@ everything with no AWS account. Configure `AWS_REGION` and `BEDROCK_MODEL_ID` (s
 |---|---|---|
 | `import_order_history` | Clean and load a CSV export; re-import is a no-op | idempotent |
 | `household_runway` | Forecast per item with ± window and confidence | read-only, UI |
+| `recall_alerts` | Recalls published since the household last looked that match something they own (push + pull) | UI |
 | `check_recalls` | Match owned durables to the local U.S. + Canada recall index, with evidence | read-only, UI |
 | `plan_restock` | Propose an order within budget (household currency); buys nothing | UI |
 | `confirm_restock` | Place a planned order after explicit approval | destructive, idempotent |
@@ -98,7 +100,7 @@ real ordering API plugs in.
 ## Tests
 
 ```bash
-npm test         # 45 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 58 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
@@ -107,6 +109,18 @@ wrong-verifier rejection), negotiates 2025-11-25, imports the messy CSV twice (s
 forecast, matches the **real** SharkNinja Foodi recall, enforces budget, refuses unconfirmed orders, proves retry
 idempotency, undoes, and exercises elicitation approve/decline. The view's inline script is compiled in a test
 because a typo there fails silently inside the iframe.
+
+## Run it for real (production)
+
+```bash
+npm run build && npm run start:prod         # compiled JS, no tsx at runtime
+# or: docker compose up --build              # non-root, read-only filesystem, healthcheck (compose file not built in CI here)
+npm run backup -- backups/hearth-$(date +%F).db   # online, verified SQLite backup
+```
+Set `PUBLIC_URL` and `HEARTH_ALLOWED_HOSTS` behind a domain. `/healthz` and `/readyz` for probes; `/metrics` (Prometheus) turns on with
+`HEARTH_METRICS_TOKEN`; JSON request logs go to stdout; SIGTERM drains and checkpoints the database. CI (`.github/workflows/ci.yml`)
+runs typecheck, build, tests and `npm audit`. Demo the alert pipeline: start with `HEARTH_ADMIN_TOKEN=<24+ chars>` then
+`HEARTH_ADMIN_TOKEN=<same> npm run demo:recall -- Foodi` while the simulator is open.
 
 ## Scale and accuracy
 
@@ -123,6 +137,7 @@ upload took 12.4 s while concurrent requests stayed at p99 13 ms. Full tables an
 - The Bedrock path is unit-tested against a stubbed client; run it with your own credentials to exercise it live.
 - OAuth is a minimal authorization server for demonstrating account linking (tokens hashed in SQLite, rotation, PKCE).
   Its consent step does not authenticate a person; production delegates to the household's real identity provider.
+- One node and SQLite. Scaling out means Postgres (the data access is plain SQL in `src/`), a shared rate-limit store, and a pub/sub for the alert push; none of that is built.
 - Every grant creates its own household; isolation is by `household` key in every query and is tested, but not at hostile scale.
 - The synthetic households prove throughput, not forecast accuracy on real purchases. Spanish and Hindi strings should be reviewed by native speakers.
 - Recall matching is heuristic by design (it says `possible` when unsure). It is a prompt to check the product

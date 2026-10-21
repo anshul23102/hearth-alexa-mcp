@@ -1,19 +1,22 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { Worker } from "node:worker_threads";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { openDb } from "./db.js";
 import { ingestStream, type IngestReport } from "./ingest.js";
-import { recallStats, syncRecalls } from "./recallIndex.js";
+import { recallStats, syncRecalls, type RecallRecord } from "./recallIndex.js";
+import { Hub } from "./hub.js";
+import { processNewRecalls } from "./alerts.js";
 import { createHearthServer } from "./server.js";
 import { baseUrl, handleOAuth, pruneTokens, verifyToken } from "./oauth.js";
 import { bedrockClient, bedrockStep, hasBedrockCredentials, validateAgentRequest, reserveBedrockCall, MODEL_ID, REGION, type WireMessage, type WireTool } from "./agent.js";
 import { RateLimiter, allowedHosts, clientIp, csp, hostAllowed, originAllowed, readBody, securityHeaders, sha256b64 } from "./security.js";
 import { RUNWAY_HTML } from "./ui.js";
+import * as metrics from "./metrics.js";
 
 const PORT = Number(process.env.PORT ?? 3939);
 const AUTH = (process.env.HEARTH_AUTH ?? "on") !== "off";
@@ -27,6 +30,17 @@ const SESSION_IDLE_MS = 30 * 60_000;
 
 interface Session { transport: StreamableHTTPServerTransport; household: string; last: number }
 const sessions = new Map<string, Session>();
+const hub = new Hub();
+const adminLimit = new RateLimiter(20, 60_000);
+
+/** A recall was just published: find its owners, store alerts, and push to anyone connected right now. */
+async function fanout(fresh: RecallRecord[]) {
+  const r = processNewRecalls(db, fresh);
+  let notified = 0;
+  for (const h of r.households) notified += await hub.notify(h);
+  if (fresh.length) console.log(JSON.stringify({ level: "info", msg: "recall fanout", recalls: fresh.length, alerts: r.created, households: r.households.size, notifiedSessions: notified }));
+  return { alerts: r.created, households: r.households.size, notifiedSessions: notified };
+}
 
 const mcpLimit = new RateLimiter(600, 60_000);
 const agentLimit = new RateLimiter(30, 60_000);
@@ -91,7 +105,11 @@ async function handleMcp(req: IncomingMessage & { auth?: AuthInfo }, res: Server
         onsessioninitialized: (id) => { sessions.set(id, { transport, household: who.household, last: Date.now() }); },
       });
       transport.onclose = () => { if (transport.sessionId) sessions.delete(transport.sessionId); };
-      await createHearthServer({ db }).connect(transport);
+      const srv = createHearthServer({ db });
+      const detach = hub.add(who.household, srv);
+      const prevClose = transport.onclose;
+      transport.onclose = () => { detach(); prevClose?.(); };
+      await srv.connect(transport);
       session = { transport, household: who.household, last: Date.now() };
     } else return rpcError(res, sid ? 404 : 400, -32000, sid ? "Unknown session" : "Missing session id");
   }
@@ -117,6 +135,7 @@ async function handleImport(req: IncomingMessage, res: ServerResponse): Promise<
   const started = performance.now();
   try {
     const report = DB_PATH === ":memory:" ? await ingestStream(db, who.household, req, { maxBytes: MAX_UPLOAD }) : await importInWorker(req, who.household);
+    metrics.inc("hearth_import_rows_total", { path: "upload" }, report.rowsRead); // counted here: the worker has its own metrics instance
     sendJson(res, 200, { ...report, seconds: Math.round(performance.now() - started) / 1000 });
   } catch (e) {
     console.error("import failed:", (e as Error).message);
@@ -126,9 +145,10 @@ async function handleImport(req: IncomingMessage, res: ServerResponse): Promise<
 
 function importInWorker(req: IncomingMessage, household: string): Promise<IngestReport> {
   return new Promise((resolve, reject) => {
-    const w = new Worker(new URL("./importWorker.ts", import.meta.url), {
+    const ts = import.meta.url.endsWith(".ts"); // dev (tsx) vs compiled production build
+    const w = new Worker(new URL(ts ? "./importWorker.ts" : "./importWorker.js", import.meta.url), {
       workerData: { dbPath: DB_PATH, household, maxBytes: MAX_UPLOAD, maxRows: 2_000_000 },
-      execArgv: ["--import", "tsx"],
+      execArgv: ts ? ["--import", "tsx"] : [],
     });
     let inflight = 0; let resume: (() => void) | null = null; let settled = false;
     const done = (fn: () => void) => { if (!settled) { settled = true; fn(); } };
@@ -151,6 +171,28 @@ function importInWorker(req: IncomingMessage, household: string): Promise<Ingest
       w.postMessage({ type: "end" });
     })().catch((e) => { done(() => reject(e)); void w.terminate(); });
   });
+}
+
+/**
+ * Operator-only: replay a real notice already in the index as if it had just been published, so the whole
+ * pipeline (index -> owner lookup -> alert -> MCP push) can be demonstrated on demand. Disabled unless
+ * HEARTH_ADMIN_TOKEN (24+ chars) is set.
+ */
+async function handleAdminReplay(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const token = process.env.HEARTH_ADMIN_TOKEN ?? "";
+  if (token.length < 24) { res.writeHead(404).end("Not found"); return; }
+  if (!adminLimit.allow(clientIp(req))) return sendJson(res, 429, { error: "slow down" });
+  const given = createHash("sha256").update(String(req.headers.authorization ?? "").replace(/^Bearer /i, "")).digest();
+  if (!timingSafeEqual(given, createHash("sha256").update(token).digest())) return sendJson(res, 401, { error: "invalid admin token" });
+  if (req.method !== "POST") return sendJson(res, 405, { error: "POST only" });
+  let body: { source?: string; titleContains?: string };
+  try { body = JSON.parse((await readBody(req, 5000)) || "{}"); } catch { return sendJson(res, 400, { error: "bad json" }); }
+  const row = db.prepare("SELECT * FROM recalls WHERE source = ? AND instr(lower(title), lower(?)) > 0 ORDER BY date DESC LIMIT 1").get(String(body.source ?? ""), String(body.titleContains ?? "")) as Record<string, string> | undefined;
+  if (!row) return sendJson(res, 404, { error: "no such notice in the index" });
+  db.prepare("DELETE FROM alerts WHERE source = ? AND ext_id = ?").run(row.source, row.ext_id);
+  const rec: RecallRecord = { source: row.source, extId: row.ext_id, region: row.region as RecallRecord["region"], date: row.date, title: row.title, product: row.product, text: row.text, url: row.url, hazard: row.hazard, remedy: row.remedy, image: row.image || undefined };
+  const out = await fanout([rec]);
+  sendJson(res, 200, { replayed: { source: rec.source, id: rec.extId, title: rec.title, date: rec.date }, ...out });
 }
 
 async function handleAgent(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
@@ -192,8 +234,39 @@ function serveStatic(url: URL, res: ServerResponse) {
   res.writeHead(200, { "content-type": MIME[extname(file)] ?? "application/octet-stream", "cache-control": "no-cache" }).end(readFileSync(file));
 }
 
-createServer(async (req, res) => {
+const routeGroup = (p: string) => p === "/mcp" ? "mcp" : p.startsWith("/api/import") ? "import" : p.startsWith("/api/agent") ? "agent" : p.startsWith("/api/admin") ? "admin" : ["/authorize", "/token", "/register", "/revoke"].includes(p) || p.startsWith("/.well-known/oauth") ? "oauth" : p === "/healthz" || p === "/readyz" || p === "/metrics" ? "ops" : "static";
+
+/** GET /metrics (Prometheus text). Off unless HEARTH_METRICS_TOKEN (16+ chars) is set; compared in constant time. */
+function handleMetrics(req: IncomingMessage, res: ServerResponse) {
+  const token = process.env.HEARTH_METRICS_TOKEN ?? "";
+  if (token.length < 16) { res.writeHead(404).end("Not found"); return; }
+  const given = createHash("sha256").update(String(req.headers.authorization ?? "").replace(/^Bearer /i, "")).digest();
+  if (!timingSafeEqual(given, createHash("sha256").update(token).digest())) { res.writeHead(401).end("unauthorized"); return; }
+  res.writeHead(200, { "content-type": "text/plain; version=0.0.4", "cache-control": "no-store" }).end(metrics.render());
+}
+
+/** Ready = the database answers and the recall index has data (live or bundled snapshot). */
+function handleReady(res: ServerResponse) {
+  try {
+    const n = (db.prepare("SELECT COUNT(*) AS n FROM recalls").get() as { n: number }).n;
+    const ok = n > 0 || process.env.HEARTH_RECALLS_SYNC === "off";
+    sendJson(res, ok ? 200 : 503, { ready: ok, recallsIndexed: n, openSessions: sessions.size });
+  } catch { sendJson(res, 503, { ready: false }); }
+}
+
+const SECURITY_TXT = "Contact: https://github.com/anshul23102/hearth-alexa-mcp/security/advisories/new\nPreferred-Languages: en\nExpires: 2027-10-21T00:00:00.000Z\nPolicy: https://github.com/anshul23102/hearth-alexa-mcp/blob/main/SECURITY.md\n";
+
+const server = createServer(async (req, res) => {
+  const t0 = performance.now();
+  const reqId = randomUUID().slice(0, 8);
+  res.setHeader("x-request-id", reqId);
   const url = new URL(req.url ?? "/", "http://x");
+  res.on("finish", () => {
+    const group = routeGroup(url.pathname);
+    metrics.inc("hearth_http_requests_total", { route: group, status: `${Math.floor(res.statusCode / 100)}xx` });
+    if (res.statusCode === 429) metrics.inc("hearth_rate_limited_total", { route: group });
+    if (group !== "static" && group !== "ops") console.log(JSON.stringify({ level: "info", ts: new Date().toISOString(), reqId, method: req.method, route: group, status: res.statusCode, ms: Math.round(performance.now() - t0) }));
+  });
   securityHeaders(res, url.pathname === "/" || url.pathname.endsWith(".html") ? PAGE_CSP : undefined);
   if (!hostAllowed(req, HOSTS)) { res.writeHead(421).end("Unrecognized Host"); return; } // DNS-rebinding defence
   const apiish = url.pathname === "/mcp" || url.pathname.startsWith("/api/") || ["/token", "/register", "/revoke"].includes(url.pathname);
@@ -205,20 +278,54 @@ createServer(async (req, res) => {
     if (await handleOAuth(db, req, res, url)) return;
     if (await handleAgent(req, res, url)) return;
     if (url.pathname === "/api/import") return await handleImport(req, res);
+    if (url.pathname === "/api/admin/recalls/replay") return await handleAdminReplay(req, res);
     if (url.pathname === "/healthz") { res.writeHead(200).end("ok"); return; }
+    if (url.pathname === "/readyz") return handleReady(res);
+    if (url.pathname === "/metrics") return handleMetrics(req, res);
+    if (url.pathname === "/.well-known/security.txt") { res.writeHead(200, { "content-type": "text/plain" }).end(SECURITY_TXT); return; }
     if (url.pathname === "/api/recalls/stats") return sendJson(res, 200, recallStats(db));
     serveStatic(url, res);
   } catch (e) {
     console.error((e as Error).message);
     if (!res.headersSent) res.writeHead((e as { status?: number }).status === 413 ? 413 : 500).end("Request failed");
   }
-}).listen(PORT, () => {
+});
+server.listen(PORT, () => {
   setInterval(() => { pruneSessions(); pruneTokens(db); }, 5 * 60_000).unref();
   // Keep the recall index fresh without ever blocking a request: sync at start (no-op if < 24h old), then every 6h.
   if (process.env.HEARTH_RECALLS_SYNC !== "off") {
-    const run = () => syncRecalls(db).then((r) => console.log("recall sync:", r.map((x) => `${x.source}=${x.count}(${x.mode})`).join(" "))).catch((e) => console.error("recall sync failed:", e.message));
+    const run = () => syncRecalls(db)
+      .then(async (r) => {
+        console.log("recall sync:", r.map((x) => `${x.source}=${x.count}(${x.mode})${x.fresh.length ? ` +${x.fresh.length} new` : ""}`).join(" "));
+        const fresh = r.flatMap((x) => x.fresh);
+        if (fresh.length) await fanout(fresh); // new notices are matched to owners and pushed immediately
+      })
+      .catch((e) => console.error("recall sync failed:", e.message));
     void run();
     setInterval(run, 6 * 3600_000).unref();
   }
   console.log(`Hearth MCP on http://localhost:${PORT}/mcp  (auth ${AUTH ? "on" : "off"})  simulator: http://localhost:${PORT}/`);
 });
+
+metrics.gauge("hearth_open_sessions", () => sessions.size);
+metrics.gauge("hearth_push_sessions", () => hub.size);
+metrics.gauge("hearth_recalls_indexed", () => (db.prepare("SELECT COUNT(*) AS n FROM recalls").get() as { n: number }).n);
+
+/** SIGTERM/SIGINT: stop taking connections, close MCP sessions, checkpoint and close the database, then exit. */
+let stopping = false;
+function shutdown(signal: string) {
+  if (stopping) return;
+  stopping = true;
+  console.log(JSON.stringify({ level: "info", msg: "shutting down", signal }));
+  const force = setTimeout(() => process.exit(1), 10_000);
+  force.unref();
+  server.close(() => {
+    void Promise.allSettled([...sessions.values()].map((s) => s.transport.close())).then(() => {
+      try { db.exec("PRAGMA wal_checkpoint(TRUNCATE)"); db.close(); } catch { /* already closed */ }
+      process.exit(0);
+    });
+  });
+  server.closeIdleConnections();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
