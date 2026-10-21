@@ -19,12 +19,26 @@ function toWire(m) {
   return { role: m.role, content: m.content.map((b) => (b.type === "tool_result" ? { type: b.type, tool_use_id: b.tool_use_id, isError: b.isError, text: b.modelText ?? b.text } : b)) };
 }
 
+/** Keep the last turns without splitting a tool call from its result (mirrors src/agent.ts; both are tested). */
+export function trimConversation(messages, max = 24) {
+  if (messages.length <= max) return messages;
+  const isTurnStart = (m) => m.role === "user" && m.content.some((b) => b.type === "text") && !m.content.some((b) => b.type === "tool_result");
+  for (let i = messages.length - max; i < messages.length; i++) if (isTurnStart(messages[i])) return messages.slice(i);
+  for (let i = messages.length - max - 1; i >= 0; i--) if (isTurnStart(messages[i])) return messages.slice(i);
+  return messages.slice(-max);
+}
+
 /** A model that has nothing to add after a tool call returns an empty reply. Speak the tool's own sentence instead of silence. */
 export function ensureSpoken(reply, fallback) {
   const hasCall = reply.content.some((b) => b.type === "tool_use");
   const text = reply.content.filter((b) => b.type === "text").map((b) => b.text).join(" ").trim();
   if (hasCall || text) return reply;
   return { role: "assistant", content: [{ type: "text", text: fallback || "Okay." }] };
+}
+
+export function describeItem(i) {
+  const when = i.daysLeft < 0 ? `by your usual pace it ran out about ${-i.daysLeft} days ago` : i.daysLeft === 0 ? "it runs out today" : `about ${i.daysLeft} days left`;
+  return `${i.name}: ${when}, give or take ${i.windowDays}. ${i.confidence} confidence, from ${i.purchases} orders.`;
 }
 
 const money = (t) => { const m = t.match(/\$\s?(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:dollars|bucks)/i); return m ? Number(m[1] ?? m[2]) : null; };
@@ -48,6 +62,14 @@ export function localStep(messages, { sampleCsv }) {
   const call = (name, input) => ({ role: "assistant", content: [{ type: "tool_use", id: `local_${Math.random().toString(36).slice(2, 9)}`, name, input }] });
   const say = (s) => ({ role: "assistant", content: [{ type: "text", text: s }] });
 
+  // Conversational follow-ups that rely on what was just said (the offline router's version of "context").
+  if (/^(no|nope|no thanks|that's all|that is all|nothing else|never ?mind)\b/.test(t)) return say("Okay. Say Alexa whenever you need me.");
+  if (/\b(thanks|thank you|cheers)\b/.test(t)) return say("You're welcome.");
+  const runway = lastStructured(messages, "runway");
+  if (runway && !/\b(order|restock|plan|buy|undo|cancel|recall|load|import|budget)\w*/.test(t)) {
+    const item = (runway.items ?? []).find((i) => i.name.toLowerCase().split(/\s+/).some((w) => w.length >= 4 && new RegExp(`\\b${w}\\b`).test(t)));
+    if (item) return say(describeItem(item));
+  }
   const lang = t.match(/\b(spanish|español|espanol|hindi|हिन्दी|english)\b/);
   if (lang && /\b(speak|talk|switch|reply|respond|habla|बात|in)\b/.test(t)) return call("remember_preference", { kind: "language", value: /span|espa/.test(lang[1]) ? "es" : /hindi|हिन्दी/.test(lang[1]) ? "hi" : "en" });
   if (/\b(load|import|sample|history|upload)\w*/.test(t)) return call("import_order_history", { csv: sampleCsv });

@@ -1,6 +1,8 @@
 import { McpClient, AuthRequired } from "./mcp.js";
 import { mountApp } from "./appHost.js";
-import { agentMode, remoteStep, localStep, ensureSpoken } from "./agent.js";
+import { agentMode, remoteStep, localStep, ensureSpoken, trimConversation } from "./agent.js";
+import { speakAloud, stopSpeaking, detectLang, chime } from "./speech.js";
+import { createVoice } from "./voice.js";
 
 const $ = (id) => document.getElementById(id);
 const say = $("say"), heard = $("heard"), lightbar = $("lightbar"), paper = $("paper"), blank = $("blank");
@@ -42,22 +44,29 @@ const setStatus = (kind, text) => {
   $("status").replaceChildren(dot, document.createTextNode(text));
 };
 let typing = 0;
-async function speak(text) {
-  const id = ++typing;
+// Replies are shown word by word and, when voice replies are on, spoken at the same time; the promise resolves when both finish,
+// so the microphone can re-open for a follow-up exactly when Alexa stops talking.
+let voiceReplies = store("hearth.voiceReplies") === "1";
+const voiceLang = () => $("vlang").value;
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch { return null; } }
+
+async function type(text, id) {
   say.textContent = "";
   if (reduce) { say.textContent = text; return; }
-  setState("speaking");
   const words = text.split(" ");
   for (let i = 0; i < words.length; i++) {
     if (id !== typing) return;
     say.textContent += (i ? " " : "") + words[i];
     await new Promise((r) => setTimeout(r, 28 + Math.min(words[i].length, 8) * 6));
   }
-  if (id === typing) setState("idle");
-  if (ttsOn) tts(text);
 }
-let ttsOn = false;
-function tts(text) { try { speechSynthesis.cancel(); speechSynthesis.speak(new SpeechSynthesisUtterance(text)); } catch { /* unsupported */ } }
+async function speak(text) {
+  const id = ++typing;
+  setState("speaking");
+  const talk = voiceReplies && text.trim() ? speakAloud(text, detectLang(text, voiceLang())) : Promise.resolve();
+  await Promise.all([type(text, id), talk]);
+  if (id === typing && !busy) setState("idle");
+}
 
 // ---- boot -------------------------------------------------------------------
 const mcp = new McpClient(location.origin, wire);
@@ -104,6 +113,7 @@ async function boot() {
 function ready() {
   $("loadStep").hidden = true;
   $("askForm").hidden = false;
+  $("voicebar").hidden = !voiceUsable;
   showChips();
 }
 
@@ -144,6 +154,7 @@ async function subscribeToAlerts() {
 async function showAlert() {
   if (busy) { alertQueued = true; return; }
   busy = true;
+  voice.pause();
   try {
     const r = await mcp.callTool("recall_alerts", {});
     const text = r.content?.[0]?.text ?? "";
@@ -155,13 +166,17 @@ async function showAlert() {
     await showCard("recall_alerts", {}, r);
     messages.push({ role: "assistant", content: [{ type: "text", text }] });
     await speak(text);
-  } catch (e) { console.error(e); } finally { busy = false; setState("idle"); if (alertQueued) { alertQueued = false; showAlert(); } }
+  } catch (e) { console.error(e); } finally { busy = false; setState("idle"); if (alertQueued) { alertQueued = false; showAlert(); } else voice.afterReply(); }
 }
 
 // ---- the loop ---------------------------------------------------------------
+let pending = null;
 async function ask(text, opts = {}) {
-  if (busy || !text.trim()) return;
+  if (!text.trim()) return;
+  if (busy) { pending = text; return; }   // said while Alexa was still working: answer it next, never drop it
   busy = true;
+  voice.pause();                          // she must not hear herself
+  stopSpeaking();
   heard.textContent = `“${text.trim()}”`;
   $("ask").value = "";
   setState("thinking");
@@ -170,7 +185,7 @@ async function ask(text, opts = {}) {
   try {
     let lastSpoken = "";
     for (let hop = 0; hop < 6; hop++) {
-      const raw = brain === "bedrock" ? await remoteStep(messages, mcp.tools, mcp.token) : localStep(messages, { sampleCsv });
+      const raw = brain === "bedrock" ? await remoteStep(trimConversation(messages), mcp.tools, mcp.token) : localStep(messages, { sampleCsv });
       const reply = ensureSpoken(raw, lastSpoken);
       messages.push(reply);
       const calls = reply.content.filter((b) => b.type === "tool_use");
@@ -182,7 +197,7 @@ async function ask(text, opts = {}) {
         try { r = await mcp.callTool(c.name, c.input); } catch (e) { r = { isError: true, content: [{ type: "text", text: e.message }] }; }
         const spoken = r.content?.[0]?.text ?? "";
         // The model also gets any assistant-audience blocks (ids it needs next); only the first block is ever spoken or shown.
-        const modelText = (r.content ?? []).filter((b) => b.type === "text" && (b.annotations?.audience ?? ["user", "assistant"]).includes("assistant")).map((b) => b.text).join("\n");
+        const modelText = modelTextOf(r);
         results.push({ type: "tool_result", tool_use_id: c.id, text: spoken, modelText, isError: !!r.isError, structured: r.structuredContent });
         await showCard(c.name, c.input, r);
       }
@@ -192,7 +207,15 @@ async function ask(text, opts = {}) {
   } catch (e) {
     console.error(e);
     await speak(`Sorry, something went wrong: ${e.message}`);
-  } finally { busy = false; setState("idle"); }
+  } finally {
+    busy = false; setState("idle");
+    if (pending) { const next = pending; pending = null; ask(next); } else voice.afterReply();
+  }
+}
+
+/** Assistant-audience blocks (ids the model needs next) plus the spoken sentence; used for the model only. */
+function modelTextOf(r) {
+  return (r.content ?? []).filter((b) => b.type === "text" && (b.annotations?.audience ?? ["user", "assistant"]).includes("assistant")).map((b) => b.text).join("\n");
 }
 
 async function showCard(name, args, result) {
@@ -206,10 +229,17 @@ async function showCard(name, args, result) {
     html, mcp, toolName: name, args, result,
     // The user can press buttons inside a card; fold that back into the conversation.
     onToolResult: (tool, a, r) => {
-      messages.push({ role: "user", content: [{ type: "tool_result", tool_use_id: `ui_${Date.now()}`, text: r.content?.[0]?.text ?? "", isError: !!r.isError, structured: r.structuredContent }] });
-      messages.push({ role: "assistant", content: [{ type: "text", text: r.content?.[0]?.text ?? "" }] });
-      heard.textContent = tool === "confirm_restock" ? "(pressed Place order)" : "(pressed Cancel order)";
-      speak(r.content?.[0]?.text ?? "");
+      const id = `ui_${Date.now()}`, spoken = r.content?.[0]?.text ?? "";
+      const label = tool === "confirm_restock" ? "Place order" : tool === "undo_restock" ? "Cancel order" : tool;
+      // A complete, valid turn (question, call, result, answer): an orphaned tool result would make the next model call fail.
+      messages.push(
+        { role: "user", content: [{ type: "text", text: `(I pressed “${label}” on the card.)` }] },
+        { role: "assistant", content: [{ type: "tool_use", id, name: tool, input: a }] },
+        { role: "user", content: [{ type: "tool_result", tool_use_id: id, text: spoken, modelText: modelTextOf(r), isError: !!r.isError, structured: r.structuredContent }] },
+        { role: "assistant", content: [{ type: "text", text: spoken }] },
+      );
+      heard.textContent = `(pressed ${label})`;
+      speak(spoken);
     },
   });
   wrap.append(frame);
@@ -221,16 +251,45 @@ async function showCard(name, args, result) {
 
 $("askForm").addEventListener("submit", (e) => { e.preventDefault(); ask($("ask").value); });
 
-// ---- voice (optional, progressive) --------------------------------------------
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (SR) {
-  const mic = $("mic");
-  mic.hidden = false;
-  const rec = new SR(); rec.lang = "en-US"; rec.interimResults = false;
-  rec.onresult = (e) => ask(e.results[0][0].transcript);
-  rec.onend = () => { mic.setAttribute("aria-pressed", "false"); if (!busy) setState("idle"); };
-  mic.addEventListener("click", () => { ttsOn = true; mic.setAttribute("aria-pressed", "true"); setState("listening"); try { rec.start(); } catch { /* already started */ } });
+// ---- voice: a spoken conversation ------------------------------------------------------------------------------
+// Mic button or "Say Alexa" opens a conversation; after each spoken reply the mic re-opens for a follow-up, silence ends it.
+const voice = createVoice({
+  getLang: voiceLang,
+  onCommand: (t) => ask(t),
+  onWake: () => { chime(); setState("listening"); },
+  onState: (s) => {
+    $("mic").setAttribute("aria-pressed", String(s === "listening"));
+    $("hands").setAttribute("aria-pressed", String(voice.hands));
+    if (s === "listening") setState("listening");
+    else if (s === "blocked") { $("hands").setAttribute("aria-pressed", "false"); speak("The microphone is blocked. Allow it for this site in your browser settings, then try again."); }
+    else if (!busy) setState("idle");
+  },
+});
+
+let voiceUsable = false;   // the bar itself appears once the household is ready (see ready())
+function setupVoiceControls() {
+  const hasSpeech = "speechSynthesis" in window;
+  if (!hasSpeech && !voice.supported) return;
+  voiceUsable = true;
+  const pref = store("hearth.vlang");
+  const nav = (navigator.language || "en-US");
+  $("vlang").value = [...$("vlang").options].some((o) => o.value === (pref || nav)) ? (pref || nav) : nav.startsWith("hi") ? "hi-IN" : nav.startsWith("es") ? "es-MX" : "en-US";
+  $("vlang").addEventListener("change", async () => {
+    store("hearth.vlang", voiceLang());
+    const code = voiceLang().slice(0, 2); // keep the server's spoken-sentence language in step with the chosen voice language
+    if (["en", "hi", "es"].includes(code) && !$("askForm").hidden) { try { await mcp.callTool("remember_preference", { kind: "language", value: code }); } catch { /* not linked yet */ } }
+  });
+  const setReplies = (on) => { voiceReplies = on; store("hearth.voiceReplies", on ? "1" : "0"); $("speaker").setAttribute("aria-pressed", String(on)); if (!on) stopSpeaking(); };
+  setReplies(voiceReplies);
+  $("speaker").addEventListener("click", () => setReplies(!voiceReplies));
+  if (voice.supported) {
+    $("mic").hidden = false;
+    $("hands").hidden = false;
+    $("mic").addEventListener("click", () => { if (voice.active) { voice.stop(); stopSpeaking(); return; } setReplies(true); chime(); voice.start(); });
+    $("hands").addEventListener("click", () => { if (voice.hands) { voice.setHands(false); } else { setReplies(true); chime(); voice.setHands(true); } $("hands").setAttribute("aria-pressed", String(voice.hands)); });
+  } else $("voiceNote").textContent = "This browser can speak replies, but cannot listen. Use Chrome for voice input.";
 }
+setupVoiceControls();
 
 // End the alert stream when the page goes away instead of letting it retry against a dead tab.
 addEventListener("pagehide", () => mcp.stop());

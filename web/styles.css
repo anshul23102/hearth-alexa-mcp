@@ -70,6 +70,13 @@ small b{color:var(--paper);font-weight:600}
 .ask button:hover{background:#ffffff22}
 .ask .mic[aria-pressed=true]{background:var(--red);color:#fff}
 
+.voicebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:-6px}
+.voicebar button,.voicebar select{font:400 11.5px var(--mono);color:var(--paper);background:transparent;border:1px solid #ffffff88;padding:7px 12px;cursor:pointer;border-radius:0}
+.voicebar select{appearance:none;padding-right:12px;background:var(--blue)}
+.voicebar select option{color:var(--ink);background:var(--paper)}
+.voicebar button[aria-pressed=true]{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.voicebar button:hover{border-color:var(--paper)}
+.voicebar small{flex-basis:100%;max-width:56ch}
 .chips{display:flex;flex-wrap:wrap;gap:10px 8px}
 .chips button{font:400 11.5px var(--mono);color:var(--ink);background:var(--paper);border:0;padding:8px 12px 8px 16px;cursor:pointer;position:relative;
   clip-path:polygon(8px 0,100% 0,100% 100%,8px 100%,0 50%);transition:transform .25s var(--ease),background .2s}
