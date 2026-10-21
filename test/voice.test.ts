@@ -185,3 +185,24 @@ test("pressing a card button leaves a valid conversation the model can continue"
   assert.ok(c.every((m, i) => i === 0 || m.role !== c[i - 1].role), "alternating roles");
   c.forEach((m, i) => (m.content ?? []).forEach((b: any) => { if (b.toolResult) assert.ok(c[i - 1].content!.some((x: any) => x.toolUse?.toolUseId === b.toolResult.toolUseId), "result has its call"); }));
 });
+
+test("Hearth says it is not a store instead of planning unrelated items when asked to buy new products", async () => {
+  const { localStep } = await import("../web/agent.js" as string) as { localStep: (m: any[], o: any) => { content: { type: string; text?: string; name?: string }[] } };
+  const ask = (text: string) => localStep([{ role: "user", content: [{ type: "text", text }] }], { sampleCsv: "" }).content[0];
+  for (const q of ["order 10 MacBooks", "buy me an iPhone", "get me 3 ipads", "purchase a new TV"]) {
+    const r = ask(q);
+    assert.equal(r.type, "text", `${q} must not start a plan`);
+    assert.match(r.text!, /only restock things you already buy/);
+  }
+  assert.equal(ask("restock what we're low on").name, "plan_restock", "a real restock request still plans");
+  assert.equal(ask("order everything we are low on").name, "plan_restock");
+});
+
+test("the model is told Hearth cannot buy new products, in the system prompt and the tool description", async () => {
+  const { readFileSync } = await import("node:fs");
+  const agent = readFileSync("src/agent.ts", "utf8"), server = readFileSync("src/server.ts", "utf8");
+  assert.match(agent, /cannot buy new or one-off products such as laptops/);
+  assert.match(agent, /do NOT call plan_restock for that request/);
+  assert.match(server, /ALREADY buys regularly/);
+  assert.match(server, /Hearth is not a store/);
+});

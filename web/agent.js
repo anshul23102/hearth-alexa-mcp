@@ -70,6 +70,10 @@ export function localStep(messages, { sampleCsv }) {
     const item = (runway.items ?? []).find((i) => i.name.toLowerCase().split(/\s+/).some((w) => w.length >= 4 && new RegExp(`\\b${w}\\b`).test(t)));
     if (item) return say(describeItem(item));
   }
+  // Hearth restocks what the household already buys; it is not a store. Say so instead of planning something unrelated.
+  if (/\b(order|buy|purchase|get me|add)\b/.test(t) && /\b(macbook|laptop|iphone|ipad|phone|tablet|tv|television|computer|camera|headphones?|airpods|watch|console|ps5|xbox|\d+\s+\w+s)\b/.test(t) && !/\b(restock|low|running|urgent|everything|plan|stuff|that|it)\b/.test(t)) {
+    return say("I can only restock things you already buy regularly, like paper towels or dog food. I can't buy new items like that. I can tell you what's running low or check your appliances for recalls.");
+  }
   const lang = t.match(/\b(spanish|español|espanol|hindi|हिन्दी|english)\b/);
   if (lang && /\b(speak|talk|switch|reply|respond|habla|बात|in)\b/.test(t)) return call("remember_preference", { kind: "language", value: /span|espa/.test(lang[1]) ? "es" : /hindi|हिन्दी/.test(lang[1]) ? "hi" : "en" });
   if (/\b(load|import|sample|history|upload)\w*/.test(t)) return call("import_order_history", { csv: sampleCsv });
