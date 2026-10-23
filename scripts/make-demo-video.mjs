@@ -16,7 +16,9 @@ const CHROME = process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/M
 const A = process.env.HEARTH_URL ?? "http://localhost:3939"; // shows the Claude brain when started with Bedrock credentials
 const PORT_B = 3956, DEBUG = 9334, TOKEN = randomBytes(18).toString("hex");
 const B = `http://localhost:${PORT_B}`;
-const NARRATOR = process.env.NARRATOR ?? "Samantha", ALEXA = process.env.ALEXA ?? "Flo (English (US))", RATE = process.env.RATE ?? "180";
+const RATE = process.env.RATE ?? "180"; // words per minute for the macOS fallback voices
+const TTS_DIR = process.env.HEARTH_TTS_DIR, TTS_PORT = 8767, TTS = `http://127.0.0.1:${TTS_PORT}`;
+let ttsUp = false;
 const W = 1440, H = 900;
 const tmp = mkdtempSync(join(tmpdir(), "hearth-demo-"));
 mkdirSync(join(tmp, "frames")); mkdirSync(join(tmp, "audio"));
@@ -77,18 +79,50 @@ const frames = []; const audio = []; let t0 = 0, nAudio = 0, audioEnd = 0, recor
 const now = () => Date.now() - t0;
 const mark = (name) => console.log(`${(now() / 1000).toFixed(1).padStart(6)} s  ${name}`);
 frameHandler = (b64) => { if (!recording) return; const name = `f${String(frames.length).padStart(6, "0")}.jpg`; writeFileSync(join(tmp, "frames", name), Buffer.from(b64, "base64")); frames.push({ name, t: now() }); };
-function voice(text, who, lang) { // synthesise now, play from the current moment; returns a promise that resolves when it has finished
-  const file = join(tmp, "audio", `a${nAudio++}.aiff`);
-  execFileSync("say", ["-v", who, "-r", RATE, "-o", file, text]);
-  const dur = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]).toString());
-  const at = Math.max(now(), audioEnd); // clips never overlap: each starts when the previous one has finished
-  audioEnd = at + dur * 1000 + 250;
-  audio.push({ file, at });
+// Voices: natural neural voices from a local Kokoro server when HEARTH_TTS_DIR is set (see scripts/tts-server.py), otherwise macOS `say`.
+const NARR = { say: "Samantha", kokoro: "am_michael", speed: 1.05, lang: "en-us" };
+const ALEX = { say: "Flo (English (US))", kokoro: "af_heart", speed: 1.0, lang: "en-us" };
+const ALEX_ES = { say: "Flo (Spanish (Mexico))", kokoro: "ef_dora", speed: 1.0, lang: "es" };
+const cache = new Map(); // "voice|text" -> { file, dur }
+const probe = (file) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]).toString());
+async function render(text, v) {
+  const key = `${v.kokoro}|${text}`;
+  if (cache.has(key)) return cache.get(key);
+  let file;
+  if (ttsUp) {
+    file = join(tmp, "audio", `a${nAudio++}.wav`);
+    const r = await fetch(TTS, { method: "POST", body: JSON.stringify({ text, voice: v.kokoro, speed: v.speed, lang: v.lang }) });
+    if (!r.ok) throw new Error(`speech synthesis failed for: ${text.slice(0, 40)}`);
+    writeFileSync(file, Buffer.from(await r.arrayBuffer()));
+  } else {
+    file = join(tmp, "audio", `a${nAudio++}.aiff`);
+    execFileSync("say", ["-v", v.say, "-r", RATE, "-o", file, text]);
+  }
+  const clip = { file, dur: probe(file) }; cache.set(key, clip); return clip;
+}
+function schedule(clip) { // clips never overlap: each starts when the previous one has finished
+  const at = Math.max(now(), audioEnd);
+  audioEnd = at + clip.dur * 1000 + 250;
+  audio.push({ file: clip.file, at, dur: clip.dur });
   return sleep(audioEnd - now());
 }
-const narrate = (text) => voice(text, NARRATOR);
+const voice = (text, v) => { const hit = cache.get(`${v.kokoro}|${text}`); return hit ? schedule(hit) : render(text, v).then(schedule); }; // narration is pre-rendered, so it starts the instant it is called
+const narrate = (text) => voice(text, NARR);
 const brief = (t) => { const parts = t.replace(/\s+/g, " ").match(/[^.!?]+[.!?]+/g) ?? [t]; let out = ""; for (const x of parts) { if (out && (out + x).length > 130) break; out += x; } return out.trim() || t.slice(0, 130); };
-const alexa = async () => { const text = await evaluate(`document.getElementById("say").innerText`); await voice(brief(text), /[¿¡áéíóúñ]|\b(tienes|hay|los|las)\b/i.test(text) ? "Flo (Spanish (Mexico))" : ALEXA); return text; };
+const alexa = async () => { const text = await evaluate(`document.getElementById("say").innerText`); await voice(brief(text), /[¿¡áéíóúñ]|\b(tienes|hay|los|las)\b/i.test(text) ? ALEX_ES : ALEX); return text; };
+
+// ---- natural voices (optional) ------------------------------------------------------------------------------------
+if (TTS_DIR) {
+  ttsUp = await fetch(TTS).then((r) => r.ok, () => false);
+  if (!ttsUp) {
+    run(join(TTS_DIR, "venv/bin/python"), [join(ROOT, "scripts/tts-server.py"), "--model", join(TTS_DIR, "kokoro-v1.0.onnx"), "--voices", join(TTS_DIR, "voices-v1.0.bin"), "--port", String(TTS_PORT)], { cwd: TTS_DIR });
+    ttsUp = await until(() => fetch(TTS).then((r) => r.ok, () => false), "the speech server", 90000);
+  }
+  // render every narration line before recording, so none of them starts late
+  const lines = [...readFileSync(import.meta.filename, "utf8").matchAll(/narrate\("((?:[^"\\]|\\.)*)"\)/g)].map((m) => JSON.parse(`"${m[1]}"`));
+  for (const line of lines) await render(line, NARR);
+  console.log(`speech: Kokoro neural voices (${lines.length} narration lines rendered)`);
+} else console.log("speech: macOS voices (set HEARTH_TTS_DIR for natural neural voices)");
 
 // ---- scene helpers -------------------------------------------------------------------------------------------------
 const $ = (id) => `document.getElementById(${JSON.stringify(id)})`;
@@ -155,7 +189,7 @@ await load("sample-family.csv"); await sleep(900); await n3; await caption("");
 
 mark("4. forecast");
 await caption("Forecast: a likely window and a confidence, never a fake-precise date");
-const n4 = narrate("Now I just ask. Every item gets a likely window, never a fake precise date.");
+const n4 = narrate("Now I just ask. Hearth learned this household's pace from its purchases, so every item gets a likely window, never a fake precise date.");
 await ask("What are we running low on?"); await n4; await alexa(); await sleep(600); await caption("");
 
 mark("5. recalls");
@@ -214,13 +248,23 @@ await goTo(A); await sleep(1200);
 if (await evaluate(`!!document.getElementById("forget") && !document.getElementById("forget").hidden`)) { await evaluate(`document.getElementById("forget").click()`); await sleep(2500); }
 
 // ---- assemble ------------------------------------------------------------------------------------------------------
-const total = frames.at(-1).t + 800;
-const list = frames.map((f, i) => `file '${join(tmp, "frames", f.name)}'\nduration ${(((frames[i + 1]?.t ?? total) - f.t) / 1000).toFixed(3)}`).join("\n") + `\nfile '${join(tmp, "frames", frames.at(-1).name)}'\n`;
+// Waiting for the model is real time but dead air on video: any stretch with no speech longer than MIN_GAP is cut down to KEEP.
+const KEEP = 1000, MIN_GAP = 2200;
+const cuts = []; let spoken = 0;
+for (const a of [...audio].sort((x, y) => x.at - y.at)) {
+  if (spoken > 0 && a.at - spoken > MIN_GAP) cuts.push({ from: spoken + KEEP, to: a.at });
+  spoken = Math.max(spoken, a.at + a.dur * 1000 + 250);
+}
+const remap = (t) => cuts.reduce((m, c) => m - (t >= c.to ? c.to - c.from : t > c.from ? t - c.from : 0), t);
+const kept = frames.filter((f, i) => !cuts.some((c) => f.t > c.from && f.t < c.to && frames[i + 1] && frames[i + 1].t < c.to)); // inside a cut, keep only the frame that is current when it ends
+const total = remap(frames.at(-1).t) + 800;
+const list = kept.map((f, i) => `file '${join(tmp, "frames", f.name)}'\nduration ${Math.max(0.001, ((kept[i + 1] ? remap(kept[i + 1].t) : total) - remap(f.t)) / 1000).toFixed(3)}`).join("\n") + `\nfile '${join(tmp, "frames", kept.at(-1).name)}'\n`;
 writeFileSync(join(tmp, "frames.txt"), list);
+console.log(`cut ${((frames.at(-1).t - remap(frames.at(-1).t)) / 1000).toFixed(1)} s of waiting from ${cuts.length} silent stretches`);
 const out = join(ROOT, "docs/demo"); mkdirSync(out, { recursive: true });
 const inputs = audio.flatMap((a) => ["-i", a.file]);
-const delays = audio.map((a, i) => `[${i + 1}:a]aresample=44100,adelay=${a.at}|${a.at}[a${i}]`).join(";");
-const mix = `${delays};${audio.map((_, i) => `[a${i}]`).join("")}amix=inputs=${audio.length}:normalize=0,alimiter=limit=0.95[aout]`;
+const delays = audio.map((a, i) => `[${i + 1}:a]aresample=44100,adelay=${Math.round(remap(a.at))}|${Math.round(remap(a.at))}[a${i}]`).join(";");
+const mix = `${delays};${audio.map((_, i) => `[a${i}]`).join("")}amix=inputs=${audio.length}:normalize=0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`;
 execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", join(tmp, "frames.txt"), ...inputs, "-filter_complex", mix, "-map", "0:v", "-map", "[aout]",
   "-vf", "fps=30,format=yuv420p", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "aac", "-b:a", "160k", "-t", (total / 1000).toFixed(2), "-movflags", "+faststart", join(out, "hearth-demo.mp4")]);
 const seconds = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", join(out, "hearth-demo.mp4")]).toString());
