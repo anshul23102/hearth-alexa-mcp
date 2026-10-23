@@ -63,3 +63,6 @@ known vulnerabilities at time of writing.
 
 ## Reporting
 Open a private security advisory on the GitHub repository.
+
+## Reporting a vulnerability
+Please report privately through GitHub's [private vulnerability reporting](https://github.com/anshul23102/hearth-alexa-mcp/security/advisories/new) rather than a public issue. Include the request or input that triggers it and what you expected. This is a hackathon project maintained by one person, so there is no response-time guarantee, but reports are read and credited.

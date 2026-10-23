@@ -1,7 +1,7 @@
 {
   "name": "hearth-alexa-mcp",
   "version": "0.1.0",
-  "description": "Hearth: recall alerts and safe reordering for Alexa+, as a stateful MCP server",
+  "description": "Hearth: recall alerts and safe reordering for Alexa+. A self-hosted MCP server (2025-11-25, Streamable HTTP, OAuth 2.1 + PKCE) that tells households the day a product they own is recalled and never spends money without an explicit, undoable yes.",
   "scripts": {
     "test": "node --import tsx --test test/*.test.ts",
     "start": "tsx src/http.ts",
@@ -16,8 +16,21 @@
     "eval": "tsx scripts/eval-recalls.ts",
     "bedrock:probe": "tsx scripts/bedrock-probe.ts"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "alexa",
+    "alexa-plus",
+    "agent",
+    "recalls",
+    "consumer-safety",
+    "amazon-bedrock",
+    "claude",
+    "oauth",
+    "streamable-http",
+    "sqlite"
+  ],
+  "author": "anshul23102",
   "license": "MIT",
   "type": "module",
   "dependencies": {
@@ -32,5 +45,13 @@
   },
   "engines": {
     "node": ">=22.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anshul23102/hearth-alexa-mcp.git"
+  },
+  "homepage": "https://github.com/anshul23102/hearth-alexa-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/anshul23102/hearth-alexa-mcp/issues"
   }
 }
