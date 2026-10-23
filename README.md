@@ -13,7 +13,7 @@ and that **never spends their money without an explicit, undoable yes**.
 [![Transport](https://img.shields.io/badge/transport-Streamable%20HTTP-2a3bd9)](https://modelcontextprotocol.io)
 [![Auth](https://img.shields.io/badge/auth-OAuth%202.1%20%2B%20PKCE-2a3bd9)](SECURITY.md)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522.16-3c873a)](package.json)
-[![Tests](https://img.shields.io/badge/tests-112%20passing-3c873a)](#tests)
+[![Tests](https://img.shields.io/badge/tests-114%20passing-3c873a)](#tests)
 [![Audit](https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-3c873a)](SECURITY.md)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
@@ -92,7 +92,8 @@ Hearth is **not a store**. It restocks only what the household already buys regu
 | **Learns from messy data** | Imports order exports as they really arrive: mixed date formats (day-first detected), many currencies in the right minor unit, duplicates, cancellations, missing quantities, retitled products. Streams files of hundreds of thousands of rows on a worker thread. |
 | **Forecasts with error bars** | Median days-per-unit across purchase gaps, robust to stock-ups; reported as a likely window with a confidence, never a fake-precise date. |
 | **Consent a model cannot forge** | No `userConfirmed` flag to set. The model's only route to an order needs a code only the on-screen card shows (stored hashed, three wrong guesses lock the plan). **Attacked on purpose:** `npm run redteam` hits the live model with 16 prompt injections while a plan is pending and counts the orders placed ([docs/REDTEAM.md](docs/REDTEAM.md)). |
-| **Closes the loop on a recall** | An alert alone does not fix a product (CPSC: under half of recalled units are ever corrected). Each recall card lets the household record *I stopped using it*, *I asked for the free fix* or *Fixed or returned*, counts how many are still open, and logs every change. |
+| **Closes the loop on a recall** | An alert alone does not fix a product (CPSC: under half of recalled units are ever corrected). Each recall card lets the household record *I stopped using it*, *I asked for the free fix* or *Fixed or returned*, counts how many are still open, and logs every change. A likely recall still open after 72 hours **comes back as a reminder**, pushed to the open session like any alert, at most three times, and never once it is resolved. |
+| **Accessible, checked** | `npm run a11y` runs axe-core (WCAG 2.1 A/AA plus best practices) on every screen, including the cards inside their sandbox and both drawers: 0 issues, no contrast failures. Automated checks find only part of what matters, so keyboard and screen-reader use are still worth a human pass. |
 | **History you can check yourself** | The Safety ledger shows a fingerprint of the hash-chained log and this browser remembers it: a later rewrite of the history, even one with every hash recomputed so the chain still verifies, will not match ([test/anchor.test.ts](test/anchor.test.ts)). |
 | **A forecast you can audit** | `npm run backtest` predicts every purchase from the history before it. The stated window is calibrated so the real next purchase falls inside it about 80% of the time (it was 56% before the backtest caught it); run it on your own export. |
 | **Safe by construction** | Spend ceilings, idempotency, undo, audit chain, an erase tool hidden from the model, and a tested attack suite ([SECURITY.md](SECURITY.md)). |
@@ -227,7 +228,7 @@ Full table and method: [SECURITY.md](SECURITY.md). This is a self-audit, not a t
 ## Tests
 
 ```bash
-npm test         # 112 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 114 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
@@ -277,7 +278,7 @@ and CI that runs typecheck, build, tests and `npm audit`. Everything configurabl
 | `web/` | The Alexa+ simulator: MCP client, voice, MCP Apps host |
 | `src/view.html` | The receipt card (an MCP App) |
 | `skill/hearth/` | The Agent Skill |
-| `test/` | 112 tests |
+| `test/` | 114 tests |
 | `scripts/` | Sample generator, benchmarks, recall evaluation, backups, Bedrock checks, recall replay |
 | `data/` | Synthetic sample households and recall snapshots |
 | `docs/` | Problem evidence, scale, Bedrock, voice, operations, demo script, friction log, submission notes |

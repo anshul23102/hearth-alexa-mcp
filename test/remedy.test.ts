@@ -49,3 +49,40 @@ test("erasing a household also erases its recall progress", () => {
   eraseHousehold(db, "h");
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM recall_actions WHERE household = 'h'").get()!.n, 0);
 });
+
+// ---- reminders -------------------------------------------------------------------------------------------------------------
+import { dueReminders, MAX_REMINDERS } from "../src/alerts.js";
+const HOUR = 3_600_000;
+const seen = (db: ReturnType<typeof openDb>) => db.prepare("UPDATE alerts SET status = 'seen'").run(); // the household has looked at the first alert
+
+test("a recall still open after the delay comes back as a new alert, then eases off after three reminders", () => {
+  const { db, match } = setup();
+  seen(db);
+  const t0 = Date.now();
+  assert.equal(dueReminders(db, t0 + 71 * HOUR, 72 * HOUR).size, 0, "not before the delay");
+  assert.deepEqual([...dueReminders(db, t0 + 73 * HOUR, 72 * HOUR)], ["h"]);
+  const again = listAlerts(db, "h", { onlyNew: true });
+  assert.equal(again.length, 1);
+  assert.equal(again[0].reminders, 1, "the alert says it is a reminder");
+  assert.equal(dueReminders(db, t0 + 74 * HOUR, 72 * HOUR).size, 0, "a reminder that has not been looked at is not repeated");
+  for (let i = 2; i <= MAX_REMINDERS + 1; i++) { seen(db); dueReminders(db, t0 + (73 + 73 * (i - 1)) * HOUR, 72 * HOUR); }
+  assert.equal(listAlerts(db, "h")[0].reminders, MAX_REMINDERS, "never more than three");
+  assert.match(JSON.stringify(db.prepare("SELECT detail FROM audit WHERE household = 'h' AND action = 'recall_reminder'").all()), /reminder/, "reminders are logged");
+  assert.ok(match);
+});
+
+test("no reminder once the household resolves or rules out the recall, and none for a merely possible match", () => {
+  const { db, match } = setup();
+  seen(db);
+  setRecallStatus(db, "h", match.recall.id, match.owned.productKey, "resolved");
+  assert.equal(dueReminders(db, Date.now() + 500 * HOUR, 72 * HOUR).size, 0);
+  const other = setup();
+  seen(other.db);
+  other.db.prepare("UPDATE alerts SET level = 'possible'").run();
+  assert.equal(dueReminders(other.db, Date.now() + 500 * HOUR, 72 * HOUR).size, 0, "a reminder to check a label would be nagging");
+  // stopping use or asking for the fix is progress, but the recall is not closed, so the reminder still comes
+  const third = setup();
+  seen(third.db);
+  setRecallStatus(third.db, "h", third.match.recall.id, third.match.owned.productKey, "stopped_using");
+  assert.equal(dueReminders(third.db, Date.now() + 500 * HOUR, 72 * HOUR).size, 1);
+});

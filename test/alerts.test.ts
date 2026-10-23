@@ -117,10 +117,28 @@ test("push: a subscribed session is notified when an owned product is recalled, 
   assert.equal(sc(await cb.callTool({ name: "recall_alerts", arguments: { includeSeen: true } })).matches.length, 0);
   const res2 = JSON.parse(((await ca.readResource({ uri: "hearth://alerts" })).contents[0] as { text: string }).text);
   assert.equal(res2.new, 0);
+
+  // Reminders: still open, so it comes back as a new alert and the open session is told again.
+  const remind = (token?: string, afterHours = 0) => fetch(`${BASE}/api/admin/reminders/run`, { method: "POST", headers: token ? { authorization: `Bearer ${token}` } : {}, body: JSON.stringify({ afterHours }) });
+  assert.equal((await remind()).status, 401, "operator only");
+  const before = got.length;
+  const reminded = (await (await remind(ADMIN)).json()) as { households: number; notifiedSessions: number };
+  assert.deepEqual(reminded, { households: 1, notifiedSessions: 1 });
+  for (let i = 0; i < 40 && got.length === before; i++) await new Promise((r) => setTimeout(r, 50));
+  assert.equal(got.length, before + 1, "the reminder is pushed like any alert");
+  const back = await ca.callTool({ name: "recall_alerts", arguments: {} });
+  assert.equal(sc(back).matches[0].reminder, 1);
+  assert.match((back as any).content[0].text, /^Reminder: /, "the spoken line says it is a reminder");
+  const m = sc(back).matches[0];
+  await ca.callTool({ name: "recall_status", arguments: { recallId: m.recall.id, productKey: m.owned.productKey, status: "resolved" } });
+  assert.deepEqual(await (await remind(ADMIN)).json(), { households: 0, notifiedSessions: 0 }, "a resolved recall is never reminded");
   await ca.close(); await cb.close();
 });
 
 test("the admin endpoint is off without a token and never reveals itself", async () => {
   const { proc: p2, base } = await startServer(3972);
-  try { assert.equal((await fetch(`${base}/api/admin/recalls/replay`, { method: "POST", headers: { authorization: `Bearer ${ADMIN}` }, body: "{}" })).status, 404); } finally { p2.kill(); }
+  try {
+    assert.equal((await fetch(`${base}/api/admin/recalls/replay`, { method: "POST", headers: { authorization: `Bearer ${ADMIN}` }, body: "{}" })).status, 404);
+    assert.equal((await fetch(`${base}/api/admin/reminders/run`, { method: "POST", headers: { authorization: `Bearer ${ADMIN}` }, body: "{}" })).status, 404);
+  } finally { p2.kill(); }
 });

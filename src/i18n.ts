@@ -31,6 +31,7 @@ const en = {
   "pref.lang": "Okay, I'll speak {lang} from now on.",
   "pref.regions": "Okay, I'll check recalls from {regions}.",
   "alerts.new": "Heads up: a new recall was just published for your {name}, {hazard}. I've put the details on screen.",
+  "alerts.reminder": "Reminder: the recall for your {name}, {hazard}, is still open. Tell me when you have stopped using it or asked for the free fix.",
   "alerts.more": " I also have {k} more.",
   "alerts.none": "No new recalls for anything you own.",
 } as const;
@@ -61,6 +62,7 @@ const es: Record<Key, string> = {
   "pref.lang": "De acuerdo, hablaré en {lang} a partir de ahora.",
   "pref.regions": "De acuerdo, revisaré retiros de {regions}.",
   "alerts.new": "Atención: se acaba de publicar un retiro del mercado para tu {name}, por {hazard}. Puse los detalles en pantalla.",
+  "alerts.reminder": "Recordatorio: el retiro del mercado de tu {name}, por {hazard}, sigue abierto. Dime cuando dejes de usarlo o pidas la reparación gratuita.",
   "alerts.more": " Tengo {k} más.",
   "alerts.none": "No hay retiros nuevos para nada de lo que tienes.",
 };
@@ -90,6 +92,7 @@ const hi: Record<Key, string> = {
   "pref.lang": "ठीक है, अब से {lang} में बात होगी।",
   "pref.regions": "ठीक है, {regions} के रिकॉल जाँचे जाएँगे।",
   "alerts.new": "ध्यान दें: आपके {name} के लिए अभी एक नया रिकॉल जारी हुआ है, {hazard}। विवरण स्क्रीन पर है।",
+  "alerts.reminder": "याद दिलाना: आपके {name} का रिकॉल, {hazard}, अभी भी खुला है। जब आप इसका उपयोग बंद कर दें या मुफ़्त सुधार माँग लें तो बताइए।",
   "alerts.more": " {k} और हैं।",
   "alerts.none": "आपकी किसी चीज़ के लिए कोई नया रिकॉल नहीं है।",
 };

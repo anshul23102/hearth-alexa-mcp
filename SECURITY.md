@@ -59,7 +59,7 @@ Dependabot (npm, GitHub Actions, Docker) and CodeQL with the `security-extended`
 ## Operations endpoints
 - `GET /healthz` liveness, `GET /readyz` readiness (database answers and the recall index has data), both unauthenticated; `/readyz` returns only two aggregate counts (notices indexed, open sessions), never household data.
 - `GET /metrics` Prometheus text; **404 unless `HEARTH_METRICS_TOKEN` (16+ chars) is set**, then bearer-protected, constant-time compared. Labels are route groups, tool names and outcomes only: no household ids, tokens or arguments (tested).
-- `POST /api/admin/recalls/replay` **404 unless `HEARTH_ADMIN_TOKEN` (24+ chars) is set**; rate limited; replays a notice already in the index so the alert pipeline can be demonstrated. It cannot create notices.
+- `POST /api/admin/recalls/replay` and `POST /api/admin/reminders/run` **404 unless `HEARTH_ADMIN_TOKEN` (24+ chars) is set** (one shared gate: rate limited, constant-time compared, POST only). Replay re-sends a notice already in the index so the alert pipeline can be demonstrated and cannot create notices; the reminders run is the same pass the server makes every 30 minutes.
 - `/.well-known/security.txt` points to the private advisory form.
 - Structured JSON request logs carry a request id, route group and status; never headers, tokens or bodies.
 
