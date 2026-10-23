@@ -10,7 +10,7 @@
 <body>
 <div class="shell">
   <header class="top">
-    <div class="brand"><span class="mark" aria-hidden="true"></span><span class="word">Hearth</span><span class="tag">recall alerts and safe reordering for Alexa+</span></div>
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span class="word" role="heading" aria-level="1">Hearth</span><span class="tag">recall alerts and safe reordering for Alexa+</span></div>
     <div class="status"><span id="status" role="status" aria-live="polite"></span><button class="forget" id="forget" hidden>Forget my data</button></div>
   </header>
 
@@ -63,7 +63,7 @@
 
     <section class="printer" aria-label="Screen output">
       <div class="slot" aria-hidden="true"><span class="led" id="led"></span></div>
-      <div class="paper" id="paper"></div>
+      <div class="paper" id="paper" tabindex="0" role="region" aria-label="Cards Alexa+ shows on screen"></div>
       <p class="blank" id="blank">Cards Alexa+ shows on screen print here.</p>
     </section>
   </main>
@@ -77,8 +77,8 @@
         <span>Safety ledger</span><span class="count" id="ledgerCount"></span>
       </button>
     </div>
-    <ol class="wirelog" id="wireLog" aria-label="JSON-RPC messages"></ol>
-    <ol class="wirelog ledgerlog" id="ledgerLog" aria-label="What Hearth did, and how each order was approved" hidden></ol>
+    <ol class="wirelog" id="wireLog" aria-label="JSON-RPC messages" tabindex="0"></ol>
+    <ol class="wirelog ledgerlog" id="ledgerLog" aria-label="What Hearth did, and how each order was approved" tabindex="0" hidden></ol>
   </footer>
 </div>
 <script type="module" src="app.js"></script>

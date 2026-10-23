@@ -10,7 +10,7 @@ import { openDb } from "./db.js";
 import { ingestStream, type IngestReport } from "./ingest.js";
 import { recallStats, syncRecalls, type RecallRecord } from "./recallIndex.js";
 import { Hub } from "./hub.js";
-import { processNewRecalls } from "./alerts.js";
+import { dueReminders, processNewRecalls } from "./alerts.js";
 import { APP_ONLY_TOOLS, createHearthServer } from "./server.js";
 import { baseUrl, handleOAuth, pruneTokens, verifyToken } from "./oauth.js";
 import { bedrockClient, bedrockStep, hasBedrockCredentials, validateAgentRequest, reserveBedrockCall, MODEL_ID, REGION, type WireMessage, type WireTool } from "./agent.js";
@@ -191,13 +191,36 @@ function importInWorker(req: IncomingMessage, household: string): Promise<Ingest
  * pipeline (index -> owner lookup -> alert -> MCP push) can be demonstrated on demand. Disabled unless
  * HEARTH_ADMIN_TOKEN (24+ chars) is set.
  */
-async function handleAdminReplay(req: IncomingMessage, res: ServerResponse): Promise<void> {
+/** Operator endpoints are off (404) without a long token, rate limited, constant-time compared, POST only. Returns false after answering. */
+function adminGate(req: IncomingMessage, res: ServerResponse): boolean {
   const token = process.env.HEARTH_ADMIN_TOKEN ?? "";
-  if (token.length < 24) { res.writeHead(404).end("Not found"); return; }
-  if (!adminLimit.allow(clientIp(req))) return sendJson(res, 429, { error: "slow down" });
+  if (token.length < 24) { res.writeHead(404).end("Not found"); return false; }
+  if (!adminLimit.allow(clientIp(req))) { sendJson(res, 429, { error: "slow down" }); return false; }
   const given = createHash("sha256").update(String(req.headers.authorization ?? "").replace(/^Bearer /i, "")).digest();
-  if (!timingSafeEqual(given, createHash("sha256").update(token).digest())) return sendJson(res, 401, { error: "invalid admin token" });
-  if (req.method !== "POST") return sendJson(res, 405, { error: "POST only" });
+  if (!timingSafeEqual(given, createHash("sha256").update(token).digest())) { sendJson(res, 401, { error: "invalid admin token" }); return false; }
+  if (req.method !== "POST") { sendJson(res, 405, { error: "POST only" }); return false; }
+  return true;
+}
+
+/** Bring back recalls that are still open after the reminder delay, and tell the open sessions of the households concerned. */
+async function remind(afterMs?: number) {
+  const households = dueReminders(db, Date.now(), afterMs);
+  let notified = 0;
+  for (const h of households) notified += await hub.notify(h);
+  if (households.size) console.log(JSON.stringify({ level: "info", msg: "recall reminders", households: households.size, notifiedSessions: notified }));
+  return { households: households.size, notifiedSessions: notified };
+}
+
+async function handleAdminReminders(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (!adminGate(req, res)) return;
+  let body: { afterHours?: number };
+  try { body = JSON.parse((await readBody(req, 2000)) || "{}"); } catch { return sendJson(res, 400, { error: "bad json" }); }
+  const after = body.afterHours === undefined ? undefined : Math.max(0, Number(body.afterHours)) * 3_600_000;
+  sendJson(res, 200, await remind(after));
+}
+
+async function handleAdminReplay(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (!adminGate(req, res)) return;
   let body: { source?: string; titleContains?: string };
   try { body = JSON.parse((await readBody(req, 5000)) || "{}"); } catch { return sendJson(res, 400, { error: "bad json" }); }
   const row = db.prepare("SELECT * FROM recalls WHERE source = ? AND instr(lower(title), lower(?)) > 0 ORDER BY date DESC LIMIT 1").get(String(body.source ?? ""), String(body.titleContains ?? "")) as Record<string, string> | undefined;
@@ -295,6 +318,7 @@ const server = createServer(async (req, res) => {
     if (await handleAgent(req, res, url)) return;
     if (url.pathname === "/api/import") return await handleImport(req, res);
     if (url.pathname === "/api/admin/recalls/replay") return await handleAdminReplay(req, res);
+    if (url.pathname === "/api/admin/reminders/run") return await handleAdminReminders(req, res);
     if (url.pathname === "/healthz") { res.writeHead(200).end("ok"); return; }
     if (url.pathname === "/readyz") return handleReady(res);
     if (url.pathname === "/metrics") return handleMetrics(req, res);
@@ -321,6 +345,8 @@ server.listen(PORT, () => {
     void run();
     setInterval(run, 30 * 60_000).unref(); // cheap: a live index younger than 24 h returns without touching the network
   }
+  void remind().catch((e) => console.error("reminders failed:", e.message));
+  setInterval(() => void remind().catch((e) => console.error("reminders failed:", e.message)), 30 * 60_000).unref();
   console.log(`Hearth MCP on http://localhost:${PORT}/mcp  (auth ${AUTH ? "on" : "off"})  simulator: http://localhost:${PORT}/`);
 });
 

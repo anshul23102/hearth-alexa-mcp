@@ -112,6 +112,8 @@ export function openDb(path = process.env.HEARTH_DB ?? "data/hearth.db"): Databa
   `);
   const cols = (db.prepare("PRAGMA table_info(orders)").all() as unknown as { name: string }[]).map((c) => c.name);
   if (!cols.includes("currency")) db.exec("ALTER TABLE orders ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD'");
+  const alcols = (db.prepare("PRAGMA table_info(alerts)").all() as unknown as { name: string }[]).map((c) => c.name);
+  if (!alcols.includes("reminders")) db.exec("ALTER TABLE alerts ADD COLUMN reminded_at INTEGER; ALTER TABLE alerts ADD COLUMN reminders INTEGER NOT NULL DEFAULT 0");
   const pcols = (db.prepare("PRAGMA table_info(proposals)").all() as unknown as { name: string }[]).map((c) => c.name);
   if (!pcols.includes("approval_hash")) db.exec("ALTER TABLE proposals ADD COLUMN approval_hash TEXT; ALTER TABLE proposals ADD COLUMN approval_attempts INTEGER NOT NULL DEFAULT 0");
   const acols = (db.prepare("PRAGMA table_info(audit)").all() as unknown as { name: string }[]).map((c) => c.name);

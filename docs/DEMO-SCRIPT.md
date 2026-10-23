@@ -17,7 +17,7 @@ Setup: `npm run sample && npm start`; open http://localhost:3939 in a fresh prof
 | 1:35-2:00 | Ask "Plan a restock under $60". Plan prints with struck-through items. Press Place order. Receipt and barcode appear | "It plans within budget and says what it left out. Nothing is bought until I press this; the card calls confirm_restock back over MCP." |
 | 2:00-2:25 | Terminal beside the browser: run `HEARTH_ADMIN_TOKEN=... npm run demo:recall -- Foodi` (server started with the same token); the idle simulator shows the red NEW RECALL banner and speaks | "Now the part that matters. A recall is published. Hearth finds every owner and pushes it to the open Alexa+ session over an MCP subscription, with nobody asking." |
 | 2:25-2:40 | Press Cancel order on the receipt; barcode voids. Open MCP wire briefly | "Ten-minute undo, idempotent retries, spend ceilings, and a hash-chained audit log." |
-| 2:40-2:55 | Terminal: `npm test` ending in 112 passing | "One hundred twelve automated tests through the official MCP SDK, including an attack suite. Open source, MIT." |
+| 2:40-2:55 | Terminal: `npm test` ending in 114 passing | "One hundred fourteen automated tests through the official MCP SDK, including an attack suite. Open source, MIT." |
 
 Bedrock has passed `npm run bedrock:check` and run live, so you may say "Claude on Amazon Bedrock can drive it" and show the header reading
 "Claude on Amazon Bedrock". It needs a fresh short-term key exported in the same terminal shortly before recording (keys last at most 12 hours), and a

@@ -236,7 +236,7 @@ await caption("");
 mark("10. evidence and close");
 const slide = (file, bg) => { const page = join(tmp, `${file}.html`); writeFileSync(page, `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;height:100%;background:${bg}}img{width:100vw;height:100vh;object-fit:contain}</style><img src="${pathToFileURL(join(ROOT, "docs/gallery", file + ".png")).href}">`); return pathToFileURL(page).href; };
 await send("Page.navigate", { url: slide("5-measured", "#2236d9") }); await sleep(900);
-await narrate("Measured, not claimed. Eighty five percent of known recalls surfaced, zero false alerts on unrelated products, one hundred twelve tests, nineteen security findings fixed.");
+await narrate("Measured, not claimed. Eighty five percent of known recalls surfaced, zero false alerts on unrelated products, one hundred fourteen tests, nineteen security findings fixed.");
 await send("Page.navigate", { url: slide("thumbnail", "#2236d9") }); await sleep(900);
 await narrate("Hearth. Recall alerts and safe reordering for Alexa Plus. Open source, M I T.");
 await sleep(600);

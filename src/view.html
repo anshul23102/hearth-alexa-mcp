@@ -73,6 +73,7 @@ h1{font:700 40px/.95 var(--display);letter-spacing:-.025em;margin:14px 0 4px;tex
 .rc + .rc{margin-top:6px}
 
 .remedy .state{font-weight:600;margin:0 0 6px}.remedy .state[data-state=resolved]{color:#0a7a3f}.remedy .state[data-state=open]{color:#b4260f}.rbtns{display:flex;flex-wrap:wrap;gap:6px}.rb{font:inherit;font-size:11px;padding:6px 9px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;border-radius:0}.rb.on{background:var(--ink);color:var(--paper)}.rb:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.remind{margin:10px 0 0;padding:6px 8px;border-left:4px solid var(--red);background:#ffe9e4;font-weight:600;font-size:11.5px}
 .limits{margin:10px 0 0;font-size:11px;color:var(--muted)}.proof{margin:8px 0 0;font-size:11px;color:#0a7a3f;text-align:center}
 .approval{margin:12px 0 0;padding:10px 12px;border:2px dashed var(--ink);display:grid;gap:2px;text-align:center}.approval small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}.approval b{font:700 30px/1.1 var(--mono);letter-spacing:.18em}.approval span{font-size:11px;color:var(--muted)}
 .tear{margin:18px -20px 0;border-top:2px dashed var(--rule);padding:16px 20px 0;display:flex;gap:10px}
@@ -97,7 +98,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
 </style>
 </head>
 <body>
-<div id="app"><div class="slip"><div class="skeleton" style="width:40%"></div><div class="skeleton"></div><div class="skeleton" style="width:70%"></div></div></div>
+<main id="app"><div class="slip"><div class="skeleton" style="width:40%"></div><div class="skeleton"></div><div class="skeleton" style="width:70%"></div></main></div>
 <script>
 (() => {
   const app = document.getElementById("app");
@@ -178,7 +179,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
     const ms = sc.matches || [];
     if (!ms.length) return slip(sc.fromAlerts ? '<h1>Nothing new</h1><p class="sub">No new recalls for anything you own.</p>' : '<h1>All clear</h1><p class="sub">Checked ' + sc.checked + " products against " + Number(sc.indexed || 0).toLocaleString(LOC) + " recall notices. No matches.</p>");
     const src = (sc.regions || []).join(" + ");
-    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul>' + remedyBlock(m) + (m.recall.url ? '<button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button>' : "") + '</div><hr class="dots">').join("");
+    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul>' + (m.reminder ? '<p class="remind">Reminder ' + m.reminder + ": this recall is still open.</p>" : "") + remedyBlock(m) + (m.recall.url ? '<button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button>' : "") + '</div><hr class="dots">').join("");
     slip('<h1>' + (sc.fromAlerts ? "New recall alert" : ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at") + "</h1><p class=\"sub\">" + (sc.fromAlerts ? "Found the moment the notice was published, by matching it to what you own on brand, product type and model number." : "Matched on brand, product type and model number against " + Number(sc.indexed || 0).toLocaleString(LOC) + " public recall notices (" + esc(src) + ").") + (typeof sc.open === "number" ? " <b>" + sc.open + " of " + ms.length + " still open.</b>" : "") + "</p><hr class=\"dots\">" + cards);
     app.querySelectorAll("[data-url]").forEach((b) => b.addEventListener("click", () => request("ui/open-link", { url: b.dataset.url }).catch(() => {})));
     wireRemedy();

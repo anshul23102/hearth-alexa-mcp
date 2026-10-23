@@ -18,7 +18,8 @@
     "gallery": "node scripts/make-gallery.mjs",
     "demo:video": "node scripts/make-demo-video.mjs",
     "backtest": "tsx scripts/backtest.ts",
-    "redteam": "node scripts/redteam.mjs"
+    "redteam": "node scripts/redteam.mjs",
+    "a11y": "node scripts/a11y.mjs"
   },
   "keywords": [
     "mcp",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "axe-core": "^4.14.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },

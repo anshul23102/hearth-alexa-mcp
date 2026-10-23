@@ -94,7 +94,7 @@ export async function handleOAuth(db: DatabaseSync, req: IncomingMessage, res: S
     const nonce = rand(24);
     pending.set(nonce, { clientId: q.get("client_id")!, redirectUri: redirect, challenge: q.get("code_challenge")!, state: (q.get("state") ?? "").slice(0, 200), exp: Date.now() + 600_000 });
     res.writeHead(200, { "content-type": "text/html", "cache-control": "no-store", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'" });
-    res.end(`<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Link Hearth</title>
+    res.end(`<!doctype html><html lang=en><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Link Hearth</title>
 <style>@font-face{font-family:B;src:url(/fonts/bricolage-700.woff2)}@font-face{font-family:M;src:url(/fonts/martian-400.woff2)}
 body{font:14px/1.55 M,ui-monospace,monospace;background:#2236d9;color:#f3f6f8;display:grid;place-items:center;min-height:100vh;margin:0;padding:20px}
 main{background:#f3f6f8;color:#0c1230;padding:32px 28px;max-width:400px;filter:drop-shadow(0 12px 22px #05084a66)}

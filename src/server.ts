@@ -104,10 +104,10 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       const first = rows[0]?.match;
       const text = !first
         ? t(L, "alerts.none")
-        : t(L, "alerts.new", { name: first.owned.name, hazard: first.recall.hazardShort }) + (rows.length > 1 ? t(L, "alerts.more", { k: rows.length - 1 }) : "");
+        : t(L, rows[0].reminders > 0 ? "alerts.reminder" : "alerts.new", { name: first.owned.name, hazard: first.recall.hazardShort }) + (rows.length > 1 ? t(L, "alerts.more", { k: rows.length - 1 }) : "");
       return {
         content: [{ type: "text", text }, forModel({ alerts: rows.slice(0, 5).map((r) => ({ owned: r.match.owned.name, recall: r.match.recall.title.slice(0, 110), level: r.match.level, url: r.match.recall.url })) })],
-        structuredContent: { view: "recalls", fromAlerts: true, ...(({ matches, open }) => ({ matches, open }))(withRemedy(db, h, rows.map((r) => r.match))), checked: rows.length, regions, indexed: 0, locale: LOCALES[L] },
+        structuredContent: { view: "recalls", fromAlerts: true, ...(({ matches, open }) => ({ matches, open }))(withRemedy(db, h, rows.map((r) => ({ ...r.match, reminder: r.reminders })))), checked: rows.length, regions, indexed: 0, locale: LOCALES[L] },
       };
     },
   );

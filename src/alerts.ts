@@ -8,7 +8,7 @@ import type { RecallRecord, Region } from "./recallIndex.js";
 // product (an index lookup by brand, not a scan of all customers), score each with the same matcher the
 // "ask" path uses, and store one alert per household and product. The caller then pushes to open sessions.
 
-export interface AlertRow { id: number; status: string; createdAt: number; match: RecallMatch }
+export interface AlertRow { id: number; status: string; createdAt: number; reminders: number; match: RecallMatch }
 
 export function processNewRecalls(db: DatabaseSync, records: RecallRecord[], now = Date.now()): { created: number; households: Set<string>; scanned: number } {
   const households = new Set<string>();
@@ -47,9 +47,9 @@ export function processNewRecalls(db: DatabaseSync, records: RecallRecord[], now
 
 export function listAlerts(db: DatabaseSync, household: string, opts: { onlyNew?: boolean; limit?: number; regions?: Region[] } = {}): AlertRow[] {
   const rows = db
-    .prepare("SELECT id, status, created_at, match FROM alerts WHERE household = ? AND (? = 0 OR status = 'new') ORDER BY created_at DESC, id DESC LIMIT ?")
-    .all(household, opts.onlyNew ? 1 : 0, Math.min(opts.limit ?? 20, 100)) as unknown as { id: number; status: string; created_at: number; match: string }[];
-  const out = rows.map((r) => ({ id: r.id, status: r.status, createdAt: r.created_at, match: JSON.parse(r.match) as RecallMatch }));
+    .prepare("SELECT id, status, created_at, reminders, match FROM alerts WHERE household = ? AND (? = 0 OR status = 'new') ORDER BY COALESCE(reminded_at, created_at) DESC, id DESC LIMIT ?")
+    .all(household, opts.onlyNew ? 1 : 0, Math.min(opts.limit ?? 20, 100)) as unknown as { id: number; status: string; created_at: number; reminders: number; match: string }[];
+  const out = rows.map((r) => ({ id: r.id, status: r.status, createdAt: r.created_at, reminders: r.reminders, match: JSON.parse(r.match) as RecallMatch }));
   return opts.regions ? out.filter((a) => opts.regions!.includes(a.match.recall.region)) : out;
 }
 
@@ -91,4 +91,31 @@ export function withRemedy<T extends { recall: { id: string }; owned: { productK
   const by = new Map(rows.map((r) => [`${r.recall_id}|${r.product_key}`, r.status]));
   const out = matches.map((m) => ({ ...m, remedy: by.get(`${m.recall.id}|${m.owned.productKey}`) ?? ("open" as RemedyStatus) }));
   return { matches: out, open: out.filter((m) => m.remedy !== "resolved" && m.remedy !== "not_mine").length }; // stopping use or asking for the fix is progress, not closure
+}
+
+/**
+ * A recall that is still open days later should come back, not sit in a list. After HEARTH_REMIND_AFTER_HOURS (default 72) a likely
+ * match that is neither resolved nor ruled out is surfaced again as a new alert, at most three times, never for a possible match
+ * (a reminder to check a label would be nagging) and never while the first alert is still unseen.
+ */
+export const MAX_REMINDERS = 3;
+export const remindAfterMs = (env = process.env) => Math.max(0, Number(env.HEARTH_REMIND_AFTER_HOURS ?? 72)) * 3_600_000;
+
+export function dueReminders(db: DatabaseSync, now = Date.now(), afterMs = remindAfterMs()): Set<string> {
+  const due = db.prepare(
+    `SELECT a.id, a.household, a.reminders FROM alerts a
+     LEFT JOIN recall_actions r ON r.household = a.household AND r.product_key = a.product_key AND r.recall_id = a.source || ':' || a.ext_id
+     WHERE a.status <> 'new' AND a.level = 'likely' AND a.reminders < ?
+       AND (r.status IS NULL OR r.status NOT IN ('resolved', 'not_mine'))
+       AND COALESCE(a.reminded_at, a.created_at) <= ?`,
+  ).all(MAX_REMINDERS, now - afterMs) as unknown as { id: number; household: string; reminders: number }[];
+  const households = new Set<string>();
+  const bump = db.prepare("UPDATE alerts SET status = 'new', reminded_at = ?, reminders = reminders + 1 WHERE id = ?");
+  for (const a of due) {
+    bump.run(now, a.id);
+    audit(db, a.household, "recall_reminder", { alertId: a.id, reminder: a.reminders + 1 }, now);
+    metrics.inc("hearth_recall_reminders_total");
+    households.add(a.household);
+  }
+  return households;
 }
