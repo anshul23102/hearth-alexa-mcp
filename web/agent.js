@@ -41,7 +41,8 @@ export function describeItem(i) {
   return `${i.name}: ${when}, give or take ${i.windowDays}. ${i.confidence} confidence, from ${i.purchases} orders.`;
 }
 
-const money = (t) => { const m = t.match(/\$\s?(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:dollars|bucks)/i); return m ? Number(m[1] ?? m[2]) : null; };
+/** "$60", "₹2,500", "Rs. 2500", "£50", "€55", "40 dollars", "2500 rupees" -> a number in the household's own currency. */
+export const money = (t) => { const m = t.match(/(?:[$₹£€]|\bRs\.?)\s?(\d[\d,]*(?:\.\d+)?)|(\d[\d,]*(?:\.\d+)?)\s*(?:dollars?|bucks|rupees?|pounds?|euros?)/i); return m ? Number((m[1] ?? m[2]).replace(/,/g, "")) : null; };
 const days = (t) => { const m = t.match(/(\d+)\s*(day|week)/i); return m ? Number(m[1]) * (/week/i.test(m[2]) ? 7 : 1) : null; };
 
 function lastStructured(messages, view) {

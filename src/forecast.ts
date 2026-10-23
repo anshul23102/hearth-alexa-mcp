@@ -55,6 +55,12 @@ export function loadSeries(db: DatabaseSync, household: string): Map<string, Row
   return byKey;
 }
 
+/** The usual price of one pack: the median of the last few prices on record, ignoring missing (zero) ones, so one unreadable price cannot make an item look free. */
+export function typicalPrice(list: Row[]): number {
+  const known = list.map((r) => r.unit_price_cents).filter((p) => p > 0).slice(-5);
+  return known.length ? Math.round(median(known)) : 0;
+}
+
 /** Days per unit (median across purchase gaps) and its spread (MAD); null when there is too little history to say anything. */
 export function seriesStats(list: Row[]): { dpu: number; mad: number; rel: number } | null {
   if (list.length < 3) return null;
@@ -98,7 +104,7 @@ export function forecast(db: DatabaseSync, household: string, now = Date.now()):
       lastPurchase: last.ordered_at,
       lastUnits: last.qty,
       packUnits: last.pack_units,
-      unitPriceCents: last.unit_price_cents,
+      unitPriceCents: typicalPrice(list),
       currency: last.currency,
       runoutDate: runout,
       daysLeft,

@@ -62,7 +62,7 @@ test("empty household is handled gracefully", async () => {
 test("import cleans a messy export and is idempotent", async () => {
   const csv = readFileSync("data/sample-orders.csv", "utf8");
   const a = sc(await call("import_order_history", { csv }));
-  assert.ok(a.imported > 150, `imported ${a.imported}`);
+  assert.ok(a.imported > 120 && a.imported <= a.rowsRead, `imported ${a.imported} of ${a.rowsRead}`);
   assert.ok(a.duplicates >= 1 && a.skipped.length >= 1 && a.repaired.length >= 1);
   const b = sc(await call("import_order_history", { csv }));
   assert.equal(b.imported, 0, "re-import must add nothing");

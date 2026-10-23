@@ -10,6 +10,8 @@ interface Line { productKey: string; title: string; name: string; packs: number;
 export interface Proposal {
   id: string; household: string; status: "pending" | "confirmed" | "expired" | "cancelled" | "undone";
   createdAt: number; expiresAt: number; currency: string; lines: Line[]; totalCents: number; budgetCents: number | null; dropped: { title: string; why: string }[];
+  /** Cost of the cheapest item that was due, so a budget that fits nothing can say what would. */
+  cheapestCents?: number;
 }
 export interface Receipt { orderRef: string; placedAt: number; currency: string; totalCents: number; undoUntil: number; lines: Line[]; consent?: "app" | "elicitation" | "code"; handoffUrl?: string }
 
@@ -66,14 +68,17 @@ export function propose(db: DatabaseSync, household: string, runway: Runway[], o
   const lines: Line[] = [];
   const dropped: Proposal["dropped"] = [];
   let total = 0;
+  let cheapest = Infinity;
   for (const r of due) {
     if (lines.length >= MAX_LINES) { dropped.push({ title: r.name, why: `plans are limited to ${MAX_LINES} items` }); continue; }
+    if (r.unitPriceCents <= 0) { dropped.push({ title: r.name, why: "there is no price on record for it" }); continue; }
     if (r.currency !== currency) { dropped.push({ title: r.name, why: `priced in ${r.currency}; this household orders in ${currency}` }); continue; }
     // One cycle's worth, rounded to whole packs, minimum 1.
     const cycleDays = 30;
     const unitsNeeded = Math.max(1, Math.round(r.unitsPerDay * cycleDays));
     const packs = Math.max(1, Math.round(unitsNeeded / Math.max(1, r.packUnits)));
     const cost = packs * r.unitPriceCents;
+    cheapest = Math.min(cheapest, cost);
     if (opts.budgetCents !== undefined && total + cost > opts.budgetCents) {
       dropped.push({ title: r.name, why: `would exceed budget by ${fmtMoney(total + cost - opts.budgetCents, currency)}` });
       continue;
@@ -86,7 +91,7 @@ export function propose(db: DatabaseSync, household: string, runway: Runway[], o
   }
   const p: Proposal = {
     id: `prop_${randomUUID().slice(0, 12)}`, household, status: "pending", createdAt: now, expiresAt: now + PROPOSAL_TTL, currency,
-    lines, totalCents: total, budgetCents: opts.budgetCents ?? null, dropped,
+    lines, totalCents: total, budgetCents: opts.budgetCents ?? null, dropped, ...(Number.isFinite(cheapest) ? { cheapestCents: cheapest } : {}),
   };
   db.prepare("INSERT INTO proposals (id, household, created_at, expires_at, status, payload) VALUES (?, ?, ?, ?, ?, ?)").run(
     p.id, household, now, p.expiresAt, p.status, JSON.stringify(p),

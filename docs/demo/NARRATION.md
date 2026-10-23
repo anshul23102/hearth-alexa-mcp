@@ -19,5 +19,5 @@ To record your own voice instead, play the video silently, read the lines below 
 | Pressing Cancel order | And there is a ten minute undo. |
 | The pushed recall alert | Now the part that matters. A recall is published. Hearth finds every owner and pushes it to their open Alexa Plus session over an MCP subscription. |
 | India sample, then Spanish | It handles other countries too: rupees, day-first dates. Or load your own export. And it speaks Spanish, Hindi and English. |
-| "Measured, not claimed" slide | Measured, not claimed. Eighty-five percent of known recalls surfaced, zero false alerts on unrelated products, one hundred thirty four tests, nineteen security findings fixed. |
+| "Measured, not claimed" slide | Measured, not claimed. Eighty-five percent of known recalls surfaced, zero false alerts on unrelated products, one hundred forty one tests, nineteen security findings fixed. |
 | Closing card | Hearth. Recall alerts and safe reordering for Alexa Plus. Open source, MIT. |

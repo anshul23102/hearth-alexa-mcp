@@ -56,3 +56,28 @@ test("free-plan guard: model calls are capped per day, persist, and reset tomorr
   assert.equal(reserveBedrockCall(db, 3, day1 + 3600_000).ok, false, "still capped later the same day");
   assert.equal(reserveBedrockCall(db, 3, Date.parse("2026-10-22T00:00:01Z")).ok, true, "a new UTC day starts fresh");
 });
+
+test("rupee prices in every common spelling are read, including 'Rs.' and lakh grouping", async () => {
+  const { parseMoneyCents } = await import("../src/normalize.js");
+  const cases: [string, number][] = [["Rs. 785.00", 78500], ["Rs.785.00", 78500], ["Rs 785", 78500], ["₹785.00", 78500], ["₹1,299.00", 129900], ["Rs. 1,299.50", 129950], ["Rs. 1,24,900.00", 12490000], ["INR 785.00", 78500], ["$26.99", 2699], ["12,50 €", 1250]];
+  for (const [text, cents] of cases) assert.equal(parseMoneyCents(text), cents, text);
+});
+
+test("a missing price cannot make an item free: the forecast uses the usual price, and a plan never contains a zero-price line", async () => {
+  const { openDb } = await import("../src/db.js");
+  const { ingestOrders } = await import("../src/ingest.js");
+  const { forecast } = await import("../src/forecast.js");
+  const { propose } = await import("../src/actions.js");
+  const rows = ["Order ID,Order Date,Product Name,ASIN,Quantity,Unit Price,Order Status"];
+  for (let i = 0; i < 6; i++) rows.push(`o${i},2026-0${i + 1}-01,"Tide PODS Laundry Detergent 81 Count",B0TESTTIDE,1,${i === 5 ? "n/a" : "21.97"},Delivered`);
+  rows.push('o9,2026-06-20,"Mystery Soap 100 Count",B0MYSTERY1,1,n/a,Delivered', 'o8,2026-05-20,"Mystery Soap 100 Count",B0MYSTERY1,1,n/a,Delivered', 'o7,2026-04-20,"Mystery Soap 100 Count",B0MYSTERY1,1,n/a,Delivered');
+  const db = openDb(":memory:");
+  const rep = ingestOrders(db, "h", rows.join("\n"), Date.parse("2026-06-25"));
+  assert.ok(rep.repairedCount >= 4, "the unreadable prices are reported as repaired");
+  const runway = forecast(db, "h", Date.parse("2026-08-30"));
+  const tide = runway.find((i) => /Tide/.test(i.title))!;
+  assert.equal(tide.unitPriceCents, 2197, "the last (unreadable) price does not make Tide free");
+  const plan = propose(db, "h", runway, { withinDays: 60 }, Date.parse("2026-08-30"));
+  assert.ok(plan.lines.every((l) => l.unitPriceCents > 0), "no zero-price line");
+  assert.ok(plan.dropped.some((d) => /no price on record/.test(d.why)) || !runway.some((i) => /Mystery/.test(i.title)), "an item with no price at all is left out and says why");
+});

@@ -12,6 +12,7 @@ import { recallStats, syncRecalls, type RecallRecord } from "./recallIndex.js";
 import { Hub } from "./hub.js";
 import { dueReminders, processNewRecalls } from "./alerts.js";
 import { storeFromEnv } from "./actions.js";
+import { generateSample, type SampleFile } from "./sample.js";
 import { APP_ONLY_TOOLS, createHearthServer } from "./server.js";
 import { fileURLToPath } from "node:url";
 import { MAX_SPEAK_CHARS, SPEAK_LANGS, startVoice, stopVoice, synthesize, voiceReady, type SpeakLang } from "./voice.js";
@@ -291,8 +292,8 @@ async function handleAgent(req: IncomingMessage, res: ServerResponse, url: URL):
 
 function serveStatic(url: URL, res: ServerResponse) {
   const sample = /^\/demo\/(sample-(?:orders|family|india)\.csv)$/.exec(url.pathname);
-  if (sample) {
-    res.writeHead(200, { "content-type": "text/csv" }).end(readFileSync(new URL(`../data/${sample[1]}`, import.meta.url)));
+  if (sample) { // generated fresh, counted back from today, so the demo looks right whenever it is opened
+    res.writeHead(200, { "content-type": "text/csv", "cache-control": "no-store" }).end(generateSample(sample[1] as SampleFile, new Date().toISOString().slice(0, 10)));
     return;
   }
   const rel = normalize(url.pathname === "/" ? "/index.html" : url.pathname).replace(/^(\.\.[/\\])+/, "");

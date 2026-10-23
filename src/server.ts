@@ -235,7 +235,9 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       const runway = forecast(db, h, now()).filter((r) => !skip.has(r.productKey));
       const p = propose(db, h, runway, { withinDays, budgetCents: amount ? Math.round(amount * minorFactor) : undefined, currency }, now());
       const loc = LOCALES[L];
-      const text = p.lines.length === 0
+      const text = p.lines.length === 0 && p.dropped.length > 0 && p.budgetCents && p.cheapestCents
+        ? t(L, "plan.nobudget", { budget: fmtMoney(p.budgetCents, p.currency, loc), min: fmtMoney(p.cheapestCents, p.currency, loc) })
+        : p.lines.length === 0
         ? t(L, "plan.empty")
         : t(L, "plan.some", {
             n: p.lines.length, total: fmtMoney(p.totalCents, p.currency, loc),

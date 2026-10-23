@@ -59,7 +59,8 @@ test("metrics are private, correct, and label no personal data", async () => {
   const text = await (await fetch(`${BASE}/metrics`, { headers: { authorization: `Bearer ${TOKEN}` } })).text();
   assert.match(text, /hearth_tool_calls_total\{tool="import_order_history",outcome="ok"\} 1/);
   assert.match(text, /hearth_tool_calls_total\{tool="confirm_restock",outcome="error"\} 1/);
-  assert.match(text, /hearth_import_rows_total\{path="mcp"\} 208/);
+  const rows = CSV.split("\n").filter(Boolean).length - 1; // every data row of the sample, whatever its size
+  assert.match(text, new RegExp(`hearth_import_rows_total\\{path="mcp"\\} ${rows}`));
   assert.match(text, /hearth_http_requests_total\{route="oauth",status="3xx"\}/);
   assert.match(text, /hearth_recalls_indexed \d+/);
   assert.match(text, /hearth_open_sessions /);

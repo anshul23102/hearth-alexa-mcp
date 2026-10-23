@@ -1,263 +1,236 @@
 Order ID,Order Date,Product Name,ASIN,Quantity,Unit Price,Order Status
-114-7000137-1000091,"2024-10-22","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"44.21",Delivered
-114-7000274-1000182,"Nov 3, 2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"43.96",Delivered
-114-7000411-1000273,"2024-11-14","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$43.58",Delivered
-114-7000548-1000364,"Nov 24, 2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$42.45",Delivered
-114-7000685-1000455,"Dec 3, 2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$43.87",Delivered
-114-7000822-1000546,"12/15/2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$42.11",Cancelled
-114-7000959-1000637,"12/27/2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,,"43.77",Delivered
-114-7001096-1000728,"Jan 7, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$42.73",Delivered
-114-7001233-1000819,"1/20/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$43.63",Delivered
-114-7001370-1000910,"Jan 31, 2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"44.07",Delivered
-114-7001507-1001001,"Feb 12, 2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"43.92",Delivered
-114-7001644-1001092,"2/24/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,2,"USD 42.43",Delivered
-114-7001781-1001183,"2025-03-17","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"USD 43.99",Delivered
-114-7001918-1001274,"3/29/2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"USD 42.74",Delivered
-114-7002055-1001365,"4/7/2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$42.24",Delivered
-114-7002192-1001456,"4/16/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$42.77",Delivered
-114-7002329-1001547,"2025-04-28","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$43.21",Delivered
-114-7002466-1001638,"May 9, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$42.96",Delivered
-114-7002603-1001729,"May 19, 2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"44.15",Delivered
-114-7002740-1001820,"5/29/2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"42.15",Delivered
-114-7002877-1001911,"2025-06-08","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"USD 42.01",Delivered
-114-7003014-1002002,"2025-06-18","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"USD 42.22",Delivered
-114-7003151-1002093,"2025-06-27","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"42.25",Delivered
-114-7003288-1002184,"7/8/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"USD 42.85",Delivered
-114-7003425-1002275,"Jul 19, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"41.80",Delivered
-114-7003562-1002366,"2025-07-30","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"42.33",Delivered
-114-7003699-1002457,"Aug 11, 2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$43.25",Returned
-114-7003836-1002548,"Aug 21, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"USD 43.42",Delivered
-114-7003973-1002639,"2025-09-02","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"USD 41.82",Delivered
-114-7004110-1002730,"Sep 12, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$41.95",Delivered
-114-7004247-1002821,"2025-09-23","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"USD 44.22",Delivered
-114-7004384-1002912,"2025-10-05","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$42.90",Delivered
-114-7004521-1003003,"10/17/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$43.28",Delivered
-114-7004658-1003094,"10/30/2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$42.15",Delivered
-114-7004795-1003185,"11/12/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$43.42",Delivered
-114-7004932-1003276,"11/23/2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,2,"USD 44.11",Delivered
-114-7005069-1003367,"Dec 17, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$42.90",Delivered
-114-7005206-1003458,"12/29/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"USD 42.22",Delivered
-114-7005343-1003549,"Jan 10, 2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$43.75",Delivered
-114-7005343-1003549,"Jan 10, 2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$43.75",Delivered
-114-7005480-1003640,"Jan 20, 2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$42.76",Delivered
-114-7005617-1003731,"2026-02-01","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"44.07",Delivered
-114-7005754-1003822,"2026-02-13","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"42.82",Delivered
-114-7005891-1003913,"2026-02-25","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$42.41",Delivered
-114-7006028-1004004,"Mar 7, 2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"42.27",Delivered
-114-7006165-1004095,"2026-03-17","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"USD 43.15",Delivered
-114-7006302-1004186,"2026-03-29","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"USD 42.53",Delivered
-114-7006439-1004277,"2026-04-10","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,,"USD 43.98",Delivered
-114-7006576-1004368,"2026-04-20","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"42.46",Delivered
-114-7006576-1004368,"2026-04-20","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"42.46",Delivered
-114-7006713-1004459,"4/29/2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"$44.05",Delivered
-114-7006850-1004550,"5/12/2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"44.18",Delivered
-114-7006987-1004641,"5/23/2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$43.57",Delivered
-114-7007124-1004732,"2026-06-02","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"43.46",Delivered
-114-7007261-1004823,"Jun 14, 2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"41.97",Delivered
-114-7007398-1004914,"2026-06-25","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,1,"USD 41.70",Delivered
-114-7007535-1005005,"7/6/2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"USD 42.98",Delivered
-114-7007672-1005096,"7/17/2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$44.17",Delivered
-114-7007809-1005187,"2026-07-29","Pampers Swaddlers Newborn Diapers, 124 Count",B0001MKP2Q,2,"$42.13",Delivered
-114-7007946-1005278,"2026-08-19","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"42.80",Delivered
-114-7008083-1005369,"8/30/2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$43.29",Delivered
-114-7008220-1005460,"9/12/2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,2,"USD 43.23",Delivered
-114-7008357-1005551,"Oct 4, 2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"43.69",Delivered
-114-7008494-1005642,"2026-10-14","Pampers Swaddlers Diapers Size 1, 140 Count",B0001MKP2Q,1,"$42.93",Delivered
-114-7008631-1005733,"10/23/2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"40.98",Delivered
-114-7008768-1005824,"11/1/2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 42.69",Delivered
-114-7008905-1005915,"Nov 10, 2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"42.62",Delivered
-114-7009042-1006006,"2024-11-19","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.69",Delivered
-114-7009179-1006097,"2024-11-27","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,,"USD 41.07",Delivered
-114-7009316-1006188,"Dec 6, 2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$43.24",Delivered
-114-7009453-1006279,"12/16/2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"42.38",Delivered
-114-7009590-1006370,"Dec 26, 2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$43.16",Delivered
-114-7009727-1006461,"2025-01-05","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 41.30",Delivered
-114-7009864-1006552,"Jan 13, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$40.95",Delivered
-114-7010001-1006643,"1/21/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,,"$41.42",Delivered
-114-7010138-1006734,"2025-01-30","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"41.34",Delivered
-114-7010138-1006734,"2025-01-30","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"41.34",Delivered
-114-7010275-1006825,"Feb 16, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"42.02",Delivered
-114-7010412-1006916,"2025-03-04","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$43.19",Delivered
-114-7010549-1007007,"2025-03-14","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.30",Delivered
-114-7010549-1007007,"2025-03-14","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.30",Delivered
-114-7010686-1007098,"2025-03-22","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 42.82",Delivered
-114-7010823-1007189,"4/1/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"41.58",Delivered
-114-7010960-1007280,"Apr 9, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 41.27",Delivered
-114-7011097-1007371,"4/19/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"42.43",Cancelled
-114-7011234-1007462,"4/29/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"40.85",Delivered
-114-7011371-1007553,"May 17, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"41.43",Cancelled
-114-7011508-1007644,"2025-05-25","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"42.41",Delivered
-114-7011645-1007735,"Jun 4, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"$42.73",Cancelled
-114-7011782-1007826,"2025-06-21","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 40.83",Delivered
-114-7011919-1007917,"2025-06-30","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"$43.00",Delivered
-114-7012056-1008008,"Jul 20, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.29",Cancelled
-114-7012193-1008099,"7/29/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"41.49",Delivered
-114-7012330-1008190,"Aug 6, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 41.69",Delivered
-114-7012467-1008281,"8/15/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"40.76",Delivered
-114-7012604-1008372,"2025-08-31","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"41.33",Delivered
-114-7012741-1008463,"2025-09-07","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"41.09",Delivered
-114-7012878-1008554,"2025-09-15","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 41.45",Delivered
-114-7013015-1008645,"Sep 24, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.05",Delivered
-114-7013152-1008736,"Oct 2, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"42.04",Delivered
-114-7013289-1008827,"2025-10-12","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.83",Delivered
-114-7013426-1008918,"10/19/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.90",Returned
-114-7013563-1009009,"10/28/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$40.77",Delivered
-114-7013700-1009100,"11/5/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$42.79",Delivered
-114-7013837-1009191,"Nov 13, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$40.79",Delivered
-114-7013974-1009282,"11/23/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"42.32",Delivered
-114-7014111-1009373,"Dec 2, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$42.22",Delivered
-114-7014248-1009464,"12/10/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$43.17",Delivered
-114-7014385-1009555,"2025-12-20","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"41.73",Delivered
-114-7014522-1009646,"Dec 28, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$43.18",Delivered
-114-7014659-1009737,"Jan 6, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 43.22",Delivered
-114-7014659-1009737,"Jan 6, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 43.22",Delivered
-114-7014796-1009828,"Jan 14, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 42.18",Delivered
-114-7014933-1009919,"1/22/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 41.68",Delivered
-114-7015070-1010010,"1/31/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 42.65",Delivered
-114-7015207-1010101,"Feb 10, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"41.22",Delivered
-114-7015344-1010192,"2/18/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"41.22",Delivered
-114-7015481-1010283,"Mar 5, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,,"$42.60",Delivered
-114-7015618-1010374,"Mar 21, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$40.85",Delivered
-114-7015755-1010465,"Mar 31, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"41.09",Returned
-114-7015892-1010556,"4/18/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.15",Delivered
-114-7016029-1010647,"2026-04-28","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 42.12",Delivered
-114-7016166-1010738,"May 7, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.59",Delivered
-114-7016303-1010829,"5/18/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"$42.21",Delivered
-114-7016440-1010920,"6/3/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"USD 42.48",Delivered
-114-7016577-1011011,"6/18/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"USD 42.41",Delivered
-114-7016714-1011102,"Jun 25, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"41.32",Delivered
-114-7016851-1011193,"2026-07-05","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"41.11",Delivered
-114-7016988-1011284,"7/14/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"42.29",Delivered
-114-7017125-1011375,"2026-07-24","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$43.24",Delivered
-114-7017262-1011466,"Aug 3, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$40.98",Delivered
-114-7017399-1011557,"2026-08-11","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"43.20",Cancelled
-114-7017536-1011648,"8/21/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,1,"$41.05",Delivered
-114-7017673-1011739,"8/31/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"$41.10",Delivered
-114-7017810-1011830,"2026-09-20","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"$42.74",Cancelled
-114-7017947-1011921,"Oct 5, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B000136ERZ,2,"41.83",Delivered
-114-7018084-1012012,"Oct 29, 2024","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"$19.61",Delivered
-114-7018221-1012103,"Nov 17, 2024","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,2,"19.53",Delivered
-114-7018358-1012194,"Jan 4, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"19.47",Delivered
-114-7018495-1012285,"Jan 22, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"USD 19.98",Delivered
-114-7018632-1012376,"2025-02-09","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"USD 20.44",Delivered
-114-7018769-1012467,"2/27/2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"20.10",Delivered
-114-7018906-1012558,"Mar 17, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"$19.85",Delivered
-114-7019043-1012649,"4/7/2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"19.61",Delivered
-114-7019180-1012740,"2025-04-25","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"$19.46",Delivered
-114-7019317-1012831,"2025-05-19","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"$19.98",Delivered
-114-7019454-1012922,"2025-06-10","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"$19.66",Delivered
-114-7019591-1013013,"Jun 30, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"20.31",Cancelled
-114-7019728-1013104,"Jul 19, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"19.61",Delivered
-114-7019865-1013195,"2025-08-07","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"USD 19.90",Delivered
-114-7020002-1013286,"8/28/2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"$20.03",Delivered
-114-7020139-1013377,"9/19/2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"USD 19.68",Delivered
-114-7020276-1013468,"Oct 11, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,2,"20.36",Delivered
-114-7020276-1013468,"Oct 11, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,2,"20.36",Delivered
-114-7020413-1013559,"11/16/2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"19.47",Delivered
-114-7020550-1013650,"Dec 9, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"$20.32",Delivered
-114-7020687-1013741,"2025-12-31","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"$20.50",Delivered
-114-7020824-1013832,"1/18/2026","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"20.47",Delivered
-114-7020961-1013923,"2026-02-07","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"USD 19.76",Delivered
-114-7021098-1014014,"2026-03-03","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"20.48",Delivered
-114-7021235-1014105,"2026-03-24","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,2,"20.22",Delivered
-114-7021372-1014196,"2026-05-07","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"19.49",Delivered
-114-7021509-1014287,"2026-05-26","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,2,"20.27",Delivered
-114-7021646-1014378,"7/10/2026","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"$19.67",Delivered
-114-7021783-1014469,"2026-08-02","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"USD 20.42",Delivered
-114-7021920-1014560,"2026-08-22","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,1,"20.02",Delivered
-114-7022057-1014651,"Sep 16, 2026","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000XJ46V,2,"$20.01",Delivered
-114-7022194-1014742,"Oct 11, 2024","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"USD 12.17",Delivered
-114-7022331-1014833,"11/27/2024","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"$11.95",Delivered
-114-7022468-1014924,"1/4/2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,,"12.26",Delivered
-114-7022605-1015015,"2025-02-16","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"11.91",Delivered
-114-7022742-1015106,"Mar 29, 2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"USD 12.18",Delivered
-114-7022879-1015197,"2025-05-17","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"$11.77",Returned
-114-7023016-1015288,"Jul 3, 2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"$12.24",Delivered
-114-7023153-1015379,"8/20/2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"$11.79",Delivered
-114-7023290-1015470,"2025-09-29","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"11.69",Cancelled
-114-7023427-1015561,"Nov 6, 2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"USD 12.06",Delivered
-114-7023564-1015652,"Dec 11, 2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"12.08",Delivered
-114-7023701-1015743,"Jan 29, 2026","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"USD 11.91",Delivered
-114-7023838-1015834,"Mar 14, 2026","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"11.94",Delivered
-114-7023975-1015925,"2026-04-24","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"12.19",Delivered
-114-7024112-1016016,"2026-06-11","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,,"USD 12.21",Delivered
-114-7024249-1016107,"Jul 18, 2026","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"$11.93",Delivered
-114-7024386-1016198,"2026-08-23","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"11.99",Delivered
-114-7024523-1016289,"Oct 6, 2026","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000VEF1Z,1,"$12.32",Delivered
-114-7024660-1016380,"2024-10-30","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"$27.15",Delivered
-114-7024797-1016471,"11/24/2024","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,2,"27.40",Delivered
-114-7024934-1016562,"1/14/2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,2,"$27.58",Delivered
-114-7025071-1016653,"2025-03-04","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,2,"$27.32",Delivered
-114-7025208-1016744,"2025-04-25","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"$27.64",Delivered
-114-7025345-1016835,"May 14, 2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"$27.67",Delivered
-114-7025482-1016926,"2025-06-06","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"$27.79",Delivered
-114-7025619-1017017,"Jun 28, 2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"$26.64",Delivered
-114-7025756-1017108,"Jul 18, 2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"27.78",Delivered
-114-7025893-1017199,"2025-08-08","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"26.79",Delivered
-114-7026030-1017290,"Sep 2, 2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"27.25",Cancelled
-114-7026167-1017381,"9/25/2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,,"$26.21",Delivered
-114-7026304-1017472,"11/12/2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"USD 27.75",Delivered
-114-7026441-1017563,"12/7/2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"26.74",Delivered
-114-7026578-1017654,"Dec 30, 2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,,"$27.47",Delivered
-114-7026715-1017745,"Jan 20, 2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,2,"$26.62",Returned
-114-7026852-1017836,"Feb 28, 2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"26.73",Delivered
-114-7026989-1017927,"Mar 22, 2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,2,"$27.16",Delivered
-114-7027126-1018018,"May 14, 2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"27.18",Delivered
-114-7027263-1018109,"2026-06-09","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"USD 26.93",Delivered
-114-7027400-1018200,"Jun 30, 2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"$27.65",Delivered
-114-7027537-1018291,"7/26/2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"26.94",Delivered
-114-7027674-1018382,"Aug 17, 2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"$26.70",Delivered
-114-7027811-1018473,"9/8/2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"$26.25",Delivered
-114-7027948-1018564,"2026-10-01","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B0000EDF6L,1,"26.31",Delivered
-114-7028085-1018655,"Oct 22, 2024","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"USD 6.15",Delivered
-114-7028222-1018746,"2024-11-05","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"6.12",Cancelled
-114-7028359-1018837,"2024-11-21","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"5.91",Delivered
-114-7028496-1018928,"2024-12-03","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"6.08",Delivered
-114-7028633-1019019,"2024-12-18","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,2,"$6.14",Delivered
-114-7028770-1019110,"Jan 20, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"6.02",Cancelled
-114-7028907-1019201,"2/4/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,,"USD 5.86",Delivered
-114-7029044-1019292,"2025-03-06","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,2,"6.14",Delivered
-114-7029181-1019383,"4/1/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,2,"$5.93",Delivered
-114-7029318-1019474,"2025-04-25","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$6.17",Returned
-114-7029455-1019565,"May 8, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"USD 5.90",Returned
-114-7029592-1019656,"5/22/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.87",Delivered
-114-7029729-1019747,"2025-06-05","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,2,"6.15",Delivered
-114-7029866-1019838,"2025-06-29","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"6.12",Delivered
-114-7030003-1019929,"Jul 14, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.89",Delivered
-114-7030140-1020020,"2025-07-27","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"USD 6.16",Delivered
-114-7030277-1020111,"Aug 10, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$6.12",Delivered
-114-7030414-1020202,"8/23/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.88",Delivered
-114-7030551-1020293,"9/4/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.95",Delivered
-114-7030688-1020384,"2025-09-20","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.83",Delivered
-114-7030825-1020475,"10/5/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,,"$5.90",Delivered
-114-7030962-1020566,"2025-10-21","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"5.95",Delivered
-114-7031099-1020657,"11/6/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"USD 6.02",Delivered
-114-7031236-1020748,"Nov 18, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"6.05",Delivered
-114-7031373-1020839,"11/30/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.83",Delivered
-114-7031510-1020930,"2025-12-15","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"6.02",Delivered
-114-7031647-1021021,"12/29/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"5.90",Delivered
-114-7031784-1021112,"2026-01-14","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"USD 6.12",Delivered
-114-7031921-1021203,"2026-01-28","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,,"$5.83",Delivered
-114-7032058-1021294,"2/10/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"5.98",Delivered
-114-7032195-1021385,"2/22/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"USD 6.13",Delivered
-114-7032195-1021385,"2/22/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"USD 6.13",Delivered
-114-7032332-1021476,"2026-03-10","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"6.16",Delivered
-114-7032469-1021567,"3/22/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$6.06",Cancelled
-114-7032606-1021658,"2026-04-03","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.88",Delivered
-114-7032743-1021749,"Apr 17, 2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"5.98",Delivered
-114-7032880-1021840,"May 1, 2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.96",Delivered
-114-7033017-1021931,"May 17, 2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,,"5.92",Delivered
-114-7033154-1022022,"6/2/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"5.95",Delivered
-114-7033291-1022113,"2026-06-14","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.99",Delivered
-114-7033428-1022204,"6/29/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$5.85",Delivered
-114-7033565-1022295,"Jul 11, 2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"USD 5.88",Delivered
-114-7033702-1022386,"7/25/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"5.81",Delivered
-114-7033839-1022477,"8/9/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"5.85",Cancelled
-114-7033976-1022568,"2026-08-24","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,2,"USD 6.12",Delivered
-114-7034113-1022659,"9/17/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"$6.12",Delivered
-114-7034250-1022750,"10/3/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"6.02",Cancelled
-114-7034387-1022841,"10/16/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B00010R4YC,1,"USD 6.01",Delivered
-114-7034524-1022932,"2025-12-25","Philips Avent Digital Video Baby Monitor SCD843/37",B0001HAHYX,1,"USD 179.99",Delivered
-114-7034661-1023023,"2026-06-03","Fisher-Price Brunch & Go Stroller Toys, Infant Stroller Activity Set",B0001LDSOT,1,"19.99",Delivered
-114-7034798-1023114,"2025-02-28","Anker Portable Charger Power Bank PowerCore 10000 A1263",B0000L0RAM,1,"USD 25.99",Delivered
-114-7034935-1023205,"2025-08-27","Oster French Door Countertop Oven Toaster Oven",B0000AE2LE,1,"$129.99",Delivered
+114-7000137-1000091,"Oct 28, 2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"41.76",Delivered
+114-7000274-1000182,"11/8/2024","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"USD 41.73",Delivered
+114-7000411-1000273,"11/19/2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"41.83",Delivered
+114-7000411-1000273,"11/19/2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"41.83",Delivered
+114-7000548-1000364,"2024-11-30","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"$41.99",Delivered
+114-7000685-1000455,"12/11/2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"44.10",Delivered
+114-7000822-1000546,"12/20/2024","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"USD 44.27",Delivered
+114-7000959-1000637,"12/30/2024","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$43.77",Delivered
+114-7001096-1000728,"Jan 11, 2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"42.72",Cancelled
+114-7001233-1000819,"1/22/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,2,"42.62",Delivered
+114-7001370-1000910,"2025-02-10","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$42.38",Delivered
+114-7001507-1001001,"Feb 23, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"43.47",Delivered
+114-7001644-1001092,"3/4/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"43.13",Delivered
+114-7001781-1001183,"2025-03-15","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,2,"USD 44.18",Delivered
+114-7001918-1001274,"2025-04-04","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"$43.26",Delivered
+114-7002055-1001365,"4/16/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"USD 42.12",Delivered
+114-7002192-1001456,"Apr 28, 2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"42.42",Delivered
+114-7002329-1001547,"5/8/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$44.23",Delivered
+114-7002466-1001638,"2025-05-17","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,2,"43.37",Delivered
+114-7002603-1001729,"Jun 4, 2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$41.75",Delivered
+114-7002740-1001820,"2025-06-15","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"USD 43.10",Delivered
+114-7002877-1001911,"2025-06-25","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"42.67",Delivered
+114-7003014-1002002,"2025-07-04","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$42.80",Delivered
+114-7003151-1002093,"Jul 17, 2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"42.32",Delivered
+114-7003288-1002184,"Jul 28, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"$41.77",Delivered
+114-7003425-1002275,"8/9/2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"43.81",Delivered
+114-7003562-1002366,"8/19/2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,2,"$43.70",Delivered
+114-7003699-1002457,"2025-09-13","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"43.08",Cancelled
+114-7003836-1002548,"2025-09-24","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$43.66",Delivered
+114-7003973-1002639,"10/4/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"USD 42.45",Delivered
+114-7004110-1002730,"2025-10-17","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"42.13",Delivered
+114-7004247-1002821,"Oct 28, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"41.86",Delivered
+114-7004384-1002912,"2025-11-09","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"44.17",Delivered
+114-7004521-1003003,"Nov 19, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"43.85",Delivered
+114-7004658-1003094,"Nov 30, 2025","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"$43.40",Delivered
+114-7004795-1003185,"12/13/2025","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,2,"43.95",Delivered
+114-7004932-1003276,"1/7/2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"$44.21",Delivered
+114-7005069-1003367,"1/18/2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$42.55",Delivered
+114-7005206-1003458,"2026-01-29","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"USD 43.37",Delivered
+114-7005343-1003549,"Feb 9, 2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"43.18",Delivered
+114-7005480-1003640,"2026-02-22","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,2,"$42.45",Delivered
+114-7005617-1003731,"Mar 17, 2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$43.56",Delivered
+114-7005754-1003822,"3/28/2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"$43.98",Delivered
+114-7005891-1003913,"Apr 6, 2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"USD 41.86",Delivered
+114-7006028-1004004,"Apr 15, 2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,,"USD 43.47",Delivered
+114-7006165-1004095,"2026-04-25","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"USD 42.17",Delivered
+114-7006302-1004186,"May 7, 2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"43.79",Delivered
+114-7006439-1004277,"2026-05-19","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$43.93",Delivered
+114-7006576-1004368,"May 31, 2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"42.19",Delivered
+114-7006713-1004459,"6/13/2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"41.79",Delivered
+114-7006850-1004550,"6/25/2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"42.64",Delivered
+114-7006987-1004641,"Jul 8, 2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"42.14",Cancelled
+114-7007124-1004732,"7/18/2026","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"USD 42.26",Delivered
+114-7007261-1004823,"Jul 30, 2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,2,"42.60",Delivered
+114-7007398-1004914,"2026-08-21","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"USD 42.69",Delivered
+114-7007535-1005005,"2026-09-03","Pampers Swaddlers Newborn Diapers, 124 Count",B0000QXQ0Q,1,"$44.22",Delivered
+114-7007672-1005096,"2026-09-15","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"43.93",Delivered
+114-7007672-1005096,"2026-09-15","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"43.93",Delivered
+114-7007809-1005187,"2026-09-24","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$43.73",Delivered
+114-7007946-1005278,"10/4/2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"$43.36",Delivered
+114-7008083-1005369,"10/15/2026","Pampers Swaddlers Diapers Size 1, 140 Count",B0000QXQ0Q,1,"43.63",Delivered
+114-7008220-1005460,"Oct 27, 2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$41.42",Delivered
+114-7008357-1005551,"2024-11-07","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$41.70",Delivered
+114-7008494-1005642,"Nov 17, 2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$41.61",Delivered
+114-7008631-1005733,"11/27/2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$43.22",Delivered
+114-7008768-1005824,"2024-12-07","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 40.87",Delivered
+114-7008905-1005915,"Dec 17, 2024","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 41.46",Cancelled
+114-7009042-1006006,"2024-12-26","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.74",Delivered
+114-7009179-1006097,"2025-01-05","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 41.30",Delivered
+114-7009316-1006188,"Jan 15, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"41.23",Delivered
+114-7009453-1006279,"1/25/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,2,"41.65",Delivered
+114-7009590-1006370,"2/11/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"40.93",Delivered
+114-7009727-1006461,"2/21/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$43.12",Delivered
+114-7009864-1006552,"Mar 2, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 41.62",Delivered
+114-7010001-1006643,"Mar 13, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 41.43",Delivered
+114-7010138-1006734,"2025-03-24","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.40",Delivered
+114-7010275-1006825,"4/2/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,2,"USD 41.54",Returned
+114-7010412-1006916,"2025-04-22","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$42.20",Delivered
+114-7010549-1007007,"May 3, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$42.57",Delivered
+114-7010686-1007098,"May 13, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.99",Delivered
+114-7010686-1007098,"May 13, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.99",Delivered
+114-7010823-1007189,"5/23/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$43.12",Delivered
+114-7010960-1007280,"Jun 4, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"43.09",Delivered
+114-7011097-1007371,"6/15/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,,"41.24",Delivered
+114-7011234-1007462,"Jul 8, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$42.55",Delivered
+114-7011371-1007553,"7/19/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 40.93",Delivered
+114-7011508-1007644,"2025-07-28","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 43.14",Delivered
+114-7011645-1007735,"Aug 8, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$42.28",Delivered
+114-7011782-1007826,"2025-08-17","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,2,"USD 41.84",Delivered
+114-7011919-1007917,"Sep 9, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$42.58",Cancelled
+114-7012056-1008008,"Sep 18, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 43.08",Delivered
+114-7012193-1008099,"2025-09-28","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$43.09",Delivered
+114-7012330-1008190,"Oct 7, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$41.07",Delivered
+114-7012467-1008281,"2025-10-18","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.01",Delivered
+114-7012604-1008372,"10/26/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$42.32",Cancelled
+114-7012741-1008463,"2025-11-04","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,,"USD 41.40",Delivered
+114-7012878-1008554,"Nov 13, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,,"43.04",Delivered
+114-7013015-1008645,"11/22/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.00",Delivered
+114-7013152-1008736,"12/1/2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 42.96",Delivered
+114-7013289-1008827,"2025-12-12","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 41.78",Delivered
+114-7013426-1008918,"Dec 22, 2025","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,,"41.23",Delivered
+114-7013563-1009009,"1/2/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$43.23",Delivered
+114-7013700-1009100,"2026-01-12","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,2,"$42.32",Delivered
+114-7013837-1009191,"2026-01-29","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"41.15",Delivered
+114-7013974-1009282,"2026-02-07","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"41.46",Delivered
+114-7014111-1009373,"2026-02-16","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 41.24",Delivered
+114-7014248-1009464,"Feb 26, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"41.57",Delivered
+114-7014385-1009555,"3/8/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"41.46",Delivered
+114-7014522-1009646,"2026-03-19","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"41.27",Delivered
+114-7014659-1009737,"2026-03-29","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,2,"$41.30",Delivered
+114-7014796-1009828,"2026-04-18","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.28",Delivered
+114-7014933-1009919,"4/27/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.52",Delivered
+114-7015070-1010010,"May 8, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$43.12",Cancelled
+114-7015207-1010101,"2026-05-17","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$41.21",Delivered
+114-7015344-1010192,"5/26/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,2,"USD 43.23",Delivered
+114-7015481-1010283,"2026-06-17","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$40.77",Delivered
+114-7015618-1010374,"6/28/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$42.48",Delivered
+114-7015755-1010465,"2026-07-08","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.96",Delivered
+114-7015892-1010556,"Jul 19, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"42.64",Delivered
+114-7016029-1010647,"7/28/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$42.08",Delivered
+114-7016166-1010738,"2026-08-07","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$40.86",Delivered
+114-7016303-1010829,"Aug 17, 2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"USD 40.96",Delivered
+114-7016440-1010920,"8/27/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,2,"$43.23",Delivered
+114-7016577-1011011,"9/18/2026","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$40.99",Delivered
+114-7016714-1011102,"2026-09-26","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,1,"$41.20",Delivered
+114-7016851-1011193,"2026-10-06","Similac Pro-Advance Infant Formula Powder, 36 oz",B0000MTSC1,2,"USD 43.16",Cancelled
+114-7016988-1011284,"9/25/2024","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"$19.60",Delivered
+114-7017125-1011375,"11/1/2024","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,2,"USD 20.14",Delivered
+114-7017262-1011466,"Jan 16, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"$19.43",Delivered
+114-7017399-1011557,"Feb 23, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"$20.18",Delivered
+114-7017536-1011648,"2025-04-14","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"$19.83",Delivered
+114-7017673-1011739,"Jun 5, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"$20.31",Delivered
+114-7017810-1011830,"7/21/2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"20.18",Cancelled
+114-7017947-1011921,"9/2/2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"$20.22",Delivered
+114-7018084-1012012,"Oct 25, 2025","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"19.92",Delivered
+114-7018221-1012103,"2025-12-07","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,,"$20.51",Delivered
+114-7018358-1012194,"2026-01-25","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,2,"19.90",Delivered
+114-7018495-1012285,"2026-05-03","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"$19.52",Delivered
+114-7018632-1012376,"6/16/2026","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"19.86",Delivered
+114-7018769-1012467,"Aug 8, 2026","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"USD 20.59",Delivered
+114-7018906-1012558,"2026-09-18","Huggies Natural Care Sensitive Baby Wipes, 560 Count",B0000BZTO0,1,"19.92",Cancelled
+114-7019043-1012649,"10/14/2024","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"12.08",Delivered
+114-7019180-1012740,"Nov 29, 2024","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,2,"USD 11.89",Delivered
+114-7019317-1012831,"Mar 4, 2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"$12.16",Delivered
+114-7019454-1012922,"4/10/2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"11.72",Cancelled
+114-7019591-1013013,"2025-05-24","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"11.88",Delivered
+114-7019728-1013104,"2025-07-01","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"11.91",Delivered
+114-7019865-1013195,"Aug 6, 2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"11.93",Delivered
+114-7019865-1013195,"Aug 6, 2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"11.93",Delivered
+114-7020002-1013286,"2025-09-16","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"USD 11.88",Delivered
+114-7020139-1013377,"Oct 29, 2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"$12.15",Delivered
+114-7020276-1013468,"Dec 8, 2025","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"$11.64",Delivered
+114-7020413-1013559,"2026-01-22","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"$11.93",Delivered
+114-7020550-1013650,"2/28/2026","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,2,"12.07",Delivered
+114-7020687-1013741,"Jun 3, 2026","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"12.09",Delivered
+114-7020824-1013832,"Jul 18, 2026","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,1,"12.26",Delivered
+114-7020961-1013923,"2026-08-22","Dreft Stage 1 Newborn Baby Laundry Detergent, 64 oz",B0000YB9HZ,2,"$11.85",Delivered
+114-7021098-1014014,"Oct 20, 2024","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"$27.20",Delivered
+114-7021235-1014105,"Nov 23, 2024","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"USD 26.40",Delivered
+114-7021235-1014105,"Nov 23, 2024","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"USD 26.40",Delivered
+114-7021372-1014196,"12/22/2024","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"26.58",Delivered
+114-7021509-1014287,"Jan 18, 2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"$26.89",Delivered
+114-7021646-1014378,"2025-02-14","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"$27.72",Returned
+114-7021783-1014469,"Mar 20, 2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"USD 26.71",Delivered
+114-7021920-1014560,"4/23/2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"USD 26.31",Delivered
+114-7022057-1014651,"May 28, 2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"$27.48",Delivered
+114-7022194-1014742,"6/25/2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"26.36",Delivered
+114-7022331-1014833,"2025-07-20","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"26.74",Delivered
+114-7022468-1014924,"Aug 17, 2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"USD 26.94",Delivered
+114-7022605-1015015,"9/18/2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"$26.33",Returned
+114-7022742-1015106,"10/17/2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,2,"USD 26.93",Cancelled
+114-7022879-1015197,"12/15/2025","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"USD 26.62",Delivered
+114-7023016-1015288,"2026-01-15","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"$26.66",Delivered
+114-7023153-1015379,"2/18/2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"26.90",Cancelled
+114-7023290-1015470,"Mar 21, 2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"$27.74",Delivered
+114-7023427-1015561,"Apr 25, 2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"USD 26.21",Delivered
+114-7023564-1015652,"5/24/2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"$26.61",Delivered
+114-7023701-1015743,"2026-06-26","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"27.80",Delivered
+114-7023838-1015834,"7/21/2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"$27.47",Delivered
+114-7023975-1015925,"8/21/2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"26.52",Cancelled
+114-7024112-1016016,"Sep 17, 2026","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"27.25",Delivered
+114-7024249-1016107,"2026-10-19","Bounty Select-A-Size Paper Towels, 12 Triple Rolls",B00003HUMA,1,"USD 27.47",Delivered
+114-7024386-1016198,"Oct 23, 2024","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.97",Delivered
+114-7024523-1016289,"11/7/2024","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.92",Delivered
+114-7024660-1016380,"2024-11-22","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$6.09",Delivered
+114-7024797-1016471,"12/6/2024","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,,"$5.84",Delivered
+114-7024934-1016562,"12/20/2024","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.87",Delivered
+114-7025071-1016653,"2025-01-02","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"5.89",Delivered
+114-7025208-1016744,"1/15/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"5.93",Delivered
+114-7025345-1016835,"1/27/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"5.92",Delivered
+114-7025482-1016926,"Feb 10, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$6.08",Delivered
+114-7025619-1017017,"2025-02-24","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"6.01",Delivered
+114-7025756-1017108,"Mar 8, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.87",Delivered
+114-7025756-1017108,"Mar 8, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.87",Delivered
+114-7025893-1017199,"Mar 21, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 6.16",Delivered
+114-7026030-1017290,"2025-04-06","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$6.07",Delivered
+114-7026167-1017381,"Apr 20, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,,"$6.03",Delivered
+114-7026304-1017472,"5/5/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$5.99",Delivered
+114-7026441-1017563,"May 18, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.88",Delivered
+114-7026578-1017654,"May 31, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"6.05",Delivered
+114-7026715-1017745,"6/12/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"6.13",Delivered
+114-7026852-1017836,"6/24/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,2,"6.00",Delivered
+114-7026989-1017927,"2025-07-21","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,2,"USD 6.09",Delivered
+114-7027126-1018018,"2025-08-20","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.84",Delivered
+114-7027263-1018109,"9/3/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 6.04",Delivered
+114-7027400-1018200,"Sep 18, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$5.99",Delivered
+114-7027537-1018291,"9/30/2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"5.99",Delivered
+114-7027674-1018382,"2025-10-13","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.99",Delivered
+114-7027811-1018473,"2025-10-27","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$6.10",Returned
+114-7027948-1018564,"2025-11-09","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,2,"USD 6.08",Delivered
+114-7028085-1018655,"Dec 5, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,2,"$5.99",Delivered
+114-7028222-1018746,"Dec 28, 2025","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$6.12",Delivered
+114-7028359-1018837,"1/9/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"6.14",Delivered
+114-7028496-1018928,"1/24/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$6.15",Delivered
+114-7028633-1019019,"2/8/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$5.84",Delivered
+114-7028770-1019110,"2/20/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.88",Delivered
+114-7028907-1019201,"3/7/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$5.99",Delivered
+114-7029044-1019292,"3/21/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$6.08",Delivered
+114-7029181-1019383,"4/5/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$5.93",Delivered
+114-7029318-1019474,"Apr 21, 2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,2,"$5.97",Delivered
+114-7029455-1019565,"May 19, 2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$6.00",Delivered
+114-7029592-1019656,"Jun 3, 2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 6.01",Delivered
+114-7029729-1019747,"2026-06-15","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"$5.98",Delivered
+114-7029866-1019838,"6/28/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"5.95",Delivered
+114-7030003-1019929,"7/11/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"5.94",Delivered
+114-7030140-1020020,"7/23/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 6.16",Delivered
+114-7030277-1020111,"2026-08-04","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.83",Delivered
+114-7030414-1020202,"2026-08-18","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"5.95",Delivered
+114-7030551-1020293,"2026-08-31","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,1,"USD 5.86",Delivered
+114-7030688-1020384,"9/16/2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,2,"$5.82",Delivered
+114-7030825-1020475,"Oct 12, 2026","Cheerios Gluten Free Breakfast Cereal, Family Size 18 oz",B0001E807F,,"$5.95",Delivered
+114-7030962-1020566,"2023-06-12","Philips Avent Digital Video Baby Monitor SCD843/37",B0000BGAWD,1,"$179.99",Delivered
+114-7031099-1020657,"2025-02-08","Fisher-Price Brunch & Go Stroller Toys, Infant Stroller Activity Set",B0000QIFK6,1,"USD 19.99",Delivered
+114-7031236-1020748,"2025-02-28","Anker Portable Charger Power Bank PowerCore 10000 A1263",B0001D5BX6,1,"USD 25.99",Delivered
+114-7031373-1020839,"2025-08-27","Oster French Door Countertop Oven Toaster Oven",B0001BOHWX,1,"129.99",Delivered

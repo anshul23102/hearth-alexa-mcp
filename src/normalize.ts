@@ -38,7 +38,8 @@ function iso(y: number, mo: number, d: number): string | null {
 
 /** "$1,299.00", "USD 12.5", "₹499", "12,50 €" -> cents. */
 export function parseMoneyCents(raw: string): number | null {
-  let s = raw.replace(/[^\d.,-]/g, "");
+  // "Rs. 785.00" leaves ". 785.00" once the letters go, so trim stray separators from both ends too
+  let s = raw.replace(/[^\d.,-]/g, "").replace(/^[.,]+|[.,]+$/g, "");
   if (!s) return null;
   if (/,\d{2}$/.test(s) && !/\.\d{2}$/.test(s)) s = s.replace(/\./g, "").replace(",", ".");
   else s = s.replace(/,/g, "");
@@ -83,12 +84,12 @@ const CONSUMABLE = [
 const STAPLE_WORDS = /\b(atta|ghee|dal|flour|salt|cereal|oatmeal|sugar)\b/;
 const DURABLE = [
   "pressure cooker", "air fryer", "instant pot", "blender", "toaster", "kettle", "crib", "stroller", "high chair",
-  "space heater", "heater", "vacuum", "humidifier", "dehumidifier", "treadmill", "helmet",
+  "space heater", "heater", "humidifier", "dehumidifier", "treadmill", "helmet",
   "car seat", "monitor", "charger", "power bank", "slow cooker", "rice cooker", "coffee maker", "mixer", "oven",
   "dryer", "dishwasher machine", "scooter", "ladder", "grill", "bed rail", "bassinet", "airfryer",
 ];
 /** Short names that are substrings of unrelated words: "fan" is inside "infant", "lamp" inside "clamp". */
-const DURABLE_WORDS = /\b(fans?|lamps?|bikes?|swings?|robots?)\b/;
+const DURABLE_WORDS = /\b(fans?|lamps?|bikes?|swings?|robots?|vacuum cleaners?|cordless vacuum|robot vacuum|stick vacuum|vacuum flask|vacuum sealer)\b/;
 
 export type Kind = "consumable" | "durable" | "other";
 

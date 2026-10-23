@@ -55,3 +55,11 @@ test("short product words only match whole words: infant formula is a consumable
   assert.equal(classify("Lasko Oscillating Tower Fan"), "durable");
   assert.equal(classify("Aashirvaad Select Sharbati Atta, 10 kg"), "consumable");
 });
+
+test("'vacuum' in a food or a flask is read correctly, not as a cleaner", async () => {
+  const { classify } = await import("../src/normalize.js");
+  assert.equal(classify("Tata Salt Vacuum Evaporated Iodised Salt, 1 kg"), "consumable", "vacuum-evaporated salt is food");
+  assert.equal(classify("Dyson V8 Cordless Vacuum Cleaner"), "durable");
+  assert.equal(classify("Eufy RoboVac Robot Vacuum Cleaner"), "durable");
+  assert.equal(classify("Milton Thermosteel Vacuum Flask 1 L"), "durable");
+});

@@ -131,12 +131,16 @@ let busy = false;
 let sampleCsv = "";
 let brain = "local";
 
-const SUGGEST = ["What are we running low on?", "Any recalls on what we own?", "Plan a restock under $60", "Keep restocks under $80", "Speak Spanish"];
+// Budgets are in the household's own currency, so the suggestions must be too ("under $60" for a rupee household means 60 rupees).
+const BUDGETS = { USD: ["$", 60, 80], CAD: ["$", 80, 100], GBP: ["£", 50, 65], EUR: ["€", 55, 70], INR: ["₹", 2500, 3500] };
+let householdCurrency = "USD";
+const suggestions = () => { const [sym, a, b] = BUDGETS[householdCurrency] ?? BUDGETS.USD; return ["What are we running low on?", "Any recalls on what we own?", `Plan a restock under ${sym}${a.toLocaleString("en-US")}`, `Keep restocks under ${sym}${b.toLocaleString("en-US")}`, "Speak Spanish"]; };
+function learnCurrency(counts) { const top = Object.entries(counts ?? {}).sort((x, y) => y[1] - x[1])[0]?.[0]; if (top && top !== householdCurrency) { householdCurrency = top; if (!$("chips").hidden) showChips(); } }
 
 function showChips() {
   const c = $("chips");
   c.hidden = false;
-  c.replaceChildren(...SUGGEST.map((s) => { const b = document.createElement("button"); b.type = "button"; b.textContent = s; b.addEventListener("click", () => ask(s)); return b; }));
+  c.replaceChildren(...suggestions().map((s) => { const b = document.createElement("button"); b.type = "button"; b.textContent = s; b.addEventListener("click", () => ask(s)); return b; }));
 }
 
 async function boot() {
@@ -154,7 +158,7 @@ async function boot() {
     lookForNeuralVoice();
     subscribeToAlerts();
     const r = await mcp.callTool("household_runway", { withinDays: 30 });
-    if (r.structuredContent?.items?.length) { ready(); speak("Welcome back. I remember your household. Ask me what's running low."); }
+    if (r.structuredContent?.items?.length) { learnCurrency({ [r.structuredContent.items[0].currency]: 1 }); ready(); speak("Welcome back. I remember your household. Ask me what's running low."); }
     else {
       speak("I'm linked, but I don't know your household yet. Load your order history and I'll learn how fast you use things.");
       $("loadStep").hidden = false;
@@ -215,7 +219,7 @@ async function importCsv(label, getReply) {
     await speak(e instanceof AuthRequired ? "Your session expired. Reload the page to link again." : `I couldn't load that: ${e.message}`);
   } finally { setState("idle"); }
 }
-const viaTool = async (csv) => (await mcp.callTool("import_order_history", { csv })).content?.[0]?.text ?? "";
+const viaTool = async (csv) => { const r = await mcp.callTool("import_order_history", { csv }); learnCurrency(r.structuredContent?.currencies); return r.content?.[0]?.text ?? ""; };
 // Big exports are streamed to the bulk endpoint (worker thread, row-by-row) instead of being held in one MCP message.
 async function viaUpload(file) {
   const r = await fetch("/api/import", { method: "POST", headers: { "content-type": "text/csv", authorization: `Bearer ${mcp.token}` }, body: file });

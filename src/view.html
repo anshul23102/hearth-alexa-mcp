@@ -237,7 +237,13 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
   }
   function proposal(sc) {
     const p = sc.proposal; current = p;
-    if (!p.lines.length) return slip('<h1>Nothing to order</h1><p class="sub">Everything is stocked for that window.</p>');
+    if (!p.lines.length && !p.dropped.length) return slip('<h1>Nothing to order</h1><p class="sub">Everything is stocked for that window.</p>');
+    if (!p.lines.length) { // things are due, but none fits the budget: say so, show what is left out, and let the person raise it
+      const left = p.dropped.map((d) => '<div class="leader struck"><span class="t">' + esc(short(d.title, d.name)) + '</span></div><div class="reason">left out: ' + esc(d.why) + "</div>").join("");
+      slip('<h1>Nothing fits that budget</h1><p class="sub">Some items are due, but the cheapest costs about ' + money(p.cheapestCents || 0, p.currency) + (p.budgetCents ? ", and the budget is " + money(p.budgetCents, p.currency) : "") + ". Try a bigger one.</p>" + tuner({ ...p, budgetCents: Math.max(p.budgetCents || 0, p.cheapestCents || 0), totalCents: p.cheapestCents || 0 }) + '<hr class="dots">' + left);
+      wireTuner();
+      return;
+    }
     const lines = p.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + money(l.packs * l.unitPriceCents, l.currency) + '</span></div><div class="reason">' + esc(l.reason) + "</div>").join("");
     const dropped = p.dropped.map((d) => '<div class="leader struck"><span class="t">' + esc(short(d.title, d.name)) + '</span></div><div class="reason">left out: ' + esc(d.why) + "</div>").join("");
     slip('<h1>Restock plan</h1><p class="sub">Nothing is ordered until you say yes. Plan expires at ' + hhmm(p.expiresAt) + '.</p>' + '<div class="approval"><small>Approval code</small><b id="code" aria-live="polite">····</b><span>Say it to approve by voice, or press Place order below.</span></div><hr class="dots">' + lines + dropped + '<hr class="solid"><div class="total"><small>Total</small><span>' + money(p.totalCents, p.currency) + '</span></div>' + (p.budgetCents ? '<div class="note">Budget ' + money(p.budgetCents, p.currency) + " · " + money(p.budgetCents - p.totalCents, p.currency) + " to spare</div>" : "") +
