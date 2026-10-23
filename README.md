@@ -95,7 +95,7 @@ Hearth is **not a store**. It restocks only what the household already buys regu
 | **A forecast you can audit** | `npm run backtest` predicts every purchase from the history before it. The stated window is calibrated so the real next purchase falls inside it about 80% of the time (it was 56% before the backtest caught it); run it on your own export. |
 | **Safe by construction** | Spend ceilings, idempotency, undo, audit chain, an erase tool hidden from the model, and a tested attack suite ([SECURITY.md](SECURITY.md)). |
 | **Speaks the household's language** | English, Spanish and Hindi replies, locale-correct money, preferences that persist. Spoken conversation with a wake word and follow-ups ([docs/VOICE.md](docs/VOICE.md)). |
-| **Real protocol, visible** | A real MCP client (OAuth + PKCE, Streamable HTTP/SSE, MCP Apps host) stands in for the device, with a live **MCP wire** drawer showing every JSON-RPC message. |
+| **Real protocol, visible** | A real MCP client (OAuth + PKCE, Streamable HTTP/SSE, MCP Apps host) stands in for the device, with a live **MCP wire** drawer showing every JSON-RPC message, and a plain-language **Safety ledger** beside it: every action, how each order was approved, and whether the hash-chained history is intact. |
 | **Claude on Amazon Bedrock** | Optional brain via the Converse API with tool use, verified live with Claude Haiku 4.5, with retries and a daily call cap ([docs/BEDROCK.md](docs/BEDROCK.md)). |
 
 > **What is simulated.** Alexa+ add-on tooling is partner-only, so there is no real device: the web page in `web/` is a **real MCP client**

@@ -148,7 +148,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
       const w = i.daysLeft < 0 ? '<span class="when over">OVERDUE ' + Math.abs(i.daysLeft) + "D</span>" : i.daysLeft === 0 ? '<span class="when soon">TODAY</span>' : '<span class="when ' + (i.daysLeft <= 7 ? "soon" : "") + '">IN ' + i.daysLeft + "D</span>";
       return '<div class="row"><div class="line"><span class="name">' + esc(short(i.title, i.name)) + "</span>" + w + '</div><div class="meta"><span>±' + i.windowDays + "d · " + i.confidence + " confidence</span><span>" + i.purchases + " orders</span></div>" + scale(i) + "</div>";
     }).join("");
-    slip('<h1>Running low</h1><p class="sub">' + due + " of " + items.length + " items run out within " + sc.withinDays + ' days. Bars show the likely window, not a promise.</p><hr class="dots">' + rows);
+    slip('<h1>Running low</h1><p class="sub">' + due + " of " + items.length + " items run out within " + sc.withinDays + ' days. Bars show the likely window, not a promise: each is sized to catch your next purchase about 8 times in 10.</p><hr class="dots">' + rows);
   }
   function recalls(sc) {
     const ms = sc.matches || [];

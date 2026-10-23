@@ -31,11 +31,54 @@ function wire({ dir, body, label }) {
   log.append(li);
   log.scrollTop = log.scrollHeight;
 }
-$("wireToggle").addEventListener("click", () => {
-  const open = $("wire").dataset.open !== "true";
-  $("wire").dataset.open = String(open);
-  $("wireToggle").setAttribute("aria-expanded", String(open));
-});
+// One drawer, two tabs: the raw protocol, and the plain-language safety ledger.
+function drawer(tab) {
+  const w = $("wire");
+  const open = !(w.dataset.open === "true" && w.dataset.tab === tab);
+  w.dataset.tab = tab; w.dataset.open = String(open);
+  $("wireLog").hidden = tab !== "wire"; $("ledgerLog").hidden = tab !== "ledger";
+  $("wireToggle").setAttribute("aria-expanded", String(open && tab === "wire"));
+  $("ledgerToggle").setAttribute("aria-expanded", String(open && tab === "ledger"));
+  if (open && tab === "ledger") refreshLedger();
+}
+$("wireToggle").addEventListener("click", () => drawer("wire"));
+$("ledgerToggle").addEventListener("click", () => drawer("ledger"));
+
+// ---- safety ledger: what Hearth did for this household, and how each order was approved ----------------------
+const PROOF = { code: "approved by the spoken code", app: "approved with the card's Place order button", elicitation: "approved at a prompt the client showed" };
+function ledgerLine(it) {
+  const d = it.detail ?? {};
+  switch (it.action) {
+    case "confirm_restock": return { text: `Order placed, ${PROOF[d.consent] ?? "approved"}`, tone: "ok" };
+    case "undo_restock": return { text: "Order cancelled inside the undo window", tone: "" };
+    case "approval_code_issued": return { text: "Approval code shown on the plan card (the model is never given it)", tone: "" };
+    case "approval_failed": return { text: `Wrong approval code (attempt ${d.attempt ?? "?"} of 3): nothing ordered`, tone: "warn" };
+    case "confirm_blocked": return { text: `Order blocked by the ${d.reason ?? "safety"} limit`, tone: "warn" };
+    case "confirm_declined": return { text: "Order declined at the approval prompt", tone: "" };
+    case "propose_restock": return { text: "Restock planned (buys nothing)", tone: "" };
+    case "import_orders": return { text: "Order history imported and cleaned", tone: "" };
+    case "check_recalls": return { text: "Checked what you own against recall notices", tone: "" };
+    default: return { text: it.action.replace(/_/g, " "), tone: "" };
+  }
+}
+async function refreshLedger() {
+  try {
+    const r = await mcp.callTool("activity_log", { limit: 15 });
+    const sc = r.structuredContent; if (!sc) return;
+    const log = $("ledgerLog");
+    const head = document.createElement("li");
+    head.className = sc.chainIntact ? "head ok" : "head warn";
+    head.textContent = sc.chainIntact ? `History intact: ${sc.entries} entries, each hash-chained to the one before, so edits would show.` : "Warning: this history failed its integrity check and may have been altered.";
+    const rows = sc.items.map((it) => {
+      const { text, tone } = ledgerLine(it), li = document.createElement("li"), t = document.createElement("time");
+      li.className = tone; t.textContent = new Date(it.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      li.append(Object.assign(document.createElement("span"), { textContent: text }), t);
+      return li;
+    });
+    log.replaceChildren(head, ...rows);
+    $("ledgerCount").textContent = `${sc.entries} entries`;
+  } catch { /* the drawer is a convenience; the conversation never depends on it */ }
+}
 
 // ---- ui helpers -------------------------------------------------------------
 const setState = (s) => { lightbar.dataset.state = s; };
@@ -111,6 +154,7 @@ async function boot() {
   }
 }
 function ready() {
+  $("ledgerToggle").hidden = false;
   $("loadStep").hidden = true;
   $("askForm").hidden = false;
   $("voicebar").hidden = !voiceUsable;
@@ -229,6 +273,7 @@ async function ask(text, opts = {}) {
     await speak(`Sorry, something went wrong: ${e.message}`);
   } finally {
     busy = false; setState("idle");
+    if ($("wire").dataset.open === "true" && $("wire").dataset.tab === "ledger") refreshLedger();
     if (pending) { const next = pending; pending = null; ask(next); } else voice.afterReply();
   }
 }
