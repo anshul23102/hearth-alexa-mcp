@@ -44,7 +44,7 @@ test("negotiates the 2025-11-25 protocol and lists tools with annotations", asyn
   assert.equal(tools.find((t) => t.name === "confirm_restock")!.annotations?.destructiveHint, true);
   assert.equal(tools.find((t) => t.name === "household_runway")!.annotations?.readOnlyHint, true);
   const appCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("app")).map((t) => t.name).sort();
-  assert.deepEqual(appCallable, ["approval_code", "approve_restock", "delete_household_data", "recall_status", "undo_restock"], "cards may only call the approval-gated tools and the recall progress buttons");
+  assert.deepEqual(appCallable, ["approval_code", "approve_restock", "delete_household_data", "recall_status", "remember_preference", "undo_restock"], "cards may only call the approval-gated tools, the recall progress buttons and the skip switch");
   const modelCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("model")).map((t) => t.name);
   for (const t of ["delete_household_data", "approve_restock", "approval_code"]) assert.ok(!modelCallable.includes(t), `the model must never be offered ${t}`);
   assert.ok(modelCallable.includes("confirm_restock"), "the model's only route to ordering is the code-gated tool");
@@ -137,4 +137,18 @@ test("asks for approval through MCP elicitation when the client supports it", as
   const placed = sc(await c2.callTool({ name: "confirm_restock", arguments: { proposalId: id } }));
   assert.match(placed.receipt.orderRef, /^SIM-/);
   await c2.close();
+});
+
+test("the skip switch on a forecast row is reversible and really changes the plan", async () => {
+  const before = sc(await call("household_runway", { withinDays: 60 }));
+  const target = before.items[0];
+  assert.equal(target.skipped, false);
+  await call("remember_preference", { kind: "skip_item", value: target.productKey });
+  const during = sc(await call("household_runway", { withinDays: 60 }));
+  assert.equal(during.items.find((i: any) => i.productKey === target.productKey).skipped, true, "the row shows it is switched off");
+  const planned = sc(await call("plan_restock", { withinDays: 60 })).proposal;
+  assert.ok(!planned.lines.some((l: any) => l.productKey === target.productKey), "a skipped item is left out of plans");
+  await call("remember_preference", { kind: "unskip_item", value: target.productKey });
+  assert.equal(sc(await call("household_runway", { withinDays: 60 })).items.find((i: any) => i.productKey === target.productKey).skipped, false, "resuming puts it back");
+  assert.equal(((await call("remember_preference", { kind: "unskip_item", value: "bad key!" })) as any).isError, true, "keys are validated");
 });

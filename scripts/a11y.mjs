@@ -109,6 +109,8 @@ await until(() => evaluate(`!document.getElementById("askForm").hidden`), "the a
 await until(settled, "the import answer");
 await audit("linked");
 await ask("What are we running low on?");   await audit("runway card");
+await inCard(`document.querySelector(".more-btn").click(); document.querySelector(".skipbtn").click()`); await sleep(1200);
+await audit("runway row opened");
 await ask("Any recalls on what we own?");   await audit("recall card");
 await ask("Plan a restock under $60");      await audit("plan card");
 await inCard(`document.getElementById("place").click()`); await sleep(2500);

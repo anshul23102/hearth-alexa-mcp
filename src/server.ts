@@ -144,7 +144,8 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
     async ({ withinDays }, extra) => {
       const h = hh(extra);
       const L = langOf(h);
-      const all = forecast(db, h, now());
+      const skipped = new Set((getPref(db, h, "skip_items") ?? "").split("|").filter(Boolean));
+      const all = forecast(db, h, now()).map((r) => ({ ...r, skipped: skipped.has(r.productKey) }));
       const due = all.filter((r) => r.daysLeft <= withinDays);
       const phrase = (r: (typeof all)[number]) =>
         r.daysLeft < 0 ? t(L, "runway.overdue", { name: r.name }) : r.daysLeft === 0 ? t(L, "runway.today", { name: r.name }) : t(L, "runway.in", { name: r.name, d: r.daysLeft });
@@ -345,11 +346,11 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       description:
         "Persist a preference across sessions: a restock budget (in the household's currency), an item to never reorder, the spoken language (en, es, hi), or which regulators to check for recalls (US, CA).",
       inputSchema: {
-        kind: z.enum(["budget", "budget_usd", "skip_item", "language", "regions"]),
-        value: z.string().max(200).describe("An amount for budget; a product key (e.g. asin:B0000A2WMH) for skip_item; en|es|hi for language; a comma list like US,CA for regions"),
+        kind: z.enum(["budget", "budget_usd", "skip_item", "unskip_item", "language", "regions"]),
+        value: z.string().max(200).describe("An amount for budget; a product key (e.g. asin:B0000A2WMH) for skip_item or unskip_item; en|es|hi for language; a comma list like US,CA for regions"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
-      _meta: { ui: { visibility: ["model"] } },
+      _meta: { ui: { visibility: ["model", "app"] } }, // the forecast rows have a skip / resume switch
     },
     async ({ kind, value }, extra) => {
       const h = hh(extra);
@@ -360,6 +361,13 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         setPref(db, h, "budget", String(Number(value)));
         audit(db, h, "remember_preference", { kind: "budget", value }, now());
         return { content: [{ type: "text", text: t(L, "pref.budget", { amount: fmtMoney(Math.round(Number(value) * 10 ** minorDigits(householdCurrency(db, h))), householdCurrency(db, h), LOCALES[L]) }) }], structuredContent: { kind: "budget", value } };
+      }
+      if (kind === "unskip_item") {
+        if (!/^[\w:.-]{1,80}$/.test(value)) return bad("That does not look like a product key.");
+        const cur = (getPref(db, h, "skip_items") ?? "").split("|").filter((k) => k && k !== value);
+        setPref(db, h, "skip_items", cur.join("|"));
+        audit(db, h, "remember_preference", { kind, value }, now());
+        return { content: [{ type: "text", text: t(L, "pref.unskip") }], structuredContent: { kind, value } };
       }
       if (kind === "skip_item") {
         if (!/^[\w:.-]{1,80}$/.test(value)) return bad("That does not look like a product key.");
