@@ -1,23 +1,27 @@
-# Demo video script (target 2:30, hard limit 3:00)
+# Demo video script (about 2:50, hard limit 3:00)
 
-> A finished video made from this script (live Claude on Bedrock, synthetic voices) is produced by `npm run demo:video`; its narration is in [demo/NARRATION.md](demo/NARRATION.md) if you would rather record your own voice.
+> A finished video made from this script (live Claude on Bedrock, neural Kokoro voices) is produced by `npm run demo:video`; its narration is in [demo/NARRATION.md](demo/NARRATION.md) if you would rather record your own voice.
 
-Record the browser at 1440x900 with the MCP wire drawer closed until the last scene. Use a real voice-over; do not use
+`npm run demo:video` records at 1920x1080 (JPEG screencast, H.264 CRF 17); allow about 10 GB of free disk while it runs (it removes its frames afterwards). If you record by hand, use the same size with the MCP wire drawer closed until the link scene. Use a real voice-over; do not use
 copyrighted music. Judges may stop at 3:00, so the hook and the safety gate come first.
 
 Setup: `npm run sample && npm start`; open http://localhost:3939 in a fresh profile (so you start unlinked).
 
-| Time | On screen | Say |
+The scenes below are exactly what the recorder drives (see [scripts/make-demo-video.mjs](../scripts/make-demo-video.mjs)); silent waits for the model are cut, so times are approximate.
+
+| Approx. | On screen | Say (see [demo/NARRATION.md](demo/NARRATION.md)) |
 |---|---|---|
-| 0:00-0:15 | Cobalt screen: "Hi, I'm Alexa+... link Hearth to your account." | "Recalls get published, but owners are not reliably reached, and agents that spend money need a safety layer. Hearth is an MCP server that does both for Alexa+." |
-| 0:15-0:30 | Click Link, consent page, Allow; header shows "Linked · MCP 2025-11-25". Open MCP wire for 3 seconds | "A real OAuth 2.1 and PKCE account link, then MCP 2025-11-25 over Streamable HTTP." |
-| 0:30-0:45 | Load sample order history; spoken line: imported about 140, ignored a few duplicates... | "A deliberately messy export: mixed dates, duplicates, cancellations, retitled listings. Hearth cleans it and says what it did." |
-| 0:45-1:10 | Ask "What are we running low on?" Receipt prints. Point at a range bar | "Each item has a likely window, not a fake date. Some things are due this week, others are comfortably stocked, and each bar is a range, not a date." |
-| 1:10-1:35 | Ask "Any recalls on what we own?" Recall slip prints; zoom on the evidence list and the stamp | "It matches my pressure cooker to a real CPSC recall on brand, type and model number OP302, and shows why. The blender is only 'possible' because I bought it after the recall date." |
-| 1:35-2:00 | Ask "Plan a restock under $60". Plan prints with struck-through items. Press Place order. Receipt and barcode appear | "It plans within budget and says what it left out. Nothing is bought until I press this; the card calls confirm_restock back over MCP." |
-| 2:00-2:25 | Terminal beside the browser: run `HEARTH_ADMIN_TOKEN=... npm run demo:recall -- Foodi` (server started with the same token); the idle simulator shows the red NEW RECALL banner and speaks | "Now the part that matters. A recall is published. Hearth finds every owner and pushes it to the open Alexa+ session over an MCP subscription, with nobody asking." |
-| 2:25-2:40 | Press Cancel order on the receipt; barcode voids. Open MCP wire briefly | "Ten-minute undo, idempotent retries, spend ceilings, and a hash-chained audit log." |
-| 2:40-2:55 | Terminal: `npm test` ending in 142 passing | "One hundred forty two automated tests through the official MCP SDK, including an attack suite. Open source, MIT." |
+| 0:00 | Unlinked cobalt screen | Recalls reach few owners; an assistant that spends money needs a safety standard; Hearth does both. |
+| 0:12 | Link, consent page, Allow; open the MCP wire drawer | Real OAuth with PKCE, MCP over Streamable HTTP, every message visible. |
+| 0:22 | Load the family sample (messy export) | Hearth cleans it and says what it did. |
+| 0:28 | "What are we running low on?", then tap **Why this date** | A likely window, never a fake precise date; one tap shows the arithmetic. |
+| 0:50 | "Any recalls on what we own?", then press a remedy button | Matched on brand and model number with evidence; the remedy tracker records what you did. |
+| 1:15 | "Order me ten laptops" | Not a store: it only restocks what the household already buys. |
+| 1:30 | "Plan a restock under sixty dollars"; the card shows a four-digit approval code; say "Confirm" plus the code | Plans first within a budget; the model never sees the code; only the spoken code places the order. |
+| 2:00 | Open the **Safety ledger**, then **Cancel order** | Every action and how it was approved, in a hash-chained ledger; ten-minute undo. |
+| 2:10 | Second session: operator replays the real Foodi recall; the red banner appears and speaks | A recall is published; Hearth pushes it to every owner's open session over an MCP subscription. |
+| 2:30 | Load the pantry sample, tap the Spanish chip | Spanish and Hindi replies; import your own export in any currency. |
+| 2:40 | "Measured, not claimed" slide, then the closing card | 85% of known recalls surfaced, zero false alerts, 16 red-team attacks and no order placed, `npm test` ending in 142 passing; open source, MIT. |
 
 Bedrock has passed `npm run bedrock:check` and run live, so you may say "Claude on Amazon Bedrock can drive it" and show the header reading
 "Claude on Amazon Bedrock". It needs a fresh short-term key exported in the same terminal shortly before recording (keys last at most 12 hours), and a

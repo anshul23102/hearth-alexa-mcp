@@ -262,7 +262,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         approvalCode: z.string().max(12).optional().describe("The 4-digit code the person read from the plan card; never guess or invent it"),
       },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
-      _meta: { ui: { visibility: ["model"] } },
+      _meta: { ui: { resourceUri: RUNWAY_URI, visibility: ["model"] } },
     },
     async ({ proposalId, approvalCode }, extra) => {
       const h = hh(extra);
@@ -335,7 +335,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
       description: "Cancel a restock order placed through Hearth, within the 10-minute undo window.",
       inputSchema: { proposalId: z.string().max(64) },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
-      _meta: { ui: { visibility: ["model", "app"] } },
+      _meta: { ui: { resourceUri: RUNWAY_URI, visibility: ["model", "app"] } },
     },
     async ({ proposalId }, extra) => {
       const r = await undo(db, store, hh(extra), proposalId, now());

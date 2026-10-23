@@ -1,11 +1,11 @@
 // Records the demo video: drives the real simulator in headless Chrome (screencast over the DevTools protocol), narrates the
-// scenes in docs/DEMO-SCRIPT.md with macOS `say`, voices Alexa's actual replies in a second voice, and mixes it all with ffmpeg.
+// scenes in docs/DEMO-SCRIPT.md with a neural voice (macOS `say` as the fallback), voices Alexa's actual replies in a second voice, and mixes it all with ffmpeg.
 // Needs Google Chrome, ffmpeg, and a Hearth server on HEARTH_URL (default http://localhost:3939) to show the live Claude brain.
 // A second throwaway server (offline brain, operator token) is started for the push-alert scene.
 //   npm run demo:video      ->  docs/demo/hearth-demo.mp4
 import { spawn, execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -19,7 +19,7 @@ const B = `http://localhost:${PORT_B}`;
 const RATE = process.env.RATE ?? "180"; // words per minute for the macOS fallback voices
 const TTS_DIR = process.env.HEARTH_TTS_DIR, TTS_PORT = 8767, TTS = `http://127.0.0.1:${TTS_PORT}`;
 let ttsUp = false;
-const W = 1440, H = 900;
+const W = 1920, H = 1080; // full HD
 const tmp = mkdtempSync(join(tmpdir(), "hearth-demo-"));
 mkdirSync(join(tmp, "frames")); mkdirSync(join(tmp, "audio"));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -168,7 +168,7 @@ await goTo(B); await linkAndAllow(); await load("sample-orders.csv");
 
 // ---- recording -----------------------------------------------------------------------------------------------------
 await goTo(A);
-await send("Page.startScreencast", { format: "jpeg", quality: 88, maxWidth: W, maxHeight: H, everyNthFrame: 1 });
+await send("Page.startScreencast", { format: "jpeg", quality: 94, maxWidth: W, maxHeight: H, everyNthFrame: 1 });
 t0 = Date.now(); recording = true;
 await sleep(500);
 
@@ -189,13 +189,16 @@ await load("sample-family.csv"); await sleep(900); await n3; await caption("");
 
 mark("4. forecast");
 await caption("Forecast: a likely window and a confidence, never a fake-precise date");
-const n4 = narrate("Now I just ask. Hearth learned this household's pace from its purchases, so every item gets a likely window, never a fake precise date.");
-await ask("What are we running low on?"); await n4; await alexa(); await sleep(600); await caption("");
+const n4 = narrate("Now I just ask. Every item gets a likely window, never a fake precise date, and one tap shows the arithmetic.");
+await ask("What are we running low on?"); await n4; await alexa(); await sleep(400);
+await clickCard(".more-btn"); await sleep(1800); await caption("");
 
 mark("5. recalls");
 await caption("Matched on brand, product type and model number against real CPSC and Health Canada notices");
-const n5 = narrate("It checks everything the household owns against real recall notices from the U S and Canada, by brand, product type and model number, and shows its evidence.");
-await ask("Any recalls on what we own?"); await n5; await alexa(); await sleep(1200); await caption("");
+const n5 = narrate("It checks everything the household owns against real recall notices from the U S and Canada, by brand and model number, shows its evidence, and tracks what you did about it.");
+await ask("Any recalls on what we own?"); await n5; await alexa(); await sleep(500);
+if (await evaluate(`!!document.querySelector(".rbtns button")`, cards.at(-1)).catch(() => false)) { await caption("Remedy tracker: Hearth keeps asking until you have dealt with it"); await clickCard(".rbtns button"); await sleep(1500); }
+await caption("");
 
 mark("6. not a store");
 await caption("Hearth is not a store: it restocks only what a household already buys");
@@ -203,13 +206,29 @@ const n6 = narrate("Hearth is not a store. It only restocks what a household alr
 await ask("Order me ten laptops"); await n6; await alexa(); await sleep(400); await caption("");
 
 mark("7. safe reordering");
-await caption("Plan first. Nothing is bought until you say yes.");
-const n7 = narrate("When it restocks, it plans first, within a budget. Nothing is bought until I confirm.");
-await ask("Plan a restock under sixty dollars"); await n7; await sleep(1200);
-const n8 = narrate("Confirm calls back over M C P. Orders are idempotent, capped by limits the model cannot change, and audited.");
-await clickCard("#place"); await sleep(1800); await n8;
-const n9 = narrate("And there is a ten minute undo.");
-await clickCard("#undo"); await n9; await caption("");
+await caption("Plan first. A model cannot approve: the code is shown only on the card.");
+const n7 = narrate("When it restocks, it plans first, within a budget. The card shows a four digit approval code that the model never sees.");
+await ask("Plan a restock under sixty dollars"); await n7; await sleep(700);
+const code = (await evaluate(`document.getElementById("code").textContent`, cards.at(-1))).replace(/\s/g, "");
+if (!/^\d{4}$/.test(code)) throw new Error(`no approval code on the card: ${code}`);
+const n8 = narrate("I say the code aloud, and only then is the order placed, capped by limits the model cannot change.");
+const placed = async () => { // the receipt is a new card iframe: wait for it to attach and render
+  for (let i = 0; i < 40; i++) { for (const c of cards.slice(-3)) if (await evaluate(`!!document.getElementById("undo")`, c).catch(() => false)) return true; await sleep(150); }
+  return false;
+};
+let ordered = false;
+for (const words of [`Yes, place it. The approval code is ${code}.`, `Confirm ${code}`]) { // a person says the digits plainly; try a second phrasing before falling back to the button
+  await ask(words); await sleep(300);
+  console.log(`voice approval "${words}" -> ${(await evaluate(`${$("say")}.innerText`)).slice(0, 90)}`);
+  if ((ordered = await placed())) break;
+}
+await n8;
+if (process.env.PROBE) { console.log(`PROBE ordered=${ordered} cards=${cards.length}`); for (const c of cards.slice(-3)) console.log("card:", (await evaluate(`document.body.innerText.slice(0,80)`, c).catch((e) => "ERR " + e.message)).replace(/\n/g, " | ")); rmSync(tmp, { recursive: true, force: true }); process.exit(0); }
+if (!ordered) { await clickCard("#place"); await sleep(1500); flagged.push("voice approval fell back to the button"); }
+await caption("Safety ledger: every action, and how each order was approved, in a hash-chained log");
+const n8b = narrate("Everything lands in a tamper evident safety ledger, and there is a ten minute undo.");
+await clickEl("#ledgerToggle"); await sleep(2600); await clickEl("#ledgerToggle");
+await clickCard("#undo"); await n8b; await caption("");
 
 mark("8. the push");
 await goTo(B); await sleep(1800);
@@ -221,14 +240,13 @@ if (!res.notifiedSessions) throw new Error(`the recall was not pushed: ${JSON.st
 await until(() => evaluate(`!document.getElementById("alertbar").hidden`), "the pushed alert", 15000);
 await n10; await alexa(); await sleep(1500); await caption("");
 
-mark("9. the real world: another coun");
+mark("9. languages");
 await goTo(A); await sleep(1200);
-await caption("A third household, replies in Spanish and Hindi; or import your own export");
-const n11 = narrate("A third household, or load your own export.");
-await load("sample-pantry.csv"); await sleep(700); await n11;
+await caption("Replies in Spanish and Hindi; or import your own export in any currency");
+await load("sample-pantry.csv"); await sleep(500);
 const chip = await evaluate(`[...document.querySelectorAll("#chips button")].findIndex((b) => /Spanish/i.test(b.textContent))`);
 if (chip >= 0) {
-  const n12 = narrate("And it speaks Spanish, Hindi and English.");
+  const n12 = narrate("It speaks Spanish and Hindi too, and imports your own export in any currency.");
   await clickEl(`#chips button:nth-child(${chip + 1})`); await sleep(1500); await until(idle, "the Spanish reply", 30000); await alexa(); await n12;
 }
 await caption("");
@@ -236,7 +254,7 @@ await caption("");
 mark("10. evidence and close");
 const slide = (file, bg) => { const page = join(tmp, `${file}.html`); writeFileSync(page, `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;height:100%;background:${bg}}img{width:100vw;height:100vh;object-fit:contain}</style><img src="${pathToFileURL(join(ROOT, "docs/gallery", file + ".png")).href}">`); return pathToFileURL(page).href; };
 await send("Page.navigate", { url: slide("5-measured", "#2236d9") }); await sleep(900);
-await narrate("Measured, not claimed. Eighty five percent of known recalls surfaced, zero false alerts on unrelated products, one hundred forty two tests, nineteen security findings fixed.");
+await narrate("Measured, not claimed. Eighty five percent of known recalls surfaced, zero false alerts, sixteen red team attacks and no order placed, one hundred forty two tests.");
 await send("Page.navigate", { url: slide("thumbnail", "#2236d9") }); await sleep(900);
 await narrate("Hearth. Recall alerts and safe reordering for Alexa Plus. Open source, M I T.");
 await sleep(600);
@@ -266,10 +284,11 @@ const inputs = audio.flatMap((a) => ["-i", a.file]);
 const delays = audio.map((a, i) => `[${i + 1}:a]aresample=44100,adelay=${Math.round(remap(a.at))}|${Math.round(remap(a.at))}[a${i}]`).join(";");
 const mix = `${delays};${audio.map((_, i) => `[a${i}]`).join("")}amix=inputs=${audio.length}:normalize=0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`;
 execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", join(tmp, "frames.txt"), ...inputs, "-filter_complex", mix, "-map", "0:v", "-map", "[aout]",
-  "-vf", "fps=30,format=yuv420p", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "aac", "-b:a", "160k", "-t", (total / 1000).toFixed(2), "-movflags", "+faststart", join(out, "hearth-demo.mp4")]);
+  "-vf", "fps=30,format=yuv420p", "-c:v", "libx264", "-preset", "medium", "-crf", "17", "-c:a", "aac", "-b:a", "160k", "-t", (total / 1000).toFixed(2), "-movflags", "+faststart", join(out, "hearth-demo.mp4")]);
 const seconds = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", join(out, "hearth-demo.mp4")]).toString());
 console.log(`wrote docs/demo/hearth-demo.mp4  (${seconds.toFixed(1)} s)`);
 if (flagged.length) console.log(`NOTE: the model was unavailable for: ${flagged.join(" | ")}; answered by the offline router. Record again.`);
 if (seconds > 180) console.log("WARNING: longer than the 3:00 limit; shorten the narration.");
 cleanup();
+rmSync(tmp, { recursive: true, force: true }); // the frames are gigabytes at 1080p
 process.exit(0);

@@ -110,6 +110,10 @@ Hearth is **not a store**. It restocks only what the household already buys regu
 > The three sample households in `data/` (US home, family with a baby, two adults who cook at home) are **synthetic**.
 > The recall data is **real**. You can also import your own order export from the page.
 
+## Demo video
+
+The full walkthrough (account link, messy export, forecast with "Why this date", recall matching and the remedy tracker, the not-a-store refusal, a plan approved by saying the code from the card, the Safety ledger, undo, a pushed recall, Spanish and Hindi, and the measured numbers) is recorded from the real app with live Claude on Amazon Bedrock at 1920x1080: [docs/demo/hearth-demo.mp4](docs/demo/hearth-demo.mp4). The voices are synthetic (open-source Kokoro); the screen is real. The YouTube link will be added here. Narration text: [docs/demo/NARRATION.md](docs/demo/NARRATION.md).
+
 ## Run it
 
 Requires **Node 22.16+** (uses the built-in `node:sqlite`). No AWS account is needed.
