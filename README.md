@@ -7,7 +7,7 @@ that never spends their money without an explicit, undoable yes.
 |---|---|
 | A judge | [JUDGING.md](JUDGING.md): the four criteria, each with where to see the evidence (3 minutes) |
 | Running it | [Run it](#run-it) below: `npm install && npm start` |
-| Checking security | [SECURITY.md](SECURITY.md): 16 findings fixed, each with a test |
+| Checking security | [SECURITY.md](SECURITY.md): 17 findings fixed, each with a test |
 
 
 **The problem.** Recalls are published, but owners are not reliably reached: CPSC's own FY2025 report puts the correction rate across consumer
@@ -111,7 +111,7 @@ real ordering API plugs in.
 ## Tests
 
 ```bash
-npm test         # 96 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 97 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 

@@ -298,6 +298,7 @@ const server = createServer(async (req, res) => {
     if (url.pathname === "/metrics") return handleMetrics(req, res);
     if (url.pathname === "/.well-known/security.txt") { res.writeHead(200, { "content-type": "text/plain" }).end(SECURITY_TXT); return; }
     if (url.pathname === "/api/recalls/stats") return sendJson(res, 200, recallStats(db));
+    if (req.method !== "GET" && req.method !== "HEAD") { res.writeHead(405, { allow: "GET, HEAD" }).end("Method not allowed"); return; }
     serveStatic(url, res);
   } catch (e) {
     console.error((e as Error).message);

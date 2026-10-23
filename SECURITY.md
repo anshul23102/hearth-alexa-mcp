@@ -10,7 +10,7 @@ self-audit, **not** a third-party penetration test.
 - **Trusted:** the server process and its operator configuration.
 
 ## Findings and fixes
-F1 to F11 came from the first pass; F12 to F16 from a second pass after proactive alerts, bulk import and operations endpoints were added. Database files are created owner-only (`0600`).
+F1 to F11 came from the first pass; F12 to F17 from later passes after proactive alerts, bulk import and operations endpoints were added. Database files are created owner-only (`0600`).
 | # | Severity | Finding (before) | Fix | Test |
 |---|---|---|---|---|
 | F1 | High | `/api/agent/step` (paid Bedrock call) was unauthenticated; anyone reaching the port could burn credits | Bearer auth, per-household rate limit, strict body validation and size caps | F1, agent validation |
@@ -28,6 +28,7 @@ F1 to F11 came from the first pass; F12 to F16 from a second pass after proactiv
 | F14 | Medium | `HEARTH_AUTH=off` makes every caller one shared household and could be set by mistake on a real deployment | The server refuses to start with auth off when `NODE_ENV=production` or `PUBLIC_URL` is set | misconfiguration test |
 | F15 | Low (privacy) | "Delete my data" did not remove recall alerts, which record what a household owns | Alerts are erased too; the test now checks *every* table with a `household` column, so a future table cannot be forgotten | privacy tests |
 | F16 | Medium (coverage) | After one feed outage at startup the bundled 4-notice snapshot was treated as fresh for 24 h, silently disabling recall coverage | A snapshot or failed sync is retried every 10 minutes; only a live download is trusted for a day; a failing feed never shrinks a good index | outage-fallback test |
+| F17 | Low | The static file server answered any HTTP method (PUT, TRACE) with the page | Only GET and HEAD are served; everything else gets 405 | method test |
 | F10 | Low | Client registration accepted `javascript:`, `data:` and remote `http:` redirect URIs | https or loopback only, no fragments, at most 5 | F10 |
 
 Also verified with tests: static server path traversal (7 encodings), SQL metacharacters in data and inputs, an
