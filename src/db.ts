@@ -43,6 +43,14 @@ export function openDb(path = process.env.HEARTH_DB ?? "data/hearth.db"): Databa
       UNIQUE (household, product_key, source, ext_id)
     );
     CREATE INDEX IF NOT EXISTS alerts_hh ON alerts (household, status, created_at);
+    CREATE TABLE IF NOT EXISTS recall_actions (
+      household TEXT NOT NULL,
+      recall_id TEXT NOT NULL,
+      product_key TEXT NOT NULL,
+      status TEXT NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (household, recall_id, product_key)
+    );
     CREATE TABLE IF NOT EXISTS recalls (
       source TEXT NOT NULL,
       ext_id TEXT NOT NULL,
@@ -143,6 +151,19 @@ export function audit(db: DatabaseSync, household: string, action: string, detai
 }
 
 /** Recompute the chain. `ok: false` names the first sequence number that was altered or is missing. */
+/** The newest entry's number and hash: a short fingerprint of the whole history, because every hash covers everything before it. */
+export function auditHead(db: DatabaseSync, household: string): { seq: number; hash: string } | null {
+  return (db.prepare("SELECT seq, hash FROM audit WHERE household = ? AND seq IS NOT NULL ORDER BY seq DESC LIMIT 1").get(household) as { seq: number; hash: string } | undefined) ?? null;
+}
+
+/**
+ * Has the history changed since someone wrote down a fingerprint? A chain verified only against itself cannot catch someone who
+ * rewrites every hash consistently; a fingerprint kept outside the database can. "missing" means entries were deleted.
+ */
+export function auditPin(db: DatabaseSync, household: string, seq: number, hash: string): "unchanged" | "changed" | "missing" {
+  const row = db.prepare("SELECT hash FROM audit WHERE household = ? AND seq = ?").get(household, seq) as { hash: string } | undefined;
+  return !row ? "missing" : row.hash === hash ? "unchanged" : "changed";
+}
 export function verifyAudit(db: DatabaseSync, household: string): { ok: boolean; entries: number; brokenAt?: number } {
   const rows = db.prepare("SELECT seq, ts, action, detail, prev_hash, hash FROM audit WHERE household = ? AND seq IS NOT NULL ORDER BY seq").all(household) as unknown as { seq: number; ts: number; action: string; detail: string; prev_hash: string; hash: string }[];
   let prev = "genesis", expect = 1;

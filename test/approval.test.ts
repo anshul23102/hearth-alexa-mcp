@@ -31,6 +31,7 @@ test("the voice route needs the code from the card: no code, a guess, or another
   assert.equal(ok.ok, true);
   const audit = recentAudit(db, "h", 20).find((r: any) => r.action === "confirm_restock") as any;
   assert.match(JSON.stringify(audit), /"consent":"code"/, "the audit log records how consent was proven");
+  assert.equal((ok as any).receipt.consent, "code", "and so does the receipt the person sees");
   assert.equal(verifyAudit(db, "h").ok, true);
 });
 
@@ -67,6 +68,7 @@ test("the card's button is its own proof of a person, and the audit log says so"
   const p = plan();
   const r = await confirm(db, simulatedStore, "h", p.id, "app");
   assert.equal(r.ok, true);
+  assert.equal((r as any).receipt.consent, "app");
   assert.match(JSON.stringify(recentAudit(db, "h", 20)), /"consent":"app"/);
 });
 

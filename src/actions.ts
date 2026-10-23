@@ -11,7 +11,7 @@ export interface Proposal {
   id: string; household: string; status: "pending" | "confirmed" | "expired" | "cancelled" | "undone";
   createdAt: number; expiresAt: number; currency: string; lines: Line[]; totalCents: number; budgetCents: number | null; dropped: { title: string; why: string }[];
 }
-export interface Receipt { orderRef: string; placedAt: number; currency: string; totalCents: number; undoUntil: number; lines: Line[] }
+export interface Receipt { orderRef: string; placedAt: number; currency: string; totalCents: number; undoUntil: number; lines: Line[]; consent?: "app" | "elicitation" | "code" }
 
 /** The only seam between Hearth and a real storefront. Swap this for Amazon's ordering APIs in production. */
 export interface StoreAdapter {
@@ -31,7 +31,7 @@ const DAY_MS = 86_400_000;
  * Hard spending ceilings, set by the operator (env), never by a tool: a prompt-injected or confused model can
  * lower its own budget but cannot raise these. Amounts are in major units of the order's currency.
  */
-function spendLimits(env = process.env) {
+export function spendLimits(env = process.env) {
   return { perOrder: Number(env.HEARTH_MAX_ORDER ?? 500), perDay: Number(env.HEARTH_MAX_DAILY ?? 1500) };
 }
 const UNDO_WINDOW = 10 * 60_000;
@@ -150,7 +150,7 @@ export async function confirm(db: DatabaseSync, store: StoreAdapter, household: 
     return { ok: false, error: `That would take today's total over the ${fmtMoney(lim.perDay * unit, p.currency)} daily safety limit. Try again tomorrow or order less.` };
   }
   const { orderRef } = await store.place(p.lines, id.replace("prop_", ""));
-  const receipt: Receipt = { orderRef, placedAt: now, currency: p.currency, totalCents: p.totalCents, undoUntil: now + UNDO_WINDOW, lines: p.lines };
+  const receipt: Receipt = { orderRef, placedAt: now, currency: p.currency, totalCents: p.totalCents, undoUntil: now + UNDO_WINDOW, lines: p.lines, consent: typeof consent === "string" ? consent : "code" };
   db.prepare("UPDATE proposals SET status = 'confirmed', receipt = ? WHERE id = ?").run(JSON.stringify(receipt), id);
   audit(db, household, "confirm_restock", { id, orderRef, totalCents: p.totalCents, consent: typeof consent === "string" ? consent : "code" }, now);
   return { ok: true, receipt, replayed: false };
@@ -186,6 +186,7 @@ export function eraseHousehold(db: DatabaseSync, household: string) {
       proposals: del("DELETE FROM proposals WHERE household = ?"),
       preferences: del("DELETE FROM prefs WHERE household = ?"),
       alerts: del("DELETE FROM alerts WHERE household = ?"),
+      recallProgress: del("DELETE FROM recall_actions WHERE household = ?"),
       activity: del("DELETE FROM audit WHERE household = ?"),
       tokens: del("DELETE FROM oauth_tokens WHERE household = ?"),
     };

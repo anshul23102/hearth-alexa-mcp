@@ -50,8 +50,11 @@ known vulnerabilities at time of writing.
 3. **No encryption at rest, single node.** Order history sits in a SQLite file; use disk encryption or a managed database, and a shared store (Redis/DynamoDB) for rate limits behind a load balancer.
 4. **Data egress to the model provider.** In Bedrock mode, product titles and tool results are sent to the model. Use a region and model access policy that match your data-residency rules.
 5. **`style-src 'unsafe-inline'`** remains because the receipt view uses inline style attributes; scripts are hash-locked.
-6. **The audit chain detects tampering, it does not prevent it.** Someone with write access can still rewrite the whole chain consistently; anchor the latest hash somewhere you trust (a log service, S3 object lock) to close that.
+6. **The audit chain detects tampering, it does not prevent it.** Someone with write access can still rewrite the whole chain consistently, and the self-check alone would pass (`test/anchor.test.ts` shows exactly that). The Safety ledger now shows a fingerprint that the browser remembers for the session, so a rewrite after that point does not match; for lasting protection anchor the latest hash somewhere you trust (a log service, S3 object lock).
 7. **Untested at hostile scale.** Rate limits are per node and in memory; there has been no load or fuzz campaign beyond the included tests.
+
+## Supply chain
+Dependabot (npm, GitHub Actions, Docker) and CodeQL with the `security-extended` query set run on the repository (`.github/`), `npm audit` runs in CI on production dependencies, and the lockfile is committed. These run on public repositories.
 
 ## Operations endpoints
 - `GET /healthz` liveness, `GET /readyz` readiness (database answers and the recall index has data), both unauthenticated; `/readyz` returns only two aggregate counts (notices indexed, open sessions), never household data.

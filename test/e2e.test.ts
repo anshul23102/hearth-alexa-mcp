@@ -40,11 +40,11 @@ test("negotiates the 2025-11-25 protocol and lists tools with annotations", asyn
   assert.equal(client.getServerVersion()?.name, "hearth");
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name).sort();
-  assert.deepEqual(names, ["activity_log", "approval_code", "approve_restock", "check_recalls", "confirm_restock", "delete_household_data", "household_runway", "import_order_history", "plan_restock", "recall_alerts", "remember_preference", "undo_restock"]);
+  assert.deepEqual(names, ["activity_log", "approval_code", "approve_restock", "check_recalls", "confirm_restock", "delete_household_data", "household_runway", "import_order_history", "plan_restock", "recall_alerts", "recall_status", "remember_preference", "undo_restock"]);
   assert.equal(tools.find((t) => t.name === "confirm_restock")!.annotations?.destructiveHint, true);
   assert.equal(tools.find((t) => t.name === "household_runway")!.annotations?.readOnlyHint, true);
   const appCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("app")).map((t) => t.name).sort();
-  assert.deepEqual(appCallable, ["approval_code", "approve_restock", "delete_household_data", "undo_restock"], "cards may only call the approval-gated tools");
+  assert.deepEqual(appCallable, ["approval_code", "approve_restock", "delete_household_data", "recall_status", "undo_restock"], "cards may only call the approval-gated tools and the recall progress buttons");
   const modelCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("model")).map((t) => t.name);
   for (const t of ["delete_household_data", "approve_restock", "approval_code"]) assert.ok(!modelCallable.includes(t), `the model must never be offered ${t}`);
   assert.ok(modelCallable.includes("confirm_restock"), "the model's only route to ordering is the code-gated tool");

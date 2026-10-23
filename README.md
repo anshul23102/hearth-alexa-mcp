@@ -13,7 +13,7 @@ and that **never spends their money without an explicit, undoable yes**.
 [![Transport](https://img.shields.io/badge/transport-Streamable%20HTTP-2a3bd9)](https://modelcontextprotocol.io)
 [![Auth](https://img.shields.io/badge/auth-OAuth%202.1%20%2B%20PKCE-2a3bd9)](SECURITY.md)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522.16-3c873a)](package.json)
-[![Tests](https://img.shields.io/badge/tests-106%20passing-3c873a)](#tests)
+[![Tests](https://img.shields.io/badge/tests-112%20passing-3c873a)](#tests)
 [![Audit](https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-3c873a)](SECURITY.md)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
@@ -92,6 +92,8 @@ Hearth is **not a store**. It restocks only what the household already buys regu
 | **Learns from messy data** | Imports order exports as they really arrive: mixed date formats (day-first detected), many currencies in the right minor unit, duplicates, cancellations, missing quantities, retitled products. Streams files of hundreds of thousands of rows on a worker thread. |
 | **Forecasts with error bars** | Median days-per-unit across purchase gaps, robust to stock-ups; reported as a likely window with a confidence, never a fake-precise date. |
 | **Consent a model cannot forge** | No `userConfirmed` flag to set. The model's only route to an order needs a code only the on-screen card shows (stored hashed, three wrong guesses lock the plan). **Attacked on purpose:** `npm run redteam` hits the live model with 16 prompt injections while a plan is pending and counts the orders placed ([docs/REDTEAM.md](docs/REDTEAM.md)). |
+| **Closes the loop on a recall** | An alert alone does not fix a product (CPSC: under half of recalled units are ever corrected). Each recall card lets the household record *I stopped using it*, *I asked for the free fix* or *Fixed or returned*, counts how many are still open, and logs every change. |
+| **History you can check yourself** | The Safety ledger shows a fingerprint of the hash-chained log and this browser remembers it: a later rewrite of the history, even one with every hash recomputed so the chain still verifies, will not match ([test/anchor.test.ts](test/anchor.test.ts)). |
 | **A forecast you can audit** | `npm run backtest` predicts every purchase from the history before it. The stated window is calibrated so the real next purchase falls inside it about 80% of the time (it was 56% before the backtest caught it); run it on your own export. |
 | **Safe by construction** | Spend ceilings, idempotency, undo, audit chain, an erase tool hidden from the model, and a tested attack suite ([SECURITY.md](SECURITY.md)). |
 | **Speaks the household's language** | English, Spanish and Hindi replies, locale-correct money, preferences that persist. Spoken conversation with a wake word and follow-ups ([docs/VOICE.md](docs/VOICE.md)). |
@@ -189,6 +191,8 @@ sequenceDiagram
   A->>S: undo_restock (within 10 minutes)
 ```
 
+**Where it plugs into Amazon's plans.** Amazon [says](https://developer.amazon.com/alexaplus/blogs/2026/07/alexa-plus-new-ways-to-build-experiences) brands integrating through the Alexa+ MCP toolkit will be able to offer checkout with the payment method saved in the customer's Amazon account. That is an agent spending real money on a customer's behalf, which is the case the approval code, the ceilings and the undo are for. `StoreAdapter` is the seam where such a checkout would plug in.
+
 Key decisions: the browser is the MCP client (judges see real protocol traffic); the model runs server-side so AWS credentials never reach
 the browser; the receipt card runs in an opaque-origin sandboxed iframe and can only call tools the server marks visible to apps; purchasing
 sits behind one `StoreAdapter` interface, which is the seam where a real ordering API plugs in.
@@ -199,6 +203,7 @@ sits behind one `StoreAdapter` interface, which is the seam where a real orderin
 |---|---|---|
 | `import_order_history` | Clean and load a CSV export; re-import is a no-op | idempotent |
 | `household_runway` | Forecast per item with ± window and confidence | read-only, UI |
+| `recall_status` | Record what the household did about a matched recall (stopped using it, asked for the fix, resolved, not my model); the card buttons call it too | idempotent, UI |
 | `recall_alerts` | Recalls published since the household last looked that match something they own (push + pull) | UI |
 | `check_recalls` | Match owned durables to the local U.S. + Canada recall index, with evidence | read-only, UI |
 | `plan_restock` | Propose an order within budget, in the household's currency; buys nothing | UI |
@@ -222,7 +227,7 @@ Full table and method: [SECURITY.md](SECURITY.md). This is a self-audit, not a t
 ## Tests
 
 ```bash
-npm test         # 106 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 112 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
@@ -272,7 +277,7 @@ and CI that runs typecheck, build, tests and `npm audit`. Everything configurabl
 | `web/` | The Alexa+ simulator: MCP client, voice, MCP Apps host |
 | `src/view.html` | The receipt card (an MCP App) |
 | `skill/hearth/` | The Agent Skill |
-| `test/` | 106 tests |
+| `test/` | 112 tests |
 | `scripts/` | Sample generator, benchmarks, recall evaluation, backups, Bedrock checks, recall replay |
 | `data/` | Synthetic sample households and recall snapshots |
 | `docs/` | Problem evidence, scale, Bedrock, voice, operations, demo script, friction log, submission notes |
