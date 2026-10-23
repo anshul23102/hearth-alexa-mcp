@@ -14,7 +14,8 @@
     "backup": "tsx scripts/backup.ts",
     "bench": "tsx scripts/bench.ts",
     "eval": "tsx scripts/eval-recalls.ts",
-    "bedrock:probe": "tsx scripts/bedrock-probe.ts"
+    "bedrock:probe": "tsx scripts/bedrock-probe.ts",
+    "gallery": "node scripts/make-gallery.mjs"
   },
   "keywords": [
     "mcp",
