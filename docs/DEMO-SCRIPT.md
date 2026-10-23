@@ -1,5 +1,7 @@
 # Demo video script (target 2:30, hard limit 3:00)
 
+> A finished video made from this script (live Claude on Bedrock, synthetic voices) is produced by `npm run demo:video`; its narration is in [demo/NARRATION.md](demo/NARRATION.md) if you would rather record your own voice.
+
 Record the browser at 1440x900 with the MCP wire drawer closed until the last scene. Use a real voice-over; do not use
 copyrighted music. Judges may stop at 3:00, so the hook and the safety gate come first.
 
