@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { closeSync, fstatSync, openSync, readFileSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { Worker } from "node:worker_threads";
@@ -55,7 +55,7 @@ const agentLimit = new RateLimiter(30, 60_000);
 const importLimit = new RateLimiter(10, 3600_000);
 
 // The receipt view runs inline in a sandboxed iframe; allow exactly its script by hash.
-const viewHashes = [...RUNWAY_HTML.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => sha256b64(m[1]));
+const viewHashes = [...RUNWAY_HTML.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)].map((m) => sha256b64(m[1]));
 const PAGE_CSP = csp(viewHashes);
 
 const MIME: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".csv": "text/csv", ".json": "application/json", ".woff2": "font/woff2", ".png": "image/png" };
@@ -269,8 +269,16 @@ function serveStatic(url: URL, res: ServerResponse) {
   }
   const rel = normalize(url.pathname === "/" ? "/index.html" : url.pathname).replace(/^(\.\.[/\\])+/, "");
   const file = join(WEB, rel);
-  if (!file.startsWith(WEB) || /(^|[/\\])\./.test(rel) || !existsSync(file) || !statSync(file).isFile()) { res.writeHead(404).end("Not found"); return; }
-  res.writeHead(200, { "content-type": MIME[extname(file)] ?? "application/octet-stream", "cache-control": "no-cache" }).end(readFileSync(file));
+  if (!file.startsWith(WEB) || /(^|[/\\])\./.test(rel)) { res.writeHead(404).end("Not found"); return; }
+  // Open once and check the same descriptor, so the file cannot be swapped between the check and the read.
+  let body: Buffer;
+  let fd: number | undefined;
+  try {
+    fd = openSync(file, "r");
+    if (!fstatSync(fd).isFile()) throw new Error("not a file");
+    body = readFileSync(fd);
+  } catch { res.writeHead(404).end("Not found"); return; } finally { if (fd !== undefined) closeSync(fd); }
+  res.writeHead(200, { "content-type": MIME[extname(file)] ?? "application/octet-stream", "cache-control": "no-cache" }).end(body);
 }
 
 const routeGroup = (p: string) => p === "/mcp" ? "mcp" : p.startsWith("/api/import") ? "import" : p.startsWith("/api/agent") ? "agent" : p.startsWith("/api/admin") ? "admin" : ["/authorize", "/token", "/register", "/revoke"].includes(p) || p.startsWith("/.well-known/oauth") ? "oauth" : p === "/healthz" || p === "/readyz" || p === "/metrics" ? "ops" : "static";

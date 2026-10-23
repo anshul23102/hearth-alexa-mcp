@@ -148,7 +148,7 @@ test("F8 security headers and a hash-only CSP on the simulator", async () => {
   assert.match(csp, /default-src 'none'/);
   assert.match(csp, /frame-ancestors 'none'/);
   assert.ok(!/script-src[^;]*unsafe-inline/.test(csp), "no unsafe-inline scripts");
-  const view = readFileSync("src/view.html", "utf8").match(/<script>([\s\S]*?)<\/script>/)![1];
+  const view = readFileSync("src/view.html", "utf8").match(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/i)![1];
   assert.ok(csp.includes(`'sha256-${sha256b64(view)}'`), "the receipt view script is allowed by its hash");
 });
 

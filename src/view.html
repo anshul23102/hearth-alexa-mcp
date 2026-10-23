@@ -120,6 +120,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
   let lastCall = null, current = null, timer = null;
 
   window.addEventListener("message", (e) => {
+    if (e.source !== window.parent) return; // only the host frame may drive this card (its origin is opaque inside the sandbox, so the source is the check)
     const m = e.data; if (!m || m.jsonrpc !== "2.0") return;
     if (m.id !== undefined && !m.method) { const p = pending.get(m.id); if (!p) return; pending.delete(m.id); m.error ? p.bad(new Error(m.error.message)) : p.ok(m.result); return; }
     if (m.method === "ui/notifications/tool-input") lastCall = m.params;
@@ -149,9 +150,9 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
     const due = items.filter((i) => i.daysLeft <= sc.withinDays).length;
     const rows = items.map((i) => {
       const w = i.daysLeft < 0 ? '<span class="when over">OVERDUE ' + Math.abs(i.daysLeft) + "D</span>" : i.daysLeft === 0 ? '<span class="when soon">TODAY</span>' : '<span class="when ' + (i.daysLeft <= 7 ? "soon" : "") + '">IN ' + i.daysLeft + "D</span>";
-      return '<div class="row"><div class="line"><span class="name">' + esc(short(i.title, i.name)) + "</span>" + w + '</div><div class="meta"><span>±' + i.windowDays + "d · " + i.confidence + " confidence" + (i.unitsPerDay > 0 && i.packUnits ? " · a pack lasts ~" + Math.max(1, Math.round(i.packUnits / i.unitsPerDay)) + "d" : "") + "</span><span>" + i.purchases + " orders</span></div>" + scale(i) + "</div>";
+      return '<div class="row"><div class="line"><span class="name">' + esc(short(i.title, i.name)) + "</span>" + w + '</div><div class="meta"><span>±' + i.windowDays + "d · " + esc(i.confidence) + " confidence" + (i.unitsPerDay > 0 && i.packUnits ? " · a pack lasts ~" + Math.max(1, Math.round(i.packUnits / i.unitsPerDay)) + "d" : "") + "</span><span>" + i.purchases + " orders</span></div>" + scale(i) + "</div>";
     }).join("");
-    slip('<h1>Running low</h1><p class="sub">' + due + " of " + items.length + " items run out within " + sc.withinDays + ' days. Bars show the likely window, not a promise: each is sized to catch your next purchase about 8 times in 10.</p><hr class="dots">' + rows);
+    slip('<h1>Running low</h1><p class="sub">' + due + " of " + items.length + " items run out within " + Number(sc.withinDays) + ' days. Bars show the likely window, not a promise: each is sized to catch your next purchase about 8 times in 10.</p><hr class="dots">' + rows);
   }
   const REMEDY = [["stopped_using", "I stopped using it"], ["remedy_requested", "I asked for the free fix"], ["resolved", "Fixed or returned"]];
   const REMEDY_WORDS = { open: "Still open", stopped_using: "Stopped using it", remedy_requested: "Free fix requested", resolved: "Resolved", not_mine: "Not my model" };
@@ -177,9 +178,9 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
   }
   function recalls(sc) {
     const ms = sc.matches || [];
-    if (!ms.length) return slip(sc.fromAlerts ? '<h1>Nothing new</h1><p class="sub">No new recalls for anything you own.</p>' : '<h1>All clear</h1><p class="sub">Checked ' + sc.checked + " products against " + Number(sc.indexed || 0).toLocaleString(LOC) + " recall notices. No matches.</p>");
+    if (!ms.length) return slip(sc.fromAlerts ? '<h1>Nothing new</h1><p class="sub">No new recalls for anything you own.</p>' : '<h1>All clear</h1><p class="sub">Checked ' + Number(sc.checked) + " products against " + Number(sc.indexed || 0).toLocaleString(LOC) + " recall notices. No matches.</p>");
     const src = (sc.regions || []).join(" + ");
-    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul>' + (m.reminder ? '<p class="remind">Reminder ' + m.reminder + ": this recall is still open.</p>" : "") + remedyBlock(m) + (m.recall.url ? '<button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button>' : "") + '</div><hr class="dots">').join("");
+    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + esc(m.level) + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul>' + (m.reminder ? '<p class="remind">Reminder ' + m.reminder + ": this recall is still open.</p>" : "") + remedyBlock(m) + (m.recall.url ? '<button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button>' : "") + '</div><hr class="dots">').join("");
     slip('<h1>' + (sc.fromAlerts ? "New recall alert" : ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at") + "</h1><p class=\"sub\">" + (sc.fromAlerts ? "Found the moment the notice was published, by matching it to what you own on brand, product type and model number." : "Matched on brand, product type and model number against " + Number(sc.indexed || 0).toLocaleString(LOC) + " public recall notices (" + esc(src) + ").") + (typeof sc.open === "number" ? " <b>" + sc.open + " of " + ms.length + " still open.</b>" : "") + "</p><hr class=\"dots\">" + cards);
     app.querySelectorAll("[data-url]").forEach((b) => b.addEventListener("click", () => request("ui/open-link", { url: b.dataset.url }).catch(() => {})));
     wireRemedy();
@@ -244,7 +245,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
     const sc = result && result.structuredContent;
     if (sc && sc.locale) LOC = sc.locale;
     if (!sc) return slip('<h1>Hearth</h1><p class="sub">' + esc(result?.content?.[0]?.text || "") + "</p>");
-    ({ runway, recalls, proposal, receipt, undo: undone, log }[sc.view] || (() => slip("<pre>" + esc(JSON.stringify(sc, null, 1)) + "</pre>")))(sc);
+    const views = { runway, recalls, proposal, receipt, undo: undone, log };
+    (Object.hasOwn(views, sc.view) ? views[sc.view] : () => slip("<pre>" + esc(JSON.stringify(sc, null, 1)) + "</pre>"))(sc);
   }
 
   new ResizeObserver(fit).observe(document.body);

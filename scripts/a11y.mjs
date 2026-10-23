@@ -68,18 +68,24 @@ const OPTS = JSON.stringify({ runOnly: { type: "tag", values: ["wcag2a", "wcag2a
 const RUN = `axe.run(document, ${OPTS}).then((r) => r.violations.map((v) => ({ id: v.id, impact: v.impact, help: v.help, nodes: v.nodes.slice(0, 3).map((n) => n.target.join(" ") + " | " + (n.failureSummary || "").replace(/\\s+/g, " ").slice(0, 160)) })))`;
 const findings = [];
 async function audit(label, attempt = 0) {
-  try { await evaluate(AXE); } catch (e) { if (attempt > 3) throw e; await sleep(900); return audit(label, attempt + 1); } // the page may still be navigating
-  const main = await evaluate(RUN);
-  let card = null;
-  const session = frames.at(-1);
-  if (session) {
-    await send("Runtime.evaluate", { expression: AXE }, session);
-    const r = await send("Runtime.evaluate", { expression: RUN, awaitPromise: true, returnByValue: true }, session);
-    card = r.result.value ?? [];
+  try {
+    await evaluate(AXE);
+    const main = await evaluate(RUN);
+    let card = null;
+    const session = frames.at(-1);
+    if (session) {
+      await send("Runtime.evaluate", { expression: AXE }, session);
+      const r = await send("Runtime.evaluate", { expression: RUN, awaitPromise: true, returnByValue: true }, session);
+      card = r.result.value ?? [];
+    }
+    for (const v of main) findings.push({ screen: label, where: "page", ...v });
+    for (const v of card ?? []) findings.push({ screen: label, where: "card", ...v });
+    console.log(`${label.padEnd(24)} page: ${String(main.length).padStart(2)} issue(s)   card: ${card ? String(card.length).padStart(2) + " issue(s)" : "n/a"}`);
+  } catch (e) { // the page may still be navigating (the link and consent steps redirect); look again
+    if (attempt > 4) throw e;
+    await sleep(900);
+    return audit(label, attempt + 1);
   }
-  for (const v of main) findings.push({ screen: label, where: "page", ...v });
-  for (const v of card ?? []) findings.push({ screen: label, where: "card", ...v });
-  console.log(`${label.padEnd(24)} page: ${String(main.length).padStart(2)} issue(s)   card: ${card ? String(card.length).padStart(2) + " issue(s)" : "n/a"}`);
 }
 const settled = () => evaluate(`document.getElementById("lightbar").dataset.state === "idle" && document.getElementById("say").innerText.length > 0`);
 async function ask(text) {

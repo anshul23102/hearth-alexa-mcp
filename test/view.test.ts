@@ -6,7 +6,7 @@ import { Script } from "node:vm";
 // The MCP App view is a single HTML file with an inline script; a typo there fails silently in the
 // iframe, so compile it in CI and check the host protocol hooks are present.
 const html = readFileSync(new URL("../src/view.html", import.meta.url), "utf8");
-const script = html.match(/<script>([\s\S]*)<\/script>/)![1];
+const script = html.match(/<script\b[^>]*>([\s\S]*)<\/script\s*>/i)![1];
 
 test("view script compiles", () => {
   assert.doesNotThrow(() => new Script(script, { filename: "view.html" }));

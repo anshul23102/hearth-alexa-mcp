@@ -53,6 +53,12 @@ known vulnerabilities at time of writing.
 6. **The audit chain detects tampering, it does not prevent it.** Someone with write access can still rewrite the whole chain consistently, and the self-check alone would pass (`test/anchor.test.ts` shows exactly that). The Safety ledger now shows a fingerprint that the browser remembers for the session, so a rewrite after that point does not match; for lasting protection anchor the latest hash somewhere you trust (a log service, S3 object lock).
 7. **Untested at hostile scale.** Rate limits are per node and in memory; there has been no load or fuzz campaign beyond the included tests.
 
+## CodeQL triage
+CodeQL (`security-extended`) runs on every push and reported 20 findings on its first run. All were reviewed:
+- **Fixed in the product:** the static file server checked a file and then read it (now one descriptor, opened and checked together); the card's message handler did not check that messages came from the host frame (now it does); the card chose its renderer with a method lookup that a crafted view name could abuse (now an own-property check); two enum-like values and two counters were inserted into the card's HTML without escaping (now escaped or coerced to numbers); and the regex that finds the card's script for the CSP hash is stricter.
+- **Fixed in tests:** the same script regex, and URL checks that used a substring (now the parsed host name).
+- **Remaining, and why:** the card builds its HTML from templates, so CodeQL flags `innerHTML` as possible XSS; every server-supplied string goes through `esc()` and the page CSP allows only the card's own script by hash, but this is the one place a stricter DOM-building rewrite would be better. The `postMessage` finding wants an origin check; inside the sandbox the origin is opaque, so the check is the message source. The rest are in development tooling (`scripts/`: the recorder writes a local text-to-speech reply to a local file and evaluates strings it built with `JSON.stringify` in a browser it controls), which is not shipped in the Docker image.
+
 ## Supply chain
 Dependabot (npm, GitHub Actions, Docker) and CodeQL with the `security-extended` query set run on the repository (`.github/`), `npm audit` runs in CI on production dependencies, and the lockfile is committed. These run on public repositories.
 
