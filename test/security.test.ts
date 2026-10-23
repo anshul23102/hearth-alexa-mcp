@@ -245,14 +245,24 @@ test("F7 blast radius: operator spend ceilings hold even when the model confirms
       return { r1: r1 as any, r2: r2 as any, log, total: first.totalCents };
     } finally { p.kill(); }
   };
-  // per-order ceiling: a 49-ish dollar plan is refused when the cap is 20
-  const a = await tryOrder({ HEARTH_MAX_ORDER: "20", HEARTH_MAX_DAILY: "1000" }, 3963);
-  assert.ok(a.total > 2000, `plan total ${a.total}`);
+  // The caps are derived from the real plan this data produces (so the test keeps meaning the same thing if the sample changes):
+  // the per-order cap sits below the plan, the daily cap lets one plan through but not two.
+  const { openDb } = await import("../src/db.js");
+  const { ingestOrders } = await import("../src/ingest.js");
+  const { forecast } = await import("../src/forecast.js");
+  const { propose } = await import("../src/actions.js");
+  const probe = openDb(":memory:");
+  ingestOrders(probe, "p", CSV);
+  const planDollars = propose(probe, "p", forecast(probe, "p"), { withinDays: 14, budgetCents: 6000 }).totalCents / 100;
+  assert.ok(planDollars >= 10, `the sample's plan is ${planDollars} dollars: big enough to test a ceiling`);
+  // per-order ceiling: the plan is refused when the cap is below it
+  const a = await tryOrder({ HEARTH_MAX_ORDER: String(Math.floor(planDollars / 2)), HEARTH_MAX_DAILY: "100000" }, 3963);
+  assert.ok(a.total > 1000, `plan total ${a.total}`);
   assert.equal(a.r1.isError, true);
   assert.match(a.r1.content[0].text, /per-order safety limit/);
   assert.ok(a.log.includes("confirm_blocked"));
   // daily ceiling: the first order fits, a second one the same day does not
-  const b = await tryOrder({ HEARTH_MAX_ORDER: "100", HEARTH_MAX_DAILY: "60" }, 3964);
+  const b = await tryOrder({ HEARTH_MAX_ORDER: "100000", HEARTH_MAX_DAILY: String(Math.ceil(planDollars * 1.5)) }, 3964);
   assert.notEqual(b.r1.isError, true, "first order is within both limits");
   assert.equal(b.r2.isError, true);
   assert.match(b.r2.content[0].text, /daily safety limit/);

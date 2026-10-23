@@ -103,16 +103,18 @@ export function generateSample(file: SampleFile, anchorISO: string): string {
   const asin = () => "B0" + Math.floor(rnd() * 1e8).toString(36).toUpperCase().padStart(8, "0").slice(0, 8);
 
   for (const it of prof.consumables) {
-    let t = anchor - 24 * 30 * DAY - Math.floor(rnd() * it.gap) * DAY; // two years of history
+    let t = anchor - 24 * 30 * DAY + Math.floor(rnd() * it.gap) * DAY; // at most two years of history, starting a little after its beginning
     const a = asin();
     while (t < anchor - 2 * DAY) {
       const fmt = formats[Math.floor(rnd() * formats.length)];
-      const qty = rnd() < 0.12 ? 2 : 1;
-      const status = rnd() < 0.04 ? "Cancelled" : rnd() < 0.03 ? "Returned" : "Delivered";
-      const line = [oid(), q(fmt(new Date(t))), q(it.titles[Math.floor(rnd() * it.titles.length)]), a, rnd() < 0.05 ? "" : String(qty), q(money(jitter(it.price, 0.03))), status].join(",");
+      const qty = rnd() < 0.08 ? 2 : 1;
+      const step = jitter(it.gap * qty, 0.18) * DAY;
+      const last = t + step >= anchor - 2 * DAY; // the most recent order of each product was delivered, so the demo starts from a sensible place
+      const status = last ? "Delivered" : rnd() < 0.04 ? "Cancelled" : rnd() < 0.03 ? "Returned" : "Delivered";
+      const line = [oid(), q(fmt(new Date(t))), q(it.titles[Math.floor(rnd() * it.titles.length)]), a, rnd() < 0.03 ? "" : String(qty), q(money(jitter(it.price, 0.03))), status].join(",");
       rows.push(line);
       if (rnd() < 0.04) rows.push(line); // an exact duplicate row, as real exports have
-      t += jitter(it.gap * qty, 0.18) * DAY; // two packs last twice as long
+      t += step; // two packs last twice as long
     }
   }
   for (const d of prof.durables) rows.push([oid(), q(formats[formats.length > 1 ? 1 : 0](new Date(Date.parse(d.bought)))), q(d.title), asin(), "1", q(money(d.price)), "Delivered"].join(","));

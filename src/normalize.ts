@@ -124,10 +124,12 @@ export function friendlyName(title: string): string {
   if (brand.length > 1 && brand === brand.toUpperCase()) brand = brand[0] + brand.slice(1).toLowerCase();
   const lower = clean.toLowerCase();
   let best: { at: number; text: string } | null = null;
-  for (const k of [...CONSUMABLE, ...DURABLE, "toothpaste", "toothbrush", "dog food", "blender", "vacuum"]) {
+  for (const k of [...CONSUMABLE, ...DURABLE, "toothpaste", "toothbrush", "dog food", "blender", "vacuum cleaner", "robot vacuum", "cordless vacuum"]) {
     const at = lower.indexOf(k);
     if (at > 0 && (!best || at < best.at)) best = { at, text: clean.slice(at, at + k.length + (lower[at + k.length] === "s" ? 1 : 0)).toLowerCase() };
   }
+  const staple = STAPLE_WORDS.exec(lower); // "Tata Salt ..." is the salt, "Aashirvaad ... Atta" is the atta
+  if (staple && staple.index > 0 && (!best || staple.index < best.at)) best = { at: staple.index, text: staple[1] };
   if (best) return `${brand} ${best.text}`;
   return words.slice(0, 3).join(" ");
 }

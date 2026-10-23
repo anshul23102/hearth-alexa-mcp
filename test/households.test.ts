@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { openDb } from "../src/db.js";
 import { ingestOrders } from "../src/ingest.js";
 import { forecast } from "../src/forecast.js";
-import { storeRecalls, type RecallRecord } from "../src/recallIndex.js";
+import type { RecallRecord } from "../src/recallIndex.js";
 import { processNewRecalls, listAlerts } from "../src/alerts.js";
 
 const load = (name: string) => readFileSync(`data/${name}`, "utf8");
@@ -62,4 +62,13 @@ test("'vacuum' in a food or a flask is read correctly, not as a cleaner", async 
   assert.equal(classify("Dyson V8 Cordless Vacuum Cleaner"), "durable");
   assert.equal(classify("Eufy RoboVac Robot Vacuum Cleaner"), "durable");
   assert.equal(classify("Milton Thermosteel Vacuum Flask 1 L"), "durable");
+});
+
+test("friendly names say what the product is, for staples as well as appliances", async () => {
+  const { friendlyName } = await import("../src/normalize.js");
+  assert.equal(friendlyName("Tata Salt Vacuum Evaporated Iodised Salt, 1 kg"), "Tata salt");
+  assert.equal(friendlyName("Aashirvaad Select Premium Sharbati Atta, 10 kg"), "Aashirvaad atta");
+  assert.equal(friendlyName("Fortune Sunlite Refined Sunflower Oil, 5 L Jar"), "Fortune sunflower oil");
+  assert.equal(friendlyName("Dyson V8 Cordless Vacuum Cleaner"), "Dyson cordless vacuum");
+  assert.equal(friendlyName("Amul Taaza Toned Milk Powder, 1 kg"), "Amul milk powder");
 });

@@ -17,8 +17,6 @@ const rows = db.prepare("SELECT ext_id, date, title, product, text FROM recalls 
 
 interface Case { title: string; last: string; recallId: string; kind: "pos" | "wrong-model" | "other-product" | "accessory" }
 const cases: Case[] = [];
-let seed = 11;
-const rnd = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
 
 for (const r of rows) {
   const name = r.product.replace(/\s+/g, " ").trim();

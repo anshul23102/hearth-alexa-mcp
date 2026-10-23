@@ -12,12 +12,12 @@ Setup: `npm run sample && npm start`; open http://localhost:3939 in a fresh prof
 | 0:00-0:15 | Cobalt screen: "Hi, I'm Alexa+... link Hearth to your account." | "Recalls get published, but owners are not reliably reached, and agents that spend money need a safety layer. Hearth is an MCP server that does both for Alexa+." |
 | 0:15-0:30 | Click Link, consent page, Allow; header shows "Linked · MCP 2025-11-25". Open MCP wire for 3 seconds | "A real OAuth 2.1 and PKCE account link, then MCP 2025-11-25 over Streamable HTTP." |
 | 0:30-0:45 | Load sample order history; spoken line: imported about 140, ignored a few duplicates... | "A deliberately messy export: mixed dates, duplicates, cancellations, retitled listings. Hearth cleans it and says what it did." |
-| 0:45-1:10 | Ask "What are we running low on?" Receipt prints. Point at a range bar | "Each item has a likely window, not a fake date. Toothpaste is overdue; dog food runs out today." |
+| 0:45-1:10 | Ask "What are we running low on?" Receipt prints. Point at a range bar | "Each item has a likely window, not a fake date. Some things are due this week, others are comfortably stocked, and each bar is a range, not a date." |
 | 1:10-1:35 | Ask "Any recalls on what we own?" Recall slip prints; zoom on the evidence list and the stamp | "It matches my pressure cooker to a real CPSC recall on brand, type and model number OP302, and shows why. The blender is only 'possible' because I bought it after the recall date." |
 | 1:35-2:00 | Ask "Plan a restock under $60". Plan prints with struck-through items. Press Place order. Receipt and barcode appear | "It plans within budget and says what it left out. Nothing is bought until I press this; the card calls confirm_restock back over MCP." |
 | 2:00-2:25 | Terminal beside the browser: run `HEARTH_ADMIN_TOKEN=... npm run demo:recall -- Foodi` (server started with the same token); the idle simulator shows the red NEW RECALL banner and speaks | "Now the part that matters. A recall is published. Hearth finds every owner and pushes it to the open Alexa+ session over an MCP subscription, with nobody asking." |
 | 2:25-2:40 | Press Cancel order on the receipt; barcode voids. Open MCP wire briefly | "Ten-minute undo, idempotent retries, spend ceilings, and a hash-chained audit log." |
-| 2:40-2:55 | Terminal: `npm test` ending in 141 passing | "One hundred forty one automated tests through the official MCP SDK, including an attack suite. Open source, MIT." |
+| 2:40-2:55 | Terminal: `npm test` ending in 142 passing | "One hundred forty two automated tests through the official MCP SDK, including an attack suite. Open source, MIT." |
 
 Bedrock has passed `npm run bedrock:check` and run live, so you may say "Claude on Amazon Bedrock can drive it" and show the header reading
 "Claude on Amazon Bedrock". It needs a fresh short-term key exported in the same terminal shortly before recording (keys last at most 12 hours), and a

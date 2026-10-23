@@ -16,7 +16,7 @@ before(async () => {
   // The wrong PKCE verifier must be refused (and burns the code).
   const redirect = "http://localhost/cb";
   const cid = await register(BASE, redirect);
-  const { verifier, challenge } = pkce();
+  const { challenge } = pkce();
   const code = new URL((await approve(BASE, await consentNonce(BASE, cid, challenge, redirect))).headers.get("location")!).searchParams.get("code")!;
   const bad = await fetch(`${BASE}/token`, { method: "POST", body: new URLSearchParams({ grant_type: "authorization_code", code, client_id: cid, redirect_uri: redirect, code_verifier: "w".repeat(43) }) });
   assert.equal(bad.status, 400, "wrong PKCE verifier must fail");
