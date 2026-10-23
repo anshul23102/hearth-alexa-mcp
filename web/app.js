@@ -126,15 +126,14 @@ $("forget").addEventListener("click", async () => {
 });
 // A button press is a host action, not a question: call the import tool directly, whatever the brain is.
 // (With the Bedrock brain the model never sees the file, and 40 KB of CSV should not pass through a model anyway.)
-const MAX_INLINE_CSV = 4 * 1024 * 1024; // larger exports go through the streaming upload endpoint
-async function importCsv(label, getText) {
+const MAX_INLINE_CSV = 4 * 1024 * 1024; // larger exports are streamed to /api/import
+// getReply() resolves to the sentence to speak: either the MCP import tool's reply or a summary of the upload endpoint's report.
+async function importCsv(label, getReply) {
   $("loadBtn").disabled = $("fileBtn").disabled = true;
   heard.textContent = `(loaded ${label})`;
   setState("thinking");
   try {
-    const text = await getText();
-    const r = await mcp.callTool("import_order_history", { csv: text });
-    const reply = r.content?.[0]?.text ?? "";
+    const reply = await getReply();
     messages.push({ role: "user", content: [{ type: "text", text: "I loaded my order history." }] }, { role: "assistant", content: [{ type: "text", text: reply }] });
     await speak(reply);
     ready();
@@ -143,17 +142,25 @@ async function importCsv(label, getText) {
     await speak(e instanceof AuthRequired ? "Your session expired. Reload the page to link again." : `I couldn't load that: ${e.message}`);
   } finally { setState("idle"); }
 }
+const viaTool = async (csv) => (await mcp.callTool("import_order_history", { csv })).content?.[0]?.text ?? "";
+// Big exports are streamed to the bulk endpoint (worker thread, row-by-row) instead of being held in one MCP message.
+async function viaUpload(file) {
+  const r = await fetch("/api/import", { method: "POST", headers: { "content-type": "text/csv", authorization: `Bearer ${mcp.token}` }, body: file });
+  const body = await r.json().catch(() => ({}));
+  if (r.status === 401) throw new AuthRequired("Account not linked");
+  if (!r.ok) throw new Error(body.error || `upload failed (${r.status})`);
+  return `Imported ${body.imported.toLocaleString()} orders from ${body.rowsRead.toLocaleString()} rows in ${body.seconds} seconds. I ignored ${body.duplicates.toLocaleString()} duplicates and ${body.skippedCount.toLocaleString()} unreadable rows.`;
+}
 $("loadBtn").addEventListener("click", () => {
   const file = $("sampleSel").value;
-  importCsv("the sample order history", async () => (sampleCsv = await (await fetch(`/demo/${file}`)).text()));
+  importCsv("the sample order history", async () => viaTool((sampleCsv = await (await fetch(`/demo/${file}`)).text())));
 });
 $("fileBtn").addEventListener("click", () => $("fileIn").click());
 $("fileIn").addEventListener("change", () => {
   const f = $("fileIn").files[0];
   $("fileIn").value = "";
   if (!f) return;
-  if (f.size > MAX_INLINE_CSV) { speak("That file is larger than 4 megabytes. Upload big exports with the import API; see the README."); return; }
-  importCsv(f.name, () => f.text());
+  importCsv(f.name, async () => (f.size > MAX_INLINE_CSV ? viaUpload(f) : viaTool(await f.text())));
 });
 
 // ---- proactive recall alerts (MCP resource subscription) ------------------------------------------------
