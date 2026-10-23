@@ -11,6 +11,7 @@ import { ingestStream, type IngestReport } from "./ingest.js";
 import { recallStats, syncRecalls, type RecallRecord } from "./recallIndex.js";
 import { Hub } from "./hub.js";
 import { dueReminders, processNewRecalls } from "./alerts.js";
+import { storeFromEnv } from "./actions.js";
 import { APP_ONLY_TOOLS, createHearthServer } from "./server.js";
 import { fileURLToPath } from "node:url";
 import { MAX_SPEAK_CHARS, SPEAK_LANGS, startVoice, stopVoice, synthesize, voiceReady, type SpeakLang } from "./voice.js";
@@ -119,7 +120,7 @@ async function handleMcp(req: IncomingMessage & { auth?: AuthInfo }, res: Server
         onsessioninitialized: (id) => { sessions.set(id, { transport, household: who.household, last: Date.now() }); },
       });
       transport.onclose = () => { if (transport.sessionId) sessions.delete(transport.sessionId); };
-      const srv = createHearthServer({ db });
+      const srv = createHearthServer({ db, store: storeFromEnv() });
       const detach = hub.add(who.household, srv);
       const prevClose = transport.onclose;
       transport.onclose = () => { detach(); prevClose?.(); };

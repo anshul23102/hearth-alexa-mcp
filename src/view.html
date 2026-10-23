@@ -269,6 +269,13 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
   function receipt(sc) {
     if (sc.declined) return slip('<h1>Not ordered</h1><p class="sub">Okay, I did not place that order.</p>');
     const r = sc.receipt, id = sc.proposalId;
+    if (r.handoffUrl) { // a prepared cart: nothing is bought yet, so no barcode and no undo clock
+      const cartLines = r.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + money(l.packs * l.unitPriceCents, l.currency) + "</span></div>").join("");
+      slip('<h1>Cart ready</h1><p class="sub ok">Nothing is bought yet. Amazon sets the final prices and takes the order only when you press Place your order there.</p><hr class="dots">' + cartLines + '<hr class="solid"><div class="total"><small>About</small><span>' + money(r.totalCents, r.currency) + '</span></div>' +
+        '<div class="tear"><button class="btn" data-url="' + esc(r.handoffUrl) + '">Open the cart on Amazon ↗</button></div>' + (r.consent ? '<p class="proof">You approved preparing this cart ' + ({ code: "with the spoken code", app: "with the button", elicitation: "at a prompt your device showed" }[r.consent] || "") + ".</p>" : ""));
+      app.querySelectorAll("[data-url]").forEach((b) => b.addEventListener("click", () => request("ui/open-link", { url: b.dataset.url }).catch(() => {})));
+      return;
+    }
     const lines = r.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + money(l.packs * l.unitPriceCents, l.currency) + "</span></div>").join("");
     slip('<h1>Ordered</h1><p class="sub ok">' + (sc.replayed ? "Already placed — no duplicate created." : "Placed through the simulated store.") + '</p><hr class="dots">' + lines + '<hr class="solid"><div class="total"><small>Paid</small><span>' + money(r.totalCents, r.currency) + "</span></div>" + code39(r.orderRef) + '<div class="center note">' + esc(r.orderRef) + '</div>' + (r.consent ? '<p class="proof">Approved ' + ({ code: "with the spoken code", app: "with the Place order button", elicitation: "at a prompt your device showed" }[r.consent] || "") + ". Logged in the safety ledger.</p>" : "") + '<div class="tear"><div style="flex:1"><div class="note" style="margin:0">Undo window</div><div class="timer" id="timer">—</div></div><button class="btn ghost" id="undo">Cancel order</button></div><div class="note" id="msg" role="status"></div>');
     const t = document.getElementById("timer"), u = document.getElementById("undo"), msg = document.getElementById("msg");

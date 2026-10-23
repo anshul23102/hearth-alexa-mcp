@@ -56,6 +56,9 @@ known vulnerabilities at time of writing.
 ## The neural voice endpoint
 `POST /api/speak` (and `GET /api/speak/status`) need a valid bearer token like every other API, are rate limited per household, accept only JSON with 1 to 600 characters of text and one of three languages, and answer 503 when no voice is installed. Hearth sends the voice server nothing but the sentence to speak, over loopback (or the operator's `HEARTH_TTS_URL`), never household data or tokens; the voice server itself listens on 127.0.0.1 only. At most four requests wait on it at once, results are cached in memory (not on disk), and the page's CSP allows audio only from itself and blob URLs. Pinned by `test/speak.test.ts` and `test/neuralvoice.test.ts`.
 
+## The cart handoff
+With `HEARTH_STORE=amazon-cart` the only thing Hearth produces is a link to Amazon's "Add to Cart" page. It is built from validated ASINs and bounded quantities only (anything else is dropped, tested with hostile keys), on a storefront restricted to five Amazon domains (an operator override must match the same list), and the card may open it only if it matches that exact shape. Hearth never holds payment details or Amazon credentials, and nothing is bought until the person presses Place your order on Amazon.
+
 ## CodeQL triage
 CodeQL (`security-extended`) runs on every push and reported 20 findings on its first run. All were reviewed:
 - **Fixed in the product:** the static file server checked a file and then read it (now one descriptor, opened and checked together); the card's message handler did not check that messages came from the host frame (now it does); the card chose its renderer with a method lookup that a crafted view name could abuse (now an own-property check); two enum-like values and two counters were inserted into the card's HTML without escaping (now escaped or coerced to numbers); and the regex that finds the card's script for the CSP hash is stricter.

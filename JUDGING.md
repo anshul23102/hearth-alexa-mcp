@@ -49,6 +49,9 @@ To watch a recall arrive by push: set `HEARTH_ADMIN_TOKEN` (24+ characters) and 
 - Matching only says "likely" with a model-number hit, so it does not cry wolf: 0% false alerts on unrelated products of the same brand in the evaluation.
 - Built on what the Alexa+ track asks for: MCP, Streamable HTTP, Agent Skills, and honest product feedback ([docs/FRICTION_LOG.md](docs/FRICTION_LOG.md)).
 
+## Where an order goes
+In the demo nowhere (simulated store). The real-world path, and what Amazon and Flipkart do and do not offer apps, is in [docs/REAL-WORLD.md](docs/REAL-WORLD.md); the opt-in Amazon cart handoff is built and tested for the link it builds, not against a real Amazon account.
+
 ## What is simulated, and what is not
 - **Real:** the MCP server, OAuth/PKCE, the recall data (10,000+ notices), the matching, the forecast, the safety layer, the Bedrock calls.
 - **Simulated:** the Alexa+ device (the web page is a real MCP client standing in for it, as the FAQ allows) and the storefront (`StoreAdapter`; no real purchases).

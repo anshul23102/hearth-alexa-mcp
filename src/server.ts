@@ -288,9 +288,11 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
     const res = await confirm(db, store, h, proposalId, consent, now());
     if (!res.ok) return { isError: true, content: [{ type: "text" as const, text: res.error }] };
     const r = res.receipt;
-    const text = t(L, "confirm.done", { prefix: t(L, res.replayed ? "confirm.prefixReplay" : "confirm.prefixNew"), ref: r.orderRef, total: fmtMoney(r.totalCents, r.currency, LOCALES[L]) });
+    const text = r.handoffUrl
+      ? t(L, "confirm.cart", { n: r.lines.length })
+      : t(L, "confirm.done", { prefix: t(L, res.replayed ? "confirm.prefixReplay" : "confirm.prefixNew"), ref: r.orderRef, total: fmtMoney(r.totalCents, r.currency, LOCALES[L]) });
     return {
-      content: [{ type: "text" as const, text }, forModel({ proposalId, orderRef: r.orderRef, undoUntil: new Date(r.undoUntil).toISOString(), howToUndo: "if the user asks to cancel, call undo_restock with this proposalId" })],
+      content: [{ type: "text" as const, text }, forModel(r.handoffUrl ? { proposalId, cartRef: r.orderRef, note: "no order exists yet: the person finishes on Amazon, so there is nothing to undo" } : { proposalId, orderRef: r.orderRef, undoUntil: new Date(r.undoUntil).toISOString(), howToUndo: "if the user asks to cancel, call undo_restock with this proposalId" })],
       structuredContent: { view: "receipt", proposalId, receipt: r, replayed: res.replayed, locale: LOCALES[L] },
     };
   }

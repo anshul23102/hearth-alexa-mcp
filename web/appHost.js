@@ -2,7 +2,8 @@
 // View <-> Host JSON-RPC protocol over postMessage (ui/initialize, tool-input, tool-result,
 // size-changed, tools/call proxying, open-link).
 
-const OPEN_OK = /^https:\/\/((www\.)?cpsc\.gov|recalls-rappels\.canada\.ca)\//;
+// Links a card may open: the two regulators' notices, and the Amazon "Add to Cart" link that Hearth's cart handoff prepares.
+export const OPEN_OK = /^https:\/\/((www\.)?cpsc\.gov|recalls-rappels\.canada\.ca)\/|^https:\/\/www\.amazon\.(com|in|co\.uk|ca|de)\/gp\/aws\/cart\/add\.html\?[A-Za-z0-9.=&]+$/;
 
 export function mountApp({ html, mcp, toolName, args, result, onToolResult }) {
   const frame = document.createElement("iframe");

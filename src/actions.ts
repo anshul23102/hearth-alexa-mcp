@@ -11,17 +11,40 @@ export interface Proposal {
   id: string; household: string; status: "pending" | "confirmed" | "expired" | "cancelled" | "undone";
   createdAt: number; expiresAt: number; currency: string; lines: Line[]; totalCents: number; budgetCents: number | null; dropped: { title: string; why: string }[];
 }
-export interface Receipt { orderRef: string; placedAt: number; currency: string; totalCents: number; undoUntil: number; lines: Line[]; consent?: "app" | "elicitation" | "code" }
+export interface Receipt { orderRef: string; placedAt: number; currency: string; totalCents: number; undoUntil: number; lines: Line[]; consent?: "app" | "elicitation" | "code"; handoffUrl?: string }
 
 /** The only seam between Hearth and a real storefront. Swap this for Amazon's ordering APIs in production. */
 export interface StoreAdapter {
-  place(lines: Line[], idempotencyKey: string): Promise<{ orderRef: string }>;
+  place(lines: Line[], idempotencyKey: string): Promise<{ orderRef: string; handoffUrl?: string }>;
   cancel(orderRef: string): Promise<boolean>;
 }
 export const simulatedStore: StoreAdapter = {
   async place(_lines, key) { return { orderRef: `SIM-${key.slice(0, 8).toUpperCase()}` }; },
   async cancel() { return true; },
 };
+
+/**
+ * The real-world store connector that needs no credentials: instead of placing an order, prepare the person's Amazon cart with
+ * Amazon's documented "Add to Cart" link (PA-API 5, ASIN.n / Quantity.n) and hand over to Amazon's own checkout. Hearth's approval is
+ * then permission to *prepare the cart*; nothing is bought until the person presses Place your order on Amazon. Opt in with
+ * HEARTH_STORE=amazon-cart. Needs real ASINs (they come from an Amazon order export); items without one are left out of the cart.
+ */
+const AMAZON_HOSTS: Record<string, string> = { USD: "www.amazon.com", INR: "www.amazon.in", GBP: "www.amazon.co.uk", CAD: "www.amazon.ca", EUR: "www.amazon.de" };
+export const AMAZON_HOST_OK = /^www\.amazon\.(com|in|co\.uk|ca|de)$/;
+export function amazonCartStore(env: NodeJS.ProcessEnv = process.env): StoreAdapter {
+  return {
+    async place(lines, key) {
+      const host = env.HEARTH_AMAZON_HOST ?? AMAZON_HOSTS[lines[0]?.currency] ?? "www.amazon.com";
+      if (!AMAZON_HOST_OK.test(host)) throw new Error("HEARTH_AMAZON_HOST must be an Amazon storefront (amazon.com, .in, .co.uk, .ca or .de)");
+      const items = lines.flatMap((l) => { const asin = /^asin:([A-Z0-9]{10})$/.exec(l.productKey)?.[1]; return asin ? [{ asin, qty: Math.max(1, Math.min(99, Math.round(l.packs))) }] : []; });
+      if (!items.length) throw new Error("None of these items has an Amazon product id (ASIN) in the order history, so I cannot prepare a cart for them.");
+      const query = items.map((it, i) => `ASIN.${i + 1}=${it.asin}&Quantity.${i + 1}=${it.qty}`).join("&");
+      return { orderRef: `CART-${key.slice(0, 8).toUpperCase()}`, handoffUrl: `https://${host}/gp/aws/cart/add.html?${query}` };
+    },
+    async cancel() { return false; }, // nothing was ordered, so nothing can be cancelled
+  };
+}
+export const storeFromEnv = (env: NodeJS.ProcessEnv = process.env): StoreAdapter => (env.HEARTH_STORE === "amazon-cart" ? amazonCartStore(env) : simulatedStore);
 
 const PROPOSAL_TTL = 30 * 60_000;
 const MAX_LINES = 25;
@@ -149,8 +172,10 @@ export async function confirm(db: DatabaseSync, store: StoreAdapter, household: 
     metrics.inc("hearth_orders_blocked_total", { reason: "daily" });
     return { ok: false, error: `That would take today's total over the ${fmtMoney(lim.perDay * unit, p.currency)} daily safety limit. Try again tomorrow or order less.` };
   }
-  const { orderRef } = await store.place(p.lines, id.replace("prop_", ""));
-  const receipt: Receipt = { orderRef, placedAt: now, currency: p.currency, totalCents: p.totalCents, undoUntil: now + UNDO_WINDOW, lines: p.lines, consent: typeof consent === "string" ? consent : "code" };
+  let placed: { orderRef: string; handoffUrl?: string };
+  try { placed = await store.place(p.lines, id.replace("prop_", "")); } catch (e) { return { ok: false, error: (e as Error).message }; }
+  const { orderRef } = placed;
+  const receipt: Receipt = { orderRef, placedAt: now, currency: p.currency, totalCents: p.totalCents, undoUntil: now + UNDO_WINDOW, lines: p.lines, consent: typeof consent === "string" ? consent : "code", ...(placed.handoffUrl ? { handoffUrl: placed.handoffUrl } : {}) };
   db.prepare("UPDATE proposals SET status = 'confirmed', receipt = ? WHERE id = ?").run(JSON.stringify(receipt), id);
   audit(db, household, "confirm_restock", { id, orderRef, totalCents: p.totalCents, consent: typeof consent === "string" ? consent : "code" }, now);
   return { ok: true, receipt, replayed: false };
@@ -162,6 +187,7 @@ export async function undo(db: DatabaseSync, store: StoreAdapter, household: str
   if (p.status !== "confirmed") return { ok: false, message: `Nothing to undo — proposal is ${p.status}.` };
   const row = db.prepare("SELECT receipt FROM proposals WHERE id = ?").get(id) as { receipt: string };
   const receipt = JSON.parse(row.receipt) as Receipt;
+  if (receipt.handoffUrl) return { ok: false, message: "Nothing was ordered, so there is nothing to cancel. If you changed your mind, just do not check out on Amazon, or remove the items from the cart." };
   if (now > receipt.undoUntil) return { ok: false, message: "The undo window has closed; this order is past the point I can cancel." };
   const done = await store.cancel(receipt.orderRef);
   if (!done) return { ok: false, message: "The store could not cancel that order." };

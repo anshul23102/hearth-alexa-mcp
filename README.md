@@ -15,7 +15,7 @@ and that **never spends their money without an explicit, undoable yes**.
 [![Node](https://img.shields.io/badge/node-%E2%89%A522.16-3c873a)](package.json)
 [![CI](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/codeql.yml/badge.svg)](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/codeql.yml)
-[![Tests](https://img.shields.io/badge/tests-128%20passing-3c873a)](#tests)
+[![Tests](https://img.shields.io/badge/tests-134%20passing-3c873a)](#tests)
 [![Audit](https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-3c873a)](SECURITY.md)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
@@ -221,6 +221,9 @@ sits behind one `StoreAdapter` interface, which is the seam where a real orderin
 
 An **Agent Skill** teaching an assistant the plan → read back → confirm discipline is in [`skill/hearth/SKILL.md`](skill/hearth/SKILL.md).
 
+## Where does an order actually go?
+In the demo, nowhere: the store is simulated. Hearth is not a store; it holds the household's memory and the safeguards and hands an approved restock to a `StoreAdapter`. One real connector is built and opt-in: `HEARTH_STORE=amazon-cart` prepares the person's Amazon cart with Amazon's documented "Add to Cart" link, so Amazon's own checkout takes the order and Hearth never touches payment. What is real, what is not, and why Amazon and Flipkart have no public order API for apps like this: [docs/REAL-WORLD.md](docs/REAL-WORLD.md).
+
 ## Security
 
 Self-audited in several passes: **19 findings, each fixed and each with an attack test** (DNS rebinding, cross-site calls, CSRF on consent,
@@ -232,7 +235,7 @@ Full table and method: [SECURITY.md](SECURITY.md). This is a self-audit, not a t
 ## Tests
 
 ```bash
-npm test         # 128 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 134 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
@@ -282,7 +285,7 @@ and CI that runs typecheck, build, tests and `npm audit`. Everything configurabl
 | `web/` | The Alexa+ simulator: MCP client, voice, MCP Apps host |
 | `src/view.html` | The receipt card (an MCP App) |
 | `skill/hearth/` | The Agent Skill |
-| `test/` | 128 tests |
+| `test/` | 134 tests |
 | `scripts/` | Sample generator, benchmarks, recall evaluation, backups, Bedrock checks, recall replay |
 | `data/` | Synthetic sample households and recall snapshots |
 | `docs/` | Problem evidence, scale, Bedrock, voice, operations, demo script, friction log, submission notes |
