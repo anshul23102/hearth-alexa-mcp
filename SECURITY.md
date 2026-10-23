@@ -10,7 +10,7 @@ self-audit, **not** a third-party penetration test.
 - **Trusted:** the server process and its operator configuration.
 
 ## Findings and fixes
-F1 to F11 came from the first pass; F12 to F17 from later passes after proactive alerts, bulk import and operations endpoints were added. Database files are created owner-only (`0600`).
+F1 to F11 came from the first pass; F12 to F17 from later passes after proactive alerts, bulk import and operations endpoints were added; F18 and F19 from a review of the consent path. Database files are created owner-only (`0600`).
 | # | Severity | Finding (before) | Fix | Test |
 |---|---|---|---|---|
 | F1 | High | `/api/agent/step` (paid Bedrock call) was unauthenticated; anyone reaching the port could burn credits | Bearer auth, per-household rate limit, strict body validation and size caps | F1, agent validation |
@@ -29,6 +29,8 @@ F1 to F11 came from the first pass; F12 to F17 from later passes after proactive
 | F15 | Low (privacy) | "Delete my data" did not remove recall alerts, which record what a household owns | Alerts are erased too; the test now checks *every* table with a `household` column, so a future table cannot be forgotten | privacy tests |
 | F16 | Medium (coverage) | After one feed outage at startup the bundled 4-notice snapshot was treated as fresh for 24 h, silently disabling recall coverage | A snapshot or failed sync is retried every 10 minutes; only a live download is trusted for a day; a failing feed never shrinks a good index | outage-fallback test |
 | F17 | Low | The static file server answered any HTTP method (PUT, TRACE) with the page | Only GET and HEAD are served; everything else gets 405 | method test |
+| F18 | High | `confirm_restock` took a `userConfirmed` boolean, so a prompt-injected model could place an order by simply asserting the user agreed | Removed. The model's only route needs a 4-digit approval code issued to the plan card by an app-only tool and never given to the model; stored hashed; three wrong codes lock the plan, nine an hour pause voice approvals; the card's button uses a separate app-only tool; every order logs how consent was proven | approval tests; live red team |
+| F19 | Medium | The simulator host offered every tool to the model, including ones marked app-only (the erase tool among them) | The host filters by tool visibility, and `/api/agent/step` strips the app-only tools again whatever the browser sends; a test pins the list against the server's metadata | e2e visibility test; approval router test |
 | F10 | Low | Client registration accepted `javascript:`, `data:` and remote `http:` redirect URIs | https or loopback only, no fragments, at most 5 | F10 |
 
 Also verified with tests: static server path traversal (7 encodings), SQL metacharacters in data and inputs, an
@@ -37,12 +39,13 @@ known vulnerabilities at time of writing.
 
 ## Defenses by design (not bugs, but worth stating)
 - **Propose, confirm, undo, audit.** `plan_restock` buys nothing. `confirm_restock` is idempotent and every order is undoable for 10 minutes.
-- **Tool visibility.** The receipt card can call only `confirm_restock`, `undo_restock` and `delete_household_data`; the model is never offered the erase tool.
+- **Consent a model cannot forge.** There is no `userConfirmed` flag. The model's only route to an order is `confirm_restock` with a 4-digit **approval code that exists only on the on-screen plan card**: an app-only tool (`approval_code`) issues it to the card, it is stored as a salted SHA-256, it is never written into anything the model reads, and a person has to read it out. Three wrong codes lock the plan and nine in an hour pause voice approvals for the household. Clients that support MCP elicitation can use that instead (a prompt the client itself shows). The card's **Place order** button calls a second app-only tool, `approve_restock`: the press is the consent. Every confirmed order records which proof was used (`consent`: `code`, `app` or `elicitation`). Pinned by `test/approval.test.ts` and measured against a live model by `npm run redteam`.
+- **Tool visibility.** The receipt card can call only `approval_code`, `approve_restock`, `undo_restock` and `delete_household_data`; the model is never offered the first, second or last (`/api/agent/step` strips them too).
 - **Sandboxed view.** The MCP App runs in an opaque-origin iframe (`sandbox="allow-scripts"`), cannot read the host token, and only links to the two regulators' domains are openable.
 - **Feed hygiene.** Recall text is stripped of control and bidi characters and length-capped; only https links to the indexed regulators reach the UI.
 
 ## Residual risks (honest)
-1. **The model can set `userConfirmed`.** A manipulated model could confirm a plan the user did not approve. Ceilings, undo, audit and elicitation limit the damage; they do not remove it. The real fix needs a user-presence signal from the Alexa+ platform (for example, a voice-verified confirmation token only the platform can mint). This is listed as a feature request.
+1. **Approval codes depend on the host honouring tool visibility.** MCP's `visibility: ["app"]` is metadata for the host: a host that offered `approval_code` or `approve_restock` to a model would defeat the code (our simulator host and `/api/agent/step` both enforce it, and a test checks it). A model also cannot pass the code unless a person says it, so a deployment without a screen has no voice route: it should use elicitation or the platform's own voice-verified confirmation. Ceilings, undo and the audit log still bound the damage either way.
 2. **Consent is a demo.** The consent page does not authenticate a person; production must delegate to the household's identity provider. Everything downstream (hashing, rotation, scoping) is unchanged.
 3. **No encryption at rest, single node.** Order history sits in a SQLite file; use disk encryption or a managed database, and a shared store (Redis/DynamoDB) for rate limits behind a load balancer.
 4. **Data egress to the model provider.** In Bedrock mode, product titles and tool results are sent to the model. Use a region and model access policy that match your data-residency rules.

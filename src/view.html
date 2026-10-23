@@ -72,6 +72,7 @@ h1{font:700 40px/.95 var(--display);letter-spacing:-.025em;margin:14px 0 4px;tex
 .rc a,.link{color:var(--blue);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;background:none;border:0;font:inherit;padding:0}
 .rc + .rc{margin-top:6px}
 
+.approval{margin:12px 0 0;padding:10px 12px;border:2px dashed var(--ink);display:grid;gap:2px;text-align:center}.approval small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}.approval b{font:700 30px/1.1 var(--mono);letter-spacing:.18em}.approval span{font-size:11px;color:var(--muted)}
 .tear{margin:18px -20px 0;border-top:2px dashed var(--rule);padding:16px 20px 0;display:flex;gap:10px}
 button.btn{flex:1;font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:13px 10px;border:2px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;transition:transform .18s var(--ease),background .18s,box-shadow .18s;box-shadow:3px 3px 0 var(--blue)}
 button.btn.ghost{background:transparent;color:var(--ink);box-shadow:none}
@@ -163,12 +164,14 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
     const lines = p.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + money(l.packs * l.unitPriceCents, l.currency) + '</span></div><div class="reason">' + esc(l.reason) + "</div>").join("");
     const dropped = p.dropped.map((d) => '<div class="leader struck"><span class="t">' + esc(short(d.title, d.name)) + '</span></div><div class="reason">left out: ' + esc(d.why) + "</div>").join("");
     slip('<h1>Restock plan</h1><p class="sub">Nothing is ordered until you say yes. Plan expires at ' + hhmm(p.expiresAt) + '.</p><hr class="dots">' + lines + dropped + '<hr class="solid"><div class="total"><small>Total</small><span>' + money(p.totalCents, p.currency) + '</span></div>' + (p.budgetCents ? '<div class="note">Budget ' + money(p.budgetCents, p.currency) + " · " + money(p.budgetCents - p.totalCents, p.currency) + " to spare</div>" : "") +
-      '<div class="tear"><button class="btn" id="place">Place order</button><button class="btn ghost" id="later">Not now</button></div><div class="note" id="msg" role="status"></div>');
+      '<div class="approval"><small>Approval code</small><b id="code" aria-live="polite">····</b><span>Say it to approve by voice, or press Place order.</span></div><div class="tear"><button class="btn" id="place">Place order</button><button class="btn ghost" id="later">Not now</button></div><div class="note" id="msg" role="status"></div>');
     const place = document.getElementById("place"), later = document.getElementById("later"), msg = document.getElementById("msg");
+    // The code exists only on this card: a tool the model cannot call issues it, and it is never written into the conversation.
+    callTool("approval_code", { proposalId: p.id }).then((r) => { const c = r.structuredContent && r.structuredContent.code; if (c) document.getElementById("code").textContent = c.split("").join(" "); }).catch(() => { document.getElementById("code").textContent = "—"; });
     place.addEventListener("click", async () => {
       place.disabled = later.disabled = true; place.textContent = "Placing…";
       try {
-        const r = await callTool("confirm_restock", { proposalId: p.id, userConfirmed: true });
+        const r = await callTool("approve_restock", { proposalId: p.id });
         if (r.isError) throw new Error(r.content?.[0]?.text || "Could not place order");
         render(r);
       } catch (e) { msg.innerHTML = '<span class="err">' + esc(e.message) + "</span>"; place.disabled = later.disabled = false; place.textContent = "Try again"; fit(); }

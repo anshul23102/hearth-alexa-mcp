@@ -40,13 +40,16 @@ test("negotiates the 2025-11-25 protocol and lists tools with annotations", asyn
   assert.equal(client.getServerVersion()?.name, "hearth");
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name).sort();
-  assert.deepEqual(names, ["activity_log", "check_recalls", "confirm_restock", "delete_household_data", "household_runway", "import_order_history", "plan_restock", "recall_alerts", "remember_preference", "undo_restock"]);
+  assert.deepEqual(names, ["activity_log", "approval_code", "approve_restock", "check_recalls", "confirm_restock", "delete_household_data", "household_runway", "import_order_history", "plan_restock", "recall_alerts", "remember_preference", "undo_restock"]);
   assert.equal(tools.find((t) => t.name === "confirm_restock")!.annotations?.destructiveHint, true);
   assert.equal(tools.find((t) => t.name === "household_runway")!.annotations?.readOnlyHint, true);
   const appCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("app")).map((t) => t.name).sort();
-  assert.deepEqual(appCallable, ["confirm_restock", "delete_household_data", "undo_restock"], "cards may only call the approval-gated tools");
+  assert.deepEqual(appCallable, ["approval_code", "approve_restock", "delete_household_data", "undo_restock"], "cards may only call the approval-gated tools");
   const modelCallable = tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? ["model", "app"]).includes("model")).map((t) => t.name);
-  assert.ok(!modelCallable.includes("delete_household_data"), "the model must never be offered the erase tool");
+  for (const t of ["delete_household_data", "approve_restock", "approval_code"]) assert.ok(!modelCallable.includes(t), `the model must never be offered ${t}`);
+  assert.ok(modelCallable.includes("confirm_restock"), "the model's only route to ordering is the code-gated tool");
+  const { APP_ONLY_TOOLS } = await import("../src/server.js");
+  assert.deepEqual([...APP_ONLY_TOOLS].sort(), tools.filter((t) => ((t._meta as any)?.ui?.visibility ?? []).join() === "app").map((t) => t.name).sort(), "the server-side strip list matches the tools marked app-only");
   const res = await client.listResources();
   assert.ok(res.resources.some((r) => r.uri === "ui://hearth/runway"));
 });
@@ -89,12 +92,13 @@ test("plan respects budget, refuses unconfirmed orders, is idempotent, and undoe
   assert.ok(plan.lines.length > 0 && plan.totalCents <= 6000, `total ${plan.totalCents}`);
   assert.ok(plan.dropped.length > 0, "budget should have dropped something");
 
-  const refused = await call("confirm_restock", { proposalId: plan.id, userConfirmed: false });
-  assert.equal((refused as any).isError, true);
+  const refused = await call("confirm_restock", { proposalId: plan.id });
+  assert.equal((refused as any).isError, true, "no code, no order");
 
-  const ok = sc(await call("confirm_restock", { proposalId: plan.id, userConfirmed: true }));
+  const code = sc(await call("approval_code", { proposalId: plan.id })).code as string; // what the card shows the person
+  const ok = sc(await call("confirm_restock", { proposalId: plan.id, approvalCode: code }));
   assert.match(ok.receipt.orderRef, /^SIM-/);
-  const again = sc(await call("confirm_restock", { proposalId: plan.id, userConfirmed: true }));
+  const again = sc(await call("confirm_restock", { proposalId: plan.id, approvalCode: code }));
   assert.equal(again.replayed, true);
   assert.equal(again.receipt.orderRef, ok.receipt.orderRef, "retry must not create a second order");
 
@@ -108,7 +112,7 @@ test("plan respects budget, refuses unconfirmed orders, is idempotent, and undoe
 });
 
 test("unknown proposals and bad inputs fail cleanly", async () => {
-  const r = await call("confirm_restock", { proposalId: "prop_nope", userConfirmed: true });
+  const r = await call("confirm_restock", { proposalId: "prop_nope", approvalCode: "0000" });
   assert.equal((r as any).isError, true);
   const v = await call("plan_restock", { withinDays: 9999 });
   assert.equal((v as any).isError, true, "schema violations come back as tool errors the model can read");
@@ -127,10 +131,10 @@ test("asks for approval through MCP elicitation when the client supports it", as
   c2.setRequestHandler(ElicitRequestSchema, async () => answer === "accept" ? { action: "accept", content: { approve: true } } : { action: "decline" });
   await c2.connect(new StreamableHTTPClientTransport(new URL(`${BASE}/mcp`), { requestInit: { headers: { authorization: token } } }));
   const id = await form(c2);
-  const declined = sc(await c2.callTool({ name: "confirm_restock", arguments: { proposalId: id, userConfirmed: true } }));
+  const declined = sc(await c2.callTool({ name: "confirm_restock", arguments: { proposalId: id } }));
   assert.equal(declined.declined, true, "declining the elicitation must not place the order");
   answer = "accept";
-  const placed = sc(await c2.callTool({ name: "confirm_restock", arguments: { proposalId: id, userConfirmed: true } }));
+  const placed = sc(await c2.callTool({ name: "confirm_restock", arguments: { proposalId: id } }));
   assert.match(placed.receipt.orderRef, /^SIM-/);
   await c2.close();
 });

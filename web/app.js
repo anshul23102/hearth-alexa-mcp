@@ -1,6 +1,6 @@
 import { McpClient, AuthRequired } from "./mcp.js";
 import { mountApp } from "./appHost.js";
-import { agentMode, remoteStep, localStep, ensureSpoken, trimConversation } from "./agent.js";
+import { agentMode, remoteStep, localStep, ensureSpoken, trimConversation, modelTools } from "./agent.js";
 import { speakAloud, stopSpeaking, detectLang, chime } from "./speech.js";
 import { createVoice } from "./voice.js";
 
@@ -235,7 +235,7 @@ async function ask(text, opts = {}) {
 
 // If the model service hiccups, answer this turn with the offline router rather than failing the household's request.
 async function remoteOrLocal() {
-  try { return await remoteStep(trimConversation(messages), mcp.tools, mcp.token); } catch (e) {
+  try { return await remoteStep(trimConversation(messages), modelTools(mcp.tools), mcp.token); } catch (e) {
     console.warn("model unavailable, using the offline router for this turn:", e.message);
     setStatus("ok", "Claude is unavailable right now · answering with the offline router");
     return localStep(messages, { sampleCsv });
@@ -258,8 +258,9 @@ async function showCard(name, args, result) {
     html, mcp, toolName: name, args, result,
     // The user can press buttons inside a card; fold that back into the conversation.
     onToolResult: (tool, a, r) => {
+      if (tool === "approval_code") return; // the code is for the person's eyes: it never enters the conversation the model reads
       const id = `ui_${Date.now()}`, spoken = r.content?.[0]?.text ?? "";
-      const label = tool === "confirm_restock" ? "Place order" : tool === "undo_restock" ? "Cancel order" : tool;
+      const label = tool === "approve_restock" ? "Place order" : tool === "undo_restock" ? "Cancel order" : tool;
       // A complete, valid turn (question, call, result, answer): an orphaned tool result would make the next model call fail.
       messages.push(
         { role: "user", content: [{ type: "text", text: `(I pressed “${label}” on the card.)` }] },

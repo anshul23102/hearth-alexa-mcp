@@ -16,7 +16,9 @@
     "eval": "tsx scripts/eval-recalls.ts",
     "bedrock:probe": "tsx scripts/bedrock-probe.ts",
     "gallery": "node scripts/make-gallery.mjs",
-    "demo:video": "node scripts/make-demo-video.mjs"
+    "demo:video": "node scripts/make-demo-video.mjs",
+    "backtest": "tsx scripts/backtest.ts",
+    "redteam": "node scripts/redteam.mjs"
   },
   "keywords": [
     "mcp",

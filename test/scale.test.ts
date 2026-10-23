@@ -90,7 +90,7 @@ test("currencies are detected and held in the right minor unit", () => {
 test("every language has every string with matching placeholders", () => {
   for (const l of Object.keys(LANGS)) assert.ok(isLang(l));
   const probe = { n: 1, due: 1, days: 1, list: "x", name: "x", d: 1, imported: 1, dups: 1, skipped: 1, repaired: 1, k: 1, regions: "US", hazard: "h", m: 1, matches: "m", total: "T", budget: "B", dropped: "D", prefix: "P", ref: "R", amount: "A", lang: "L" };
-  const keys = ["import", "runway.none", "runway.clear", "runway.some", "runway.overdue", "runway.today", "runway.in", "recall.none", "recall.heads", "recall.found", "plan.empty", "plan.some", "plan.budget", "plan.dropped", "confirm.done", "confirm.noyes", "confirm.declined", "pref.budget", "pref.skip", "pref.lang", "pref.regions"] as const;
+  const keys = ["import", "runway.none", "runway.clear", "runway.some", "runway.overdue", "runway.today", "runway.in", "recall.none", "recall.heads", "recall.found", "plan.empty", "plan.some", "plan.budget", "plan.dropped", "confirm.done", "confirm.needcode", "confirm.declined", "pref.budget", "pref.skip", "pref.lang", "pref.regions"] as const;
   for (const l of ["en", "es", "hi"] as const) for (const k of keys) {
     const out = t(l, k, probe);
     assert.ok(out.length > 0 && !/\{\w+\}/.test(out), `${l}.${k} leaves a placeholder: ${out}`);

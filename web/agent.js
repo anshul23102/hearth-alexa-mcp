@@ -83,9 +83,12 @@ export function localStep(messages, { sampleCsv }) {
     const r = lastStructured(messages, "receipt");
     return r ? call("undo_restock", { proposalId: r.proposalId }) : say("There's no recent order for me to cancel.");
   }
+  const plan = lastStructured(messages, "proposal");
+  const spoken = spokenCode(t);
+  if (spoken && plan && t.split(/\s+/).length <= 8) return call("confirm_restock", { proposalId: plan.proposal.id, approvalCode: spoken }); // "confirm 4 8 2 7"
   if (/\b(yes|yeah|yep|place it|go ahead|do it|confirm|order it|sounds good)\w*/.test(t)) {
-    const p = lastStructured(messages, "proposal");
-    return p ? call("confirm_restock", { proposalId: p.proposal.id, userConfirmed: true }) : say("I don't have a plan waiting. Want me to put one together?");
+    // A spoken yes is not proof of a person: the model-facing route needs the code shown on the card (or press the card's button).
+    return plan ? say("To place it, say the four digit approval code on the plan card, or press Place order.") : say("I don't have a plan waiting. Want me to put one together?");
   }
   if (/^(keep|stay|set|cap|limit)\b/.test(t) && money(t)) return call("remember_preference", { kind: "budget_usd", value: String(money(t)) });
   if (/\b(order|restock|buy|reorder|plan|stock up|cart)\w*/.test(t)) return call("plan_restock", { withinDays: days(t) ?? 14, ...(money(t) ? { budgetUsd: money(t) } : {}) });
@@ -94,3 +97,13 @@ export function localStep(messages, { sampleCsv }) {
   if (/\b(low|running|out|runway|stock|left|need|pantry|supplies|soon)\w*/.test(t)) return call("household_runway", { withinDays: days(t) ?? 30 });
   return say("I can tell you what's running low, check your appliances for recalls, or put together a restock. What would you like?");
 }
+
+const DIGIT_WORDS = { zero: 0, oh: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 };
+/** "confirm 4827", "4 8 2 7" or "four eight two seven" -> "4827"; null unless exactly four digits were said. */
+export function spokenCode(text) {
+  const digits = text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).map((w) => (/^\d+$/.test(w) ? w : w in DIGIT_WORDS ? String(DIGIT_WORDS[w]) : "")).join("");
+  return /^\d{4}$/.test(digits) ? digits : null;
+}
+
+/** Tools that only an on-screen card may call (visibility "app") are never offered to the model. */
+export const modelTools = (tools) => tools.filter((t) => (t._meta?.ui?.visibility ?? ["model", "app"]).includes("model"));

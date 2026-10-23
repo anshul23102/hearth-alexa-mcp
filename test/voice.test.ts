@@ -176,7 +176,7 @@ test("pressing a card button leaves a valid conversation the model can continue"
     { role: "user", content: [{ type: "text", text: "plan a restock" }] },
     { role: "assistant", content: [{ type: "text", text: "Here is a plan. Place it?" }] },
     { role: "user", content: [{ type: "text", text: "(I pressed “Place order” on the card.)" }] },
-    { role: "assistant", content: [{ type: "tool_use", id, name: "confirm_restock", input: { proposalId: "prop_1", userConfirmed: true } }] },
+    { role: "assistant", content: [{ type: "tool_use", id, name: "confirm_restock", input: { proposalId: "prop_1", approvalCode: "4827" } }] },
     { role: "user", content: [{ type: "tool_result", tool_use_id: id, text: "Done." }] },
     { role: "assistant", content: [{ type: "text", text: "Done." }] },
     { role: "user", content: [{ type: "text", text: "and what else is low?" }] },
