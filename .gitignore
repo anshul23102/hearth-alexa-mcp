@@ -4,3 +4,4 @@ data/*.db*
 .DS_Store
 dist/
 backups/
+docs/demo/*.mp4
