@@ -95,6 +95,8 @@ const shots = {};
 await ask("What are we running low on?");           shots["1-runway"] = join(tmp, "1.png"); await shoot(shots["1-runway"]);
 await ask("Any recalls on what we own?");           shots["2-recall-match"] = join(tmp, "2.png"); await shoot(shots["2-recall-match"]);
 await ask("Plan a restock under $60");
+await sleep(1500); // the approval code arrives from the card-only tool
+shots["6-approval-code"] = join(tmp, "6.png"); await shoot(shots["6-approval-code"]);
 await inCard(`document.getElementById("place").click()`); await sleep(3500);
 shots["4-order-receipt"] = join(tmp, "4.png"); await shoot(shots["4-order-receipt"]);
 await until(settled, "Hearth to be idle");
@@ -109,6 +111,7 @@ const captions = {
   "1-runway": "When does each item run out? A likely window and a confidence, never a fake-precise date.",
   "2-recall-match": "Recall matching on brand, product type and model number across real U.S. and Canada notices.",
   "3-recall-alert-push": "A recall is published: its owners are found and the open Alexa+ session is pushed to over MCP.",
+  "6-approval-code": "Only the card shows the approval code, so a prompt-injected model cannot place an order.",
   "4-order-receipt": "Nothing is bought until you say yes: idempotent order, 10-minute undo, tamper-evident audit log.",
 };
 const fonts = pathToFileURL(join(ROOT, "web/fonts")).href;
