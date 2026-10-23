@@ -151,6 +151,7 @@ async function boot() {
     $("proto").textContent = `MCP ${init.protocolVersion}`;
     setStatus("ok", `Linked · ${init.serverInfo.name} ${init.serverInfo.version} · ${brain === "bedrock" ? "Claude on Amazon Bedrock" : "offline router"}`);
     $("forget").hidden = false;
+    lookForNeuralVoice();
     subscribeToAlerts();
     const r = await mcp.callTool("household_runway", { withinDays: 30 });
     if (r.structuredContent?.items?.length) { ready(); speak("Welcome back. I remember your household. Ask me what's running low."); }
@@ -166,9 +167,15 @@ async function boot() {
     } else { setStatus("bad", "Server unreachable"); speak("I can't reach the Hearth server. Is it running?"); console.error(e); }
   }
 }
+// Look for the neural voice as soon as the session exists, so even the first reply is spoken with it. (A server that has just started
+// needs a few seconds to load the voice, so this keeps asking for a while; until then the browser's voice covers.)
 let neuralChecked = false;
+function lookForNeuralVoice() {
+  if (neuralChecked) return; neuralChecked = true;
+  enableNeuralVoice(() => mcp.token, { tries: 8, delay: 4000 }).then((on) => { if (on) $("voiceNote").textContent = "Alexa+ is speaking with a neural voice that runs on this machine; if it cannot, your browser's voice takes over. " + $("voiceNote").textContent; });
+}
 function ready() {
-  if (!neuralChecked) { neuralChecked = true; enableNeuralVoice(() => mcp.token, { tries: 8, delay: 4000 }).then((on) => { if (on) $("voiceNote").textContent = "Alexa+ is speaking with a neural voice that runs on this machine; if it cannot, your browser's voice takes over. " + $("voiceNote").textContent; }); }
+  lookForNeuralVoice();
   $("ledgerToggle").hidden = false;
   $("loadStep").hidden = true;
   $("askForm").hidden = false;

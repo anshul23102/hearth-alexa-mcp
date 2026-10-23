@@ -15,7 +15,7 @@ and that **never spends their money without an explicit, undoable yes**.
 [![Node](https://img.shields.io/badge/node-%E2%89%A522.16-3c873a)](package.json)
 [![CI](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/codeql.yml/badge.svg)](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/codeql.yml)
-[![Tests](https://img.shields.io/badge/tests-126%20passing-3c873a)](#tests)
+[![Tests](https://img.shields.io/badge/tests-128%20passing-3c873a)](#tests)
 [![Audit](https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-3c873a)](SECURITY.md)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
@@ -232,7 +232,7 @@ Full table and method: [SECURITY.md](SECURITY.md). This is a self-audit, not a t
 ## Tests
 
 ```bash
-npm test         # 126 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 128 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
@@ -282,7 +282,7 @@ and CI that runs typecheck, build, tests and `npm audit`. Everything configurabl
 | `web/` | The Alexa+ simulator: MCP client, voice, MCP Apps host |
 | `src/view.html` | The receipt card (an MCP App) |
 | `skill/hearth/` | The Agent Skill |
-| `test/` | 126 tests |
+| `test/` | 128 tests |
 | `scripts/` | Sample generator, benchmarks, recall evaluation, backups, Bedrock checks, recall replay |
 | `data/` | Synthetic sample households and recall snapshots |
 | `docs/` | Problem evidence, scale, Bedrock, voice, operations, demo script, friction log, submission notes |

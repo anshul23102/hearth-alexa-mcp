@@ -80,15 +80,22 @@ let speakRun = 0;  // each call to speak or stop supersedes the one before
 let current = null; // { audio, finish } for the sentence that is playing
 
 /** Ask the server whether it has a neural voice; a server that has just started needs a few seconds to load it, so keep asking for a while. */
-export async function enableNeuralVoice(getToken, { tries = 1, delay = 4000 } = {}) {
+let firstCheck = null; // resolves after the first answer, so the first sentence does not race it
+export const enableNeuralVoice = (getToken, opts) => probeNeural(getToken, opts);
+async function probeNeural(getToken, { tries = 1, delay = 4000 } = {}) {
+  let answered;
+  const first = new Promise((r) => { answered = r; });
+  firstCheck = first;
   for (let i = 0; i < tries; i++) {
     try {
       const r = await fetch("/api/speak/status", { headers: { authorization: `Bearer ${getToken()}` } });
       neural = r.ok && (await r.json()).neural ? { token: getToken, fails: 0 } : null;
     } catch { neural = null; }
+    answered(); // the first look is done, whatever it found
     if (neural || i === tries - 1) break;
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
+  answered();
   return neuralActive();
 }
 export const neuralActive = () => neural !== null;
@@ -139,9 +146,12 @@ async function neuralSpeak(text, langTag, opts) {
   }
 }
 
-export function speakAloud(text, langTag = "en-US", opts = {}) {
-  if (!text.trim()) return Promise.resolve();
+export async function speakAloud(text, langTag = "en-US", opts = {}) {
+  if (!text.trim()) return;
   stopSpeaking();
+  const run = speakRun;
+  if (firstCheck) await Promise.race([firstCheck, new Promise((r) => setTimeout(r, 2500))]); // never wait long for the answer
+  if (run !== speakRun) return; // interrupted while waiting
   return neural ? neuralSpeak(text, langTag, opts) : browserSpeak(text, langTag, opts);
 }
 

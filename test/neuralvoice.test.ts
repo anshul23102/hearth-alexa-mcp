@@ -74,3 +74,23 @@ test("a language other than English asks the server for that language", async ()
   assert.deepEqual(bodies.map((b) => b.lang), ["es", "hi"]);
   assert.ok(s.played.length === 2);
 });
+
+test("a reply spoken right after the neural check starts waits for that first answer, so even the first sentence uses the neural voice", async () => {
+  const s = install();
+  const status = (globalThis as any).fetch;
+  (globalThis as any).fetch = async (url: string, init?: any) => { if (String(url).endsWith("/api/speak/status")) await new Promise((r) => setTimeout(r, 120)); return status(url, init); }; // the answer takes a moment
+  void speech.enableNeuralVoice(() => "tok"); // not awaited, as in the page
+  await speech.speakAloud("Welcome back.", "en-US");
+  assert.equal(s.played.length, 1, "spoken by the neural voice");
+  assert.deepEqual(s.spoken, [], "not by the browser's");
+});
+
+test("when there is no neural voice the first sentence does not wait for the whole search", async () => {
+  const s = install();
+  (globalThis as any).fetch = async (url: string) => (String(url).endsWith("/api/speak/status") ? new Response(JSON.stringify({ neural: false }), { status: 200 }) : new Response("{}", { status: 500 }));
+  void speech.enableNeuralVoice(() => "tok", { tries: 6, delay: 400 }); // keeps looking for 2 seconds
+  const t0 = Date.now();
+  await speech.speakAloud("Hello there.", "en-US");
+  assert.ok(Date.now() - t0 < 300, `spoke after ${Date.now() - t0} ms, not after the search`);
+  assert.deepEqual(s.spoken, ["Hello there."]);
+});
