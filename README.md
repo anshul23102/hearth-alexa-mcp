@@ -1,76 +1,195 @@
-# Hearth: recall alerts and safe reordering for Alexa+
+<div align="center">
 
-**In one sentence:** Hearth is an Alexa+ (MCP) add-on that tells a household *the day a product they own is recalled*, and
-that never spends their money without an explicit, undoable yes.
+<img src="docs/gallery/thumbnail.png" alt="Hearth telling a household that a Ninja Foodi pressure cooker they own was just recalled" width="760">
 
-| You are | Start here |
+# Hearth
+
+### Recall alerts and safe reordering for Alexa+
+
+Hearth is an Alexa+ add-on that tells a household **the day a product they own is recalled**,
+and that **never spends their money without an explicit, undoable yes**.
+
+[![MCP](https://img.shields.io/badge/MCP-2025--11--25-2a3bd9)](https://modelcontextprotocol.io)
+[![Transport](https://img.shields.io/badge/transport-Streamable%20HTTP-2a3bd9)](https://modelcontextprotocol.io)
+[![Auth](https://img.shields.io/badge/auth-OAuth%202.1%20%2B%20PKCE-2a3bd9)](SECURITY.md)
+[![Node](https://img.shields.io/badge/node-%E2%89%A522.16-3c873a)](package.json)
+[![Tests](https://img.shields.io/badge/tests-97%20passing-3c873a)](#tests)
+[![Audit](https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-3c873a)](SECURITY.md)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+
+[**For judges**](JUDGING.md) · [Run it](#run-it) · [How it works](#how-it-works) · [Security](SECURITY.md) · [Evidence](docs/PROBLEM.md) · [Scale](docs/SCALE.md)
+
+</div>
+
+> Built for the **Amazon "Build, Ship, Shape" Developer Hackathon**, Alexa+ track, with the AWS Builder mini-challenge (Claude on Amazon Bedrock).
+
+---
+
+## The problem
+
+Two gaps meet in the kitchen.
+
+**Recalls do not reach owners.** CPSC's own FY2025 report puts the correction rate across consumer-product recalls at 44.55%, and regulators are now
+ordering marketplaces to notify buyers directly. The notice exists; the person holding the product never sees it.
+
+**Agents that can spend money have no standard safety pattern.** Alexa+ add-ons will be able to reorder what a household runs out of. Nothing says
+how much, how often, how to confirm, or how to take it back.
+
+Hearth is a reference implementation of both answers, as one self-hosted **MCP server**. The evidence, and what is *not* claimed, are in
+[docs/PROBLEM.md](docs/PROBLEM.md).
+
+## What it does
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### Tells owners the day a recall is published
+A background sync spots **new** notices from the U.S. CPSC and Health Canada (10,000+ real notices), finds every household that owns the
+product through a brand index, stores an alert, and **pushes** `notifications/resources/updated` over MCP to their open Alexa+ sessions.
+Matches carry their evidence, and only a **model-number hit** is called `likely`.
+
+</td>
+<td width="50%" valign="top">
+
+### Spends money only with a clear, reversible yes
+`plan_restock` only proposes. `confirm_restock` needs explicit approval (MCP elicitation where the client supports it), is idempotent,
+and sits under **operator-set ceilings the model cannot change**. A 10-minute `undo_restock` and a hash-chained audit log back it up.
+
+</td>
+</tr>
+</table>
+
+Hearth is **not a store**. It restocks only what the household already buys regularly, and it says so plainly if asked for a laptop.
+
+<table>
+<tr>
+<td><img src="docs/gallery/3-recall-alert-push.png" alt="A recall alert pushed to an open Alexa+ session"></td>
+<td><img src="docs/gallery/2-recall-match.png" alt="A recall matched to the exact product and model the household owns, with evidence"></td>
+</tr>
+<tr>
+<td align="center"><sub><b>Pushed the moment a notice is published</b></sub></td>
+<td align="center"><sub><b>Matched on brand, product type and model number</b></sub></td>
+</tr>
+<tr>
+<td><img src="docs/gallery/1-runway.png" alt="Forecast of what the household is running low on, with error bars"></td>
+<td><img src="docs/gallery/4-order-receipt.png" alt="Order receipt with Place order and Cancel order buttons"></td>
+</tr>
+<tr>
+<td align="center"><sub><b>Runway forecast with a window and a confidence</b></sub></td>
+<td align="center"><sub><b>Receipt card (MCP App) with working Place / Cancel buttons</b></sub></td>
+</tr>
+</table>
+
+<sub>Real screenshots of the running app. The order data in them is synthetic; the recalls are real.</sub>
+
+### Highlights
+
+| | |
 |---|---|
-| A judge | [JUDGING.md](JUDGING.md): the four criteria, each with where to see the evidence (3 minutes) |
-| Running it | [Run it](#run-it) below: `npm install && npm start` |
-| Checking security | [SECURITY.md](SECURITY.md): 17 findings fixed, each with a test |
+| **Owner-level matching** | Brand, product type and model number against 10,505 real notices. Measured on 1,669 cases built from real notices: **85.4%** surfaced, **0%** false alerts on unrelated products of the same brand, **2.1%** wrong-model false "likely". |
+| **Learns from messy data** | Imports order exports as they really arrive: mixed date formats (day-first detected), many currencies in the right minor unit, duplicates, cancellations, missing quantities, retitled products. Streams files of hundreds of thousands of rows on a worker thread. |
+| **Forecasts with error bars** | Median days-per-unit across purchase gaps, robust to stock-ups; reported as a likely window with a confidence, never a fake-precise date. |
+| **Safe by construction** | Spend ceilings, approval, idempotency, undo, audit chain, an erase tool hidden from the model, and a tested attack suite ([SECURITY.md](SECURITY.md)). |
+| **Speaks the household's language** | English, Spanish and Hindi replies, locale-correct money, preferences that persist. Spoken conversation with a wake word and follow-ups ([docs/VOICE.md](docs/VOICE.md)). |
+| **Real protocol, visible** | A real MCP client (OAuth + PKCE, Streamable HTTP/SSE, MCP Apps host) stands in for the device, with a live **MCP wire** drawer showing every JSON-RPC message. |
+| **Claude on Amazon Bedrock** | Optional brain via the Converse API with tool use, verified live with Claude Haiku 4.5, with retries and a daily call cap ([docs/BEDROCK.md](docs/BEDROCK.md)). |
 
-
-**The problem.** Recalls are published, but owners are not reliably reached: CPSC's own FY2025 report puts the correction rate across consumer
-product recalls at 44.55%, and regulators are now ordering marketplaces to notify buyers directly. Separately, Alexa+ add-ons will
-be able to spend customers' money, and there is no standard safety pattern for that. Hearth is a reference implementation of both
-answers, built as a self-hosted **MCP server** (spec **2025-11-25**, **Streamable HTTP**, OAuth 2.1 + PKCE) for Alexa+.
-The evidence, and what is *not* claimed, are in [docs/PROBLEM.md](docs/PROBLEM.md).
-
-- **Proactive: the day a recall is published, its owners are told.** A background sync spots *new* notices, finds every household that owns the product through a brand index (1,250 owners of one product among 5,000 households in 37 ms), stores an alert, and pushes `notifications/resources/updated` over MCP to those households' open sessions. This is the "notify purchasers on publication" obligation regulators are putting on marketplaces. `npm run demo:recall` replays a real notice to show it live.
-- **Owner-level recall matching across regulators.** Syncs the full public feeds (U.S. CPSC and Health Canada, **10,505 real notices**)
-  into a local index and matches each household's appliances on brand, product type and model number, with the evidence.
-  Measured on 1,669 cases built from real notices: **85.4%** of recalls surfaced, **0%** false alerts on unrelated products
-  of the same brand, **2.1%** false "likely" on a wrong model. A match is `likely` only with a model-number hit.
-- **Learns from messy global data.** Imports an order-history CSV the way real exports arrive: mixed date formats, many currencies
-  (USD, GBP, EUR, INR, JPY... held in the right minor unit), duplicate rows, cancellations, missing quantities, retitled products
-  (merged by ASIN, then title overlap). Streams files of hundreds of thousands of rows on a worker thread.
-- **Forecasts with error bars.** Median days-per-unit across purchase gaps (robust to stock-ups), reported as a likely window
-  and a confidence, never a fake-precise date.
-- **A safety layer for agent purchases.** `plan_restock` only proposes. `confirm_restock` requires an explicit yes (MCP
-  elicitation when the client supports it), is idempotent, has operator-set per-order and daily ceilings the model cannot
-  change, a 10-minute `undo_restock`, and an audit log. The erase tool is hidden from the model.
-- **Speaks the household's language.** Spoken replies in English, Spanish and Hindi, locale-correct money, per-household
-  region and language preferences that persist across sessions.
-- **Shows, not just tells.** Results render as a thermal-receipt card through an **MCP Apps** view
-  (`ui://hearth/runway`) with working Place order / Cancel order buttons that call tools back over MCP.
-
-Numbers are in [docs/SCALE.md](docs/SCALE.md); the security review is [SECURITY.md](SECURITY.md).
-
-> The Alexa+ add-on developer tools are partner-only, so there is no real Alexa+ device here. The web page in
-> `web/` is a **real MCP client** (OAuth + PKCE, Streamable HTTP/SSE, MCP Apps host) standing in for it, which
-> the hackathon FAQ explicitly allows. The storefront is a **simulated** `StoreAdapter`; no real purchases occur.
-> The three sample households in `data/` (`sample-orders.csv` US home, `sample-family.csv` family with a baby, `sample-india.csv` INR with day-first dates) are **synthetic**. The recall data is **real** (CPSC and Health Canada). You can also import your own Amazon export from the page.
+> **What is simulated.** Alexa+ add-on tooling is partner-only, so there is no real device: the web page in `web/` is a **real MCP client**
+> standing in for it, which the hackathon FAQ allows. The storefront is a simulated `StoreAdapter`; no real purchases occur.
+> The three sample households in `data/` (US home, family with a baby, India in ₹ with day-first dates) are **synthetic**.
+> The recall data is **real**. You can also import your own order export from the page.
 
 ## Run it
 
-Requires Node 22.16+ (uses the built-in `node:sqlite`, including its online `backup`).
+Requires **Node 22.16+** (uses the built-in `node:sqlite`). No AWS account is needed.
 
 ```bash
 npm install
-npm run sample     # (optional) regenerate the synthetic order export, dated relative to today
-npm start          # http://localhost:3939  (MCP endpoint: /mcp)
+npm start          # http://localhost:3939   (MCP endpoint: /mcp)
 ```
 
-Open http://localhost:3939, click **Link Hearth to Alexa+** (a real OAuth/PKCE flow), **Load sample order
-history**, then ask: *what are we running low on?*, *any recalls on what we own?*, *plan a restock under $60*,
-then press **Place order** on the card and **Cancel order**. Open **MCP wire** at the bottom to watch every
-JSON-RPC message.
+Open <http://localhost:3939>, then:
 
-### Use it from any MCP client
+1. **Link Hearth to Alexa+**, a real OAuth 2.1 + PKCE flow.
+2. **Load sample order history** (pick a household) or **Use my own export**.
+3. Ask: *"what are we running low on?"*, *"any recalls on what we own?"*, *"plan a restock under $60"*.
+4. Press **Place order** on the card, then **Cancel order**. Open **MCP wire** to watch the protocol.
+
+**See a recall arrive live.** Start with an operator token, keep the page open, and replay a real notice:
 
 ```bash
-HEARTH_AUTH=off npm start
+HEARTH_ADMIN_TOKEN=<24+ characters> npm start
+HEARTH_ADMIN_TOKEN=<same> npm run demo:recall -- Foodi
+```
+
+**Use it from any MCP client:**
+
+```bash
+HEARTH_AUTH=off npm start          # local experiments only; refuses to start in production
 claude mcp add --transport http hearth http://localhost:3939/mcp
 ```
 
-### Optional: Claude on Amazon Bedrock as the brain
+**Use Claude on Bedrock as the brain** (optional). With AWS credentials in the environment, the simulator's reasoning runs on Claude through the Converse API.
+Without them it uses a small deterministic offline router, so everything runs for judges with no account.
+Check your setup with `npm run bedrock:check`. Details and the cost guard: [docs/BEDROCK.md](docs/BEDROCK.md).
 
-With AWS credentials in the environment (or `HEARTH_AGENT=bedrock`; verified live with Claude Haiku 4.5, see [docs/BEDROCK.md](docs/BEDROCK.md)), the simulator's reasoning runs on Claude
-through the Bedrock **Converse API** with tool use (`src/agent.ts`). The browser still executes every tool call
-as the MCP client. Without credentials it uses a small deterministic offline router, so judges can run
-everything with no AWS account. Configure `AWS_REGION` and `BEDROCK_MODEL_ID` (see `.env.example`). To stay inside a free plan, model calls are capped per day (`HEARTH_BEDROCK_DAILY_CALLS`, default 150); past the cap the simulator falls back to the offline router. Check your setup with `npm run bedrock:check`; if your account cannot use a model, `npm run bedrock:probe` tries a short list of cheap ones and says which work.
+## How it works
 
-## Tools
+```mermaid
+flowchart LR
+  subgraph Browser["Alexa+ simulator (web/)"]
+    UI["Voice and text UI"]
+    MC["MCP client: OAuth + PKCE, Streamable HTTP / SSE"]
+    APP["MCP Apps host (sandboxed receipt card)"]
+  end
+  subgraph Server["Hearth server (src/)"]
+    MCP["MCP server: tools, resources, ui://"]
+    ING["Ingest, forecast"]
+    REC["Recall index and matcher"]
+    ACT["Actions: plan, confirm, undo"]
+    DB[("SQLite: orders, recalls, alerts, audit, prefs, oauth")]
+    AG["Agent adapter"]
+  end
+  UI --> MC -->|"JSON-RPC over HTTP"| MCP
+  MCP --> ING --> DB
+  MCP --> REC --> DB
+  MCP --> ACT --> DB
+  ACT -->|"StoreAdapter (simulated)"| Store(["Storefront"])
+  Feeds(["CPSC + Health Canada feeds"]) -->|"background sync"| REC
+  REC -->|"new notice: owner lookup, alert, push"| MC
+  UI -->|"/api/agent/step"| AG -->|"Converse API"| Bedrock(["Amazon Bedrock: Claude"])
+  APP <-->|"tools/call via host"| MC
+```
+
+**The recall pipeline.** Every 30 minutes the server syncs the public feeds into a local index. A notice not seen before is matched to
+owners through a reverse brand index (1,250 owners of one product among 5,000 households in 37 ms), an alert is stored, and the owner's open
+session receives `notifications/resources/updated`. History is never reported as "new", and replaying a notice never duplicates an alert.
+
+**The safety pattern.**
+
+```mermaid
+sequenceDiagram
+  participant H as Household
+  participant A as Alexa+ (model)
+  participant S as Hearth
+  H->>A: "Restock what we're low on, under $60"
+  A->>S: plan_restock
+  S-->>A: proposal + total (buys nothing)
+  A->>H: reads the plan back
+  H->>A: "Yes"
+  A->>S: confirm_restock
+  Note over S: within the operator's per-order and daily ceilings?<br/>idempotent on retry, audit entry written
+  S-->>A: placed
+  H->>A: "Cancel that"
+  A->>S: undo_restock (within 10 minutes)
+```
+
+Key decisions: the browser is the MCP client (judges see real protocol traffic); the model runs server-side so AWS credentials never reach
+the browser; the receipt card runs in an opaque-origin sandboxed iframe and can only call tools the server marks visible to apps; purchasing
+sits behind one `StoreAdapter` interface, which is the seam where a real ordering API plugs in.
+
+### Tools
 
 | Tool | What it does | Annotations |
 |---|---|---|
@@ -78,35 +197,22 @@ everything with no AWS account. Configure `AWS_REGION` and `BEDROCK_MODEL_ID` (s
 | `household_runway` | Forecast per item with ± window and confidence | read-only, UI |
 | `recall_alerts` | Recalls published since the household last looked that match something they own (push + pull) | UI |
 | `check_recalls` | Match owned durables to the local U.S. + Canada recall index, with evidence | read-only, UI |
-| `plan_restock` | Propose an order within budget (household currency); buys nothing | UI |
+| `plan_restock` | Propose an order within budget, in the household's currency; buys nothing | UI |
 | `confirm_restock` | Place a planned order after explicit approval | destructive, idempotent |
 | `undo_restock` | Cancel within 10 minutes | destructive, idempotent |
 | `remember_preference` | Persist budget, skip-item, language (en/es/hi), recall regions (US/CA) | idempotent |
 | `delete_household_data` | Erase everything held for the household (app-only, hidden from the model) | destructive |
-| `activity_log` | Transparent history of what Hearth did | read-only |
+| `activity_log` | Transparent, hash-chained history of what Hearth did | read-only |
 
-An **Agent Skill** teaching an assistant the plan → read back → confirm discipline is in
-[`skill/hearth/SKILL.md`](skill/hearth/SKILL.md).
+An **Agent Skill** teaching an assistant the plan → read back → confirm discipline is in [`skill/hearth/SKILL.md`](skill/hearth/SKILL.md).
 
-## Architecture
+## Security
 
-```
- browser (web/)                         server (src/)                         outside world
- ┌──────────────────────┐  Streamable   ┌──────────────────────────┐
- │ Alexa+ simulator     │──── HTTP ────▶│ MCP server (server.ts)   │──▶ recall index (CPSC + Health Canada,
- │  · OAuth/PKCE client │◀── JSON/SSE ──│  tools, ui:// resource   │    synced in background, fixture fallback)
- │  · MCP client (mcp.js)│              │ ingest → forecast → recalls (ask)
- │  · alert listener    │◀── push ──────│ recall sync → owner lookup → alerts → hub
- │  · MCP Apps host     │              │ actions: propose/confirm/undo ──▶ StoreAdapter (simulated)
- │    (sandboxed iframe)│              │ SQLite (node:sqlite): orders, recalls, alerts, proposals, audit, prefs, oauth
- │  · agent loop        │──/api/agent──▶│ agent.ts ──▶ Amazon Bedrock Converse (optional)
- └──────────────────────┘              └──────────────────────────┘
-```
-
-Key decisions: the browser is the MCP client (so judges see real protocol traffic); the LLM is server-side so AWS
-credentials never reach the browser; the MCP App runs in an opaque-origin sandboxed iframe and can only call tools
-the server marks visible to apps; purchasing sits behind one `StoreAdapter` interface, which is the seam where a
-real ordering API plugs in.
+Self-audited in two passes: **17 findings, each fixed and each with an attack test** (DNS rebinding, cross-site calls, CSRF on consent,
+token replay and refresh reuse, tenant isolation, spend-ceiling bypass, SQL metacharacters, path traversal, hostile text in recall feeds,
+resource exhaustion). Highlights: hashed tokens with rotating refresh and reuse detection, per-grant households, hash-only CSP, owner-only
+database file, operator ceilings the model cannot change, an erase tool the model cannot see, and refusal to start with auth off in production.
+Full table and method: [SECURITY.md](SECURITY.md). This is a self-audit, not a third-party penetration test.
 
 ## Tests
 
@@ -115,60 +221,59 @@ npm test         # 97 tests: unit, chaos, security, and end-to-end through the o
 npm run typecheck
 ```
 
-The end-to-end suite starts the server and, with the SDK client, performs the full OAuth/PKCE flow (including a
-wrong-verifier rejection), negotiates 2025-11-25, imports the messy CSV twice (second is a no-op), checks the
-forecast, matches the **real** SharkNinja Foodi recall, enforces budget, refuses unconfirmed orders, proves retry
-idempotency, undoes, and exercises elicitation approve/decline. The view's inline script is compiled in a test
-because a typo there fails silently inside the iframe.
-
-## Run it for real (production)
-
-```bash
-npm run build && npm run start:prod         # compiled JS, no tsx at runtime
-# or: docker compose up --build              # non-root, read-only filesystem, healthcheck (compose file not built in CI here)
-npm run backup -- backups/hearth-$(date +%F).db   # online, verified SQLite backup
-```
-Set `PUBLIC_URL` and `HEARTH_ALLOWED_HOSTS` behind a domain. `/healthz` and `/readyz` for probes; `/metrics` (Prometheus) turns on with
-`HEARTH_METRICS_TOKEN`; JSON request logs go to stdout; SIGTERM drains and checkpoints the database. CI (`.github/workflows/ci.yml`)
-runs typecheck, build, tests and `npm audit`. Demo the alert pipeline: start with `HEARTH_ADMIN_TOKEN=<24+ chars>` then
-`HEARTH_ADMIN_TOKEN=<same> npm run demo:recall -- Foodi` while the simulator is open.
-
-## Talking to it
-
-The simulator holds a spoken conversation, the way Alexa does:
-- **Mic button** opens a conversation; **"Say Alexa"** (hands-free) waits for the wake word. After every spoken reply the mic re-opens for a follow-up with no wake word, and silence ends the conversation.
-- **Context** carries across turns. Long conversations are trimmed at turn boundaries (never splitting a tool call from its result), so they no longer fail after about ten questions. The offline router also handles follow-ups ("what about the dog food?", "thanks", "no thanks"); full open-ended context needs the Bedrock brain.
-- **Languages:** pick English (US or India), हिन्दी or Español; the wake word works in Devanagari too. With the Bedrock brain the model answers in whatever language you speak; the offline router's sentences exist in English, Spanish and Hindi.
-- **The voice** is your browser's own text-to-speech. Hearth ranks the installed voices and picks the warmest natural one per language (a downloaded Premium or Enhanced voice always wins; on a Mac add one under System Settings, Accessibility, Spoken Content, System voice, Manage voices). Amazon's real Alexa voice is not available to third-party apps, so this is not that voice.
-- **Privacy:** recognition uses the browser's speech service (Chrome sends the audio to Google). Nothing listens until you press the mic or turn hands-free on, the mic is closed while Alexa speaks, and there is no always-on background listening by default.
-- **Limits:** no barge-in (you cannot interrupt her mid-sentence); hands-free needs Chrome and a quiet room; wake-word detection is plain speech recognition, not a trained hotword model, so it can miss or false-trigger.
-
-## Scale and accuracy
+The end-to-end suite starts the server and, with the SDK client, performs the full OAuth/PKCE flow (including a wrong-verifier rejection),
+negotiates 2025-11-25, imports the messy CSV twice (second is a no-op), checks the forecast, matches the **real** SharkNinja Foodi recall,
+enforces budget, refuses unconfirmed orders, proves retry idempotency, undoes, and exercises elicitation approve/decline. A stand-in Converse
+server (HTTP/2) pins every bug found in the first live Bedrock run. The receipt view's inline script is compiled in a test because a typo there
+fails silently inside the iframe.
 
 ```bash
 npm run bench -- 5000 200     # 676k orders, 5,000 households: import, forecast and recall latency
-npm run eval       # precision/recall of recall matching on real notices
+npm run eval                  # precision/recall of recall matching on real notices
 ```
-`POST /api/import` (Bearer token, `Content-Type: text/csv`) streams a large export on a worker thread. A 500k-row, 43.5 MB
-upload took 12.4 s while concurrent requests stayed at p99 13 ms. Full tables and caveats: [docs/SCALE.md](docs/SCALE.md).
+
+A 500k-row, 43.5 MB upload through `POST /api/import` took 12.4 s while concurrent requests stayed at p99 13 ms.
+Tables and caveats: [docs/SCALE.md](docs/SCALE.md).
+
+## Deploy
+
+```bash
+npm run build && npm run start:prod                  # compiled JS, no tsx at runtime
+docker compose up --build                            # non-root, read-only filesystem, healthcheck
+npm run backup -- backups/hearth-$(date +%F).db      # online, verified SQLite backup
+```
+
+`/healthz` and `/readyz` for probes, Prometheus `/metrics` behind a token, JSON request logs, graceful SIGTERM with a database checkpoint,
+and CI that runs typecheck, build, tests and `npm audit`. Everything configurable is in [`.env.example`](.env.example); the runbook is
+[docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## Honest limitations
 
 - No real Alexa+ device or add-on certification (tooling is partner-only); no real storefront (`StoreAdapter` is simulated).
-- Bedrock was exercised live once (Claude Haiku 4.5, one account, one session of 36 calls; [docs/BEDROCK.md](docs/BEDROCK.md)); CI runs it only against a stand-in server.
-- OAuth is a minimal authorization server for demonstrating account linking (tokens hashed in SQLite, rotation, PKCE).
-  Its consent step does not authenticate a person; production delegates to the household's real identity provider.
-- One node and SQLite. Scaling out means Postgres (the data access is plain SQL in `src/`), a shared rate-limit store, and a pub/sub for the alert push; none of that is built.
-- Every grant creates its own household; isolation is by `household` key in every query and is tested, but not at hostile scale.
-- The offline voice router understands English only (it is a small intent matcher); with the Bedrock brain Claude can interpret other languages, which is untested here. Replies are in English, Spanish or Hindi; the Spanish and Hindi strings need native review.
-- The synthetic households prove throughput, not forecast accuracy on real purchases. Spanish and Hindi strings should be reviewed by native speakers.
-- Recall matching is heuristic by design (it says `possible` when unsure). It is a prompt to check the product
-  label, not a safety guarantee.
-- Order exports other than the column shapes in `src/ingest.ts` will need header synonyms added.
+- Bedrock was exercised live (Claude Haiku 4.5, one free-plan account; [docs/BEDROCK.md](docs/BEDROCK.md)); CI runs it only against a stand-in server.
+- The Dockerfile and compose file are written but not built in CI.
+- OAuth is a minimal authorization server for demonstrating account linking. Its consent step does not authenticate a person; production delegates to the household's real identity provider.
+- One node and SQLite. Scaling out means Postgres (data access is plain SQL in `src/`), a shared rate-limit store, and a pub/sub for the alert push. None of that is built.
+- The synthetic households prove throughput, not forecast accuracy on real purchases. Spanish and Hindi strings need native-speaker review.
+- The offline voice router understands English only; with the Bedrock brain Claude can interpret other languages, which is untested here.
+- Recall matching is heuristic by design (it says `possible` when unsure). It is a prompt to check the product label, not a safety guarantee.
+- Order exports with column names beyond those in `src/ingest.ts` need header synonyms added.
 
-## Layout
+## Repository map
 
-`src/` server (ingest, forecast, recall index, matcher, actions, MCP tools, OAuth, security, Bedrock) · `web/` simulator and MCP Apps host ·
-`src/view.html` the MCP App view · `skill/` Agent Skill · `test/` · `docs/` submission notes · `PRODUCT.md`, `DESIGN.md`.
+| Path | What is there |
+|---|---|
+| `src/` | MCP server, OAuth, ingest, forecast, recall index and matcher, actions, alerts, Bedrock adapter, security |
+| `web/` | The Alexa+ simulator: MCP client, voice, MCP Apps host |
+| `src/view.html` | The receipt card (an MCP App) |
+| `skill/hearth/` | The Agent Skill |
+| `test/` | 97 tests |
+| `scripts/` | Sample generator, benchmarks, recall evaluation, backups, Bedrock checks, recall replay |
+| `data/` | Synthetic sample households and recall snapshots |
+| `docs/` | Problem evidence, scale, Bedrock, voice, operations, demo script, friction log, submission notes |
 
-MIT licensed.
+[PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md) record the product intent and the visual system.
+
+## License
+
+[MIT](LICENSE) © 2026 anshul23102
