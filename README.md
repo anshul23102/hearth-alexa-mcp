@@ -15,7 +15,7 @@ and that **never spends their money without an explicit, undoable yes**.
 [![Node](https://img.shields.io/badge/node-%E2%89%A522.16-3c873a)](package.json)
 [![CI](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/codeql.yml/badge.svg)](https://github.com/anshul23102/hearth-alexa-mcp/actions/workflows/codeql.yml)
-[![Tests](https://img.shields.io/badge/tests-115%20passing-3c873a)](#tests)
+[![Tests](https://img.shields.io/badge/tests-126%20passing-3c873a)](#tests)
 [![Audit](https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-3c873a)](SECURITY.md)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
@@ -101,7 +101,7 @@ Hearth is **not a store**. It restocks only what the household already buys regu
 | **History you can check yourself** | The Safety ledger shows a fingerprint of the hash-chained log and this browser remembers it: a later rewrite of the history, even one with every hash recomputed so the chain still verifies, will not match ([test/anchor.test.ts](test/anchor.test.ts)). |
 | **A forecast you can audit** | `npm run backtest` predicts every purchase from the history before it. The stated window is calibrated so the real next purchase falls inside it about 80% of the time (it was 56% before the backtest caught it); run it on your own export. |
 | **Safe by construction** | Spend ceilings, idempotency, undo, audit chain, an erase tool hidden from the model, and a tested attack suite ([SECURITY.md](SECURITY.md)). |
-| **Speaks the household's language** | English, Spanish and Hindi replies, locale-correct money, preferences that persist. Spoken conversation with a wake word and follow-ups ([docs/VOICE.md](docs/VOICE.md)). |
+| **Speaks the household's language** | English, Spanish and Hindi replies, locale-correct money, preferences that persist. Spoken conversation with a wake word and follow-ups, in a **neural voice that runs on your machine** (`npm run tts:setup`; the browser's voice is the automatic fallback) ([docs/VOICE.md](docs/VOICE.md)). |
 | **Real protocol, visible** | A real MCP client (OAuth + PKCE, Streamable HTTP/SSE, MCP Apps host) stands in for the device, with a live **MCP wire** drawer showing every JSON-RPC message, and a plain-language **Safety ledger** beside it: every action, how each order was approved, and whether the hash-chained history is intact. |
 | **Claude on Amazon Bedrock** | Optional brain via the Converse API with tool use, verified live with Claude Haiku 4.5, with retries and a daily call cap ([docs/BEDROCK.md](docs/BEDROCK.md)). |
 
@@ -232,7 +232,7 @@ Full table and method: [SECURITY.md](SECURITY.md). This is a self-audit, not a t
 ## Tests
 
 ```bash
-npm test         # 115 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 126 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
@@ -282,7 +282,7 @@ and CI that runs typecheck, build, tests and `npm audit`. Everything configurabl
 | `web/` | The Alexa+ simulator: MCP client, voice, MCP Apps host |
 | `src/view.html` | The receipt card (an MCP App) |
 | `skill/hearth/` | The Agent Skill |
-| `test/` | 115 tests |
+| `test/` | 126 tests |
 | `scripts/` | Sample generator, benchmarks, recall evaluation, backups, Bedrock checks, recall replay |
 | `data/` | Synthetic sample households and recall snapshots |
 | `docs/` | Problem evidence, scale, Bedrock, voice, operations, demo script, friction log, submission notes |

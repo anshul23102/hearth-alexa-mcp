@@ -40,7 +40,7 @@ if (!status.mode) throw new Error(`no Hearth server at ${A}; start it with npm s
 const live = join(ROOT, "data/hearth.db");
 let useLive = false;
 if (existsSync(live)) { const src = new DatabaseSync(live, { readOnly: true }); try { if (src.prepare("SELECT count(*) n FROM recalls").get().n > 1000) { src.exec(`VACUUM INTO '${join(tmp, "b.db")}'`); useLive = true; } } finally { src.close(); } }
-run(process.execPath, ["--import", "tsx", "src/http.ts"], { cwd: ROOT, env: { ...process.env, AWS_BEARER_TOKEN_BEDROCK: "", PORT: String(PORT_B), HEARTH_DB: join(tmp, "b.db"), HEARTH_AGENT: "local", HEARTH_RECALLS_SYNC: "off", HEARTH_ADMIN_TOKEN: TOKEN, ...(useLive ? {} : { HEARTH_RECALLS_OFFLINE: "1" }) } });
+run(process.execPath, ["--import", "tsx", "src/http.ts"], { cwd: ROOT, env: { ...process.env, AWS_BEARER_TOKEN_BEDROCK: "", PORT: String(PORT_B), HEARTH_DB: join(tmp, "b.db"), HEARTH_AGENT: "local", HEARTH_RECALLS_SYNC: "off", HEARTH_TTS: "off", HEARTH_ADMIN_TOKEN: TOKEN, ...(useLive ? {} : { HEARTH_RECALLS_OFFLINE: "1" }) } });
 await until(async () => (await (await fetch(`${B}/readyz`)).json()).ready, "the second server");
 run(CHROME, ["--headless=new", `--remote-debugging-port=${DEBUG}`, `--user-data-dir=${join(tmp, "profile")}`, "--no-first-run", "--hide-scrollbars", `--window-size=${W},${H}`, "about:blank"]);
 const target = await until(async () => (await (await fetch(`http://127.0.0.1:${DEBUG}/json`)).json()).find((t) => t.type === "page"), "Chrome");
@@ -236,7 +236,7 @@ await caption("");
 mark("10. evidence and close");
 const slide = (file, bg) => { const page = join(tmp, `${file}.html`); writeFileSync(page, `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;height:100%;background:${bg}}img{width:100vw;height:100vh;object-fit:contain}</style><img src="${pathToFileURL(join(ROOT, "docs/gallery", file + ".png")).href}">`); return pathToFileURL(page).href; };
 await send("Page.navigate", { url: slide("5-measured", "#2236d9") }); await sleep(900);
-await narrate("Measured, not claimed. Eighty five percent of known recalls surfaced, zero false alerts on unrelated products, one hundred fifteen tests, nineteen security findings fixed.");
+await narrate("Measured, not claimed. Eighty five percent of known recalls surfaced, zero false alerts on unrelated products, one hundred twenty six tests, nineteen security findings fixed.");
 await send("Page.navigate", { url: slide("thumbnail", "#2236d9") }); await sleep(900);
 await narrate("Hearth. Recall alerts and safe reordering for Alexa Plus. Open source, M I T.");
 await sleep(600);

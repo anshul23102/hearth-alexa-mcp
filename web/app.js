@@ -1,7 +1,7 @@
 import { McpClient, AuthRequired } from "./mcp.js";
 import { mountApp } from "./appHost.js";
 import { agentMode, remoteStep, localStep, ensureSpoken, trimConversation, modelTools } from "./agent.js";
-import { speakAloud, stopSpeaking, detectLang, chime } from "./speech.js";
+import { speakAloud, stopSpeaking, detectLang, chime, enableNeuralVoice } from "./speech.js";
 import { createVoice } from "./voice.js";
 
 const $ = (id) => document.getElementById(id);
@@ -166,7 +166,9 @@ async function boot() {
     } else { setStatus("bad", "Server unreachable"); speak("I can't reach the Hearth server. Is it running?"); console.error(e); }
   }
 }
+let neuralChecked = false;
 function ready() {
+  if (!neuralChecked) { neuralChecked = true; enableNeuralVoice(() => mcp.token, { tries: 8, delay: 4000 }).then((on) => { if (on) $("voiceNote").textContent = "Alexa+ is speaking with a neural voice that runs on this machine; if it cannot, your browser's voice takes over. " + $("voiceNote").textContent; }); }
   $("ledgerToggle").hidden = false;
   $("loadStep").hidden = true;
   $("askForm").hidden = false;

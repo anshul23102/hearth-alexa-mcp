@@ -37,7 +37,7 @@ To watch a recall arrive by push: set `HEARTH_ADMIN_TOKEN` (24+ characters) and 
 - One screen, one voice: ask, hear the answer, see a receipt card for anything that needs a decision. Voice (wake word "Alexa", follow-ups without repeating it) and typing both work.
 - Every irreversible step has a visible **Cancel order** within 10 minutes, and the page has **Forget my data**.
 - The receipt card is an MCP App; its buttons call tools back over MCP rather than going around the protocol.
-- Replies are written to be spoken: short, no markup, locale-correct money, English, Spanish and Hindi.
+- Replies are written to be spoken: short, no markup, locale-correct money, English, Spanish and Hindi, in a neural voice that runs locally (with the browser's voice as the fallback).
 
 ### Potential Impact: a specific need, beyond the hackathon?
 - Recalls are published but owners are rarely reached; [docs/PROBLEM.md](docs/PROBLEM.md) cites the regulator figures and says plainly what is *not* claimed.

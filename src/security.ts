@@ -63,6 +63,7 @@ export function csp(viewScriptHashes: string[]): string {
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     "img-src 'self' data:",
+    "media-src 'self' blob:", // the neural voice's audio is played from a blob the page builds
     "connect-src 'self'",
     "frame-src about:",
     "base-uri 'self'",

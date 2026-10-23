@@ -19,7 +19,8 @@
     "demo:video": "node scripts/make-demo-video.mjs",
     "backtest": "tsx scripts/backtest.ts",
     "redteam": "node scripts/redteam.mjs",
-    "a11y": "node scripts/a11y.mjs"
+    "a11y": "node scripts/a11y.mjs",
+    "tts:setup": "bash scripts/setup-tts.sh"
   },
   "keywords": [
     "mcp",

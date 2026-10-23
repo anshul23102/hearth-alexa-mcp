@@ -12,6 +12,8 @@ import { recallStats, syncRecalls, type RecallRecord } from "./recallIndex.js";
 import { Hub } from "./hub.js";
 import { dueReminders, processNewRecalls } from "./alerts.js";
 import { APP_ONLY_TOOLS, createHearthServer } from "./server.js";
+import { fileURLToPath } from "node:url";
+import { MAX_SPEAK_CHARS, SPEAK_LANGS, startVoice, stopVoice, synthesize, voiceReady, type SpeakLang } from "./voice.js";
 import { baseUrl, handleOAuth, pruneTokens, verifyToken } from "./oauth.js";
 import { bedrockClient, bedrockStep, hasBedrockCredentials, validateAgentRequest, reserveBedrockCall, MODEL_ID, REGION, type WireMessage, type WireTool } from "./agent.js";
 import { RateLimiter, allowedHosts, clientIp, csp, hostAllowed, originAllowed, readBody, securityHeaders, sha256b64 } from "./security.js";
@@ -53,6 +55,7 @@ async function fanout(fresh: RecallRecord[]) {
 const mcpLimit = new RateLimiter(600, 60_000);
 const agentLimit = new RateLimiter(30, 60_000);
 const importLimit = new RateLimiter(10, 3600_000);
+const speakLimit = new RateLimiter(120, 60_000);
 
 // The receipt view runs inline in a sandboxed iframe; allow exactly its script by hash.
 const viewHashes = [...RUNWAY_HTML.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)].map((m) => sha256b64(m[1]));
@@ -231,6 +234,30 @@ async function handleAdminReplay(req: IncomingMessage, res: ServerResponse): Pro
   sendJson(res, 200, { replayed: { source: rec.source, id: rec.extId, title: rec.title, date: rec.date }, ...out });
 }
 
+/** POST /api/speak {text, lang}: WAV audio from the neural voice, for the person who is signed in. 503 when no voice is installed (the page then uses the browser's). */
+async function handleSpeak(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
+  if (url.pathname === "/api/speak/status") {
+    if (!authenticate(req, res)) return true;
+    sendJson(res, 200, { neural: voiceReady() });
+    return true;
+  }
+  if (url.pathname !== "/api/speak") return false;
+  const who = authenticate(req, res);
+  if (!who) return true;
+  if (req.method !== "POST") { sendJson(res, 405, { error: "POST only" }); return true; }
+  if (!speakLimit.allow(who.household)) { sendJson(res, 429, { error: "Slow down a little." }, { "retry-after": String(speakLimit.retryAfter(who.household)) }); return true; }
+  let body: { text?: unknown; lang?: unknown };
+  try { body = JSON.parse((await readBody(req, 4000)) || "null") ?? {}; } catch { sendJson(res, 400, { error: "bad json" }); return true; }
+  const text = typeof body.text === "string" ? body.text.replace(/\s+/g, " ").trim() : "";
+  if (!text || text.length > MAX_SPEAK_CHARS) { sendJson(res, 400, { error: `text must be 1 to ${MAX_SPEAK_CHARS} characters` }); return true; }
+  if (!SPEAK_LANGS.includes(body.lang as SpeakLang)) { sendJson(res, 400, { error: "lang must be en, es or hi" }); return true; }
+  if (!voiceReady()) { sendJson(res, 503, { error: "no neural voice is installed; the page uses the browser's voice" }); return true; }
+  const wav = await synthesize(text, body.lang as SpeakLang);
+  if (!wav) { sendJson(res, 502, { error: "the neural voice could not speak that" }); return true; }
+  res.writeHead(200, { "content-type": "audio/wav", "content-length": wav.length, "cache-control": "private, no-store" }).end(wav);
+  return true;
+}
+
 async function handleAgent(req: IncomingMessage, res: ServerResponse, url: URL): Promise<boolean> {
   if (url.pathname === "/api/agent/status") {
     sendJson(res, 200, { mode: hasBedrockCredentials() ? "bedrock" : "local", model: hasBedrockCredentials() ? MODEL_ID : null, region: REGION });
@@ -281,7 +308,7 @@ function serveStatic(url: URL, res: ServerResponse) {
   res.writeHead(200, { "content-type": MIME[extname(file)] ?? "application/octet-stream", "cache-control": "no-cache" }).end(body);
 }
 
-const routeGroup = (p: string) => p === "/mcp" ? "mcp" : p.startsWith("/api/import") ? "import" : p.startsWith("/api/agent") ? "agent" : p.startsWith("/api/admin") ? "admin" : ["/authorize", "/token", "/register", "/revoke"].includes(p) || p.startsWith("/.well-known/oauth") ? "oauth" : p === "/healthz" || p === "/readyz" || p === "/metrics" ? "ops" : "static";
+const routeGroup = (p: string) => p === "/mcp" ? "mcp" : p.startsWith("/api/import") ? "import" : p.startsWith("/api/agent") ? "agent" : p.startsWith("/api/speak") ? "speak" : p.startsWith("/api/admin") ? "admin" : ["/authorize", "/token", "/register", "/revoke"].includes(p) || p.startsWith("/.well-known/oauth") ? "oauth" : p === "/healthz" || p === "/readyz" || p === "/metrics" ? "ops" : "static";
 
 /** GET /metrics (Prometheus text). Off unless HEARTH_METRICS_TOKEN (16+ chars) is set; compared in constant time. */
 function handleMetrics(req: IncomingMessage, res: ServerResponse) {
@@ -324,6 +351,7 @@ const server = createServer(async (req, res) => {
     if (url.pathname === "/mcp") return await handleMcp(req, res);
     if (await handleOAuth(db, req, res, url)) return;
     if (await handleAgent(req, res, url)) return;
+    if (await handleSpeak(req, res, url)) return;
     if (url.pathname === "/api/import") return await handleImport(req, res);
     if (url.pathname === "/api/admin/recalls/replay") return await handleAdminReplay(req, res);
     if (url.pathname === "/api/admin/reminders/run") return await handleAdminReminders(req, res);
@@ -353,6 +381,7 @@ server.listen(PORT, () => {
     void run();
     setInterval(run, 30 * 60_000).unref(); // cheap: a live index younger than 24 h returns without touching the network
   }
+  void startVoice(fileURLToPath(new URL("..", import.meta.url))).catch((e) => console.error("neural voice failed to start:", e.message));
   void remind().catch((e) => console.error("reminders failed:", e.message));
   setInterval(() => void remind().catch((e) => console.error("reminders failed:", e.message)), 30 * 60_000).unref();
   console.log(`Hearth MCP on http://localhost:${PORT}/mcp  (auth ${AUTH ? "on" : "off"})  simulator: http://localhost:${PORT}/`);
@@ -377,6 +406,7 @@ function shutdown(signal: string) {
     });
   });
   server.closeIdleConnections();
+  stopVoice();
 }
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));

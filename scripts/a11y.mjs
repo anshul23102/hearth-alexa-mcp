@@ -30,7 +30,7 @@ const useLive = existsSync(live) && (() => { const src = new DatabaseSync(live, 
 console.log(useLive ? "using the synced recall index" : "using the bundled recall snapshot");
 
 // ---- server and browser --------------------------------------------------------------------------------------------
-run(process.execPath, ["--import", "tsx", "src/http.ts"], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), HEARTH_DB: join(tmp, "g.db"), HEARTH_AGENT: "local", HEARTH_RECALLS_SYNC: "off", ...(useLive ? {} : { HEARTH_RECALLS_OFFLINE: "1" }), HEARTH_ADMIN_TOKEN: TOKEN } });
+run(process.execPath, ["--import", "tsx", "src/http.ts"], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), HEARTH_DB: join(tmp, "g.db"), HEARTH_AGENT: "local", HEARTH_RECALLS_SYNC: "off", HEARTH_TTS: "off", ...(useLive ? {} : { HEARTH_RECALLS_OFFLINE: "1" }), HEARTH_ADMIN_TOKEN: TOKEN } });
 await until(async () => (await (await fetch(`${BASE}/readyz`)).json()).ready, "the server");
 run(CHROME, ["--headless=new", `--remote-debugging-port=${DEBUG}`, `--user-data-dir=${join(tmp, "profile")}`, "--no-first-run", "--hide-scrollbars", "about:blank"]);
 const target = await until(async () => (await (await fetch(`http://127.0.0.1:${DEBUG}/json`)).json()).find((t) => t.type === "page"), "Chrome");
