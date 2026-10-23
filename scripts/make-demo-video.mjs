@@ -40,7 +40,7 @@ if (!status.mode) throw new Error(`no Hearth server at ${A}; start it with npm s
 const live = join(ROOT, "data/hearth.db");
 let useLive = false;
 if (existsSync(live)) { const src = new DatabaseSync(live, { readOnly: true }); try { if (src.prepare("SELECT count(*) n FROM recalls").get().n > 1000) { src.exec(`VACUUM INTO '${join(tmp, "b.db")}'`); useLive = true; } } finally { src.close(); } }
-run("npx", ["tsx", "src/http.ts"], { cwd: ROOT, env: { ...process.env, AWS_BEARER_TOKEN_BEDROCK: "", PORT: String(PORT_B), HEARTH_DB: join(tmp, "b.db"), HEARTH_AGENT: "local", HEARTH_RECALLS_SYNC: "off", HEARTH_ADMIN_TOKEN: TOKEN, ...(useLive ? {} : { HEARTH_RECALLS_OFFLINE: "1" }) } });
+run(process.execPath, ["--import", "tsx", "src/http.ts"], { cwd: ROOT, env: { ...process.env, AWS_BEARER_TOKEN_BEDROCK: "", PORT: String(PORT_B), HEARTH_DB: join(tmp, "b.db"), HEARTH_AGENT: "local", HEARTH_RECALLS_SYNC: "off", HEARTH_ADMIN_TOKEN: TOKEN, ...(useLive ? {} : { HEARTH_RECALLS_OFFLINE: "1" }) } });
 await until(async () => (await (await fetch(`${B}/readyz`)).json()).ready, "the second server");
 run(CHROME, ["--headless=new", `--remote-debugging-port=${DEBUG}`, `--user-data-dir=${join(tmp, "profile")}`, "--no-first-run", "--hide-scrollbars", `--window-size=${W},${H}`, "about:blank"]);
 const target = await until(async () => (await (await fetch(`http://127.0.0.1:${DEBUG}/json`)).json()).find((t) => t.type === "page"), "Chrome");
