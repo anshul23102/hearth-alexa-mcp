@@ -68,11 +68,17 @@
     </section>
   </main>
 
-  <footer class="wire" id="wire" data-open="false">
-    <button class="wiretoggle" id="wireToggle" aria-expanded="false" aria-controls="wireLog">
-      <span>MCP wire</span><span class="count" id="wireCount">0 messages</span><span class="proto" id="proto"></span>
-    </button>
+  <footer class="wire" id="wire" data-open="false" data-tab="wire">
+    <div class="wirebar">
+      <button class="wiretoggle" id="wireToggle" aria-expanded="false" aria-controls="wireLog">
+        <span>MCP wire</span><span class="count" id="wireCount">0 messages</span><span class="proto" id="proto"></span>
+      </button>
+      <button class="wiretoggle ledgertoggle" id="ledgerToggle" aria-expanded="false" aria-controls="ledgerLog" hidden>
+        <span>Safety ledger</span><span class="count" id="ledgerCount"></span>
+      </button>
+    </div>
     <ol class="wirelog" id="wireLog" aria-label="JSON-RPC messages"></ol>
+    <ol class="wirelog ledgerlog" id="ledgerLog" aria-label="What Hearth did, and how each order was approved" hidden></ol>
   </footer>
 </div>
 <script type="module" src="app.js"></script>

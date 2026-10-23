@@ -98,9 +98,18 @@ small b{color:var(--paper);font-weight:600}
 
 /* ---- wire ---- */
 .wire{background:var(--blue-ink);border-top:1px solid #ffffff22;position:sticky;bottom:0;z-index:5}
+.wirebar{display:flex}
+.wirebar .wiretoggle{width:auto}
+.wirebar .wiretoggle:first-child{flex:1}
+.ledgertoggle{border-left:1px solid #ffffff33}
+.ledgerlog li{display:flex;gap:12px;align-items:baseline;border-top:1px dotted #ffffff33;padding:6px 0}
+.ledgerlog li.head{font-weight:600;color:var(--paper-dim)}
+.ledgerlog li.ok span::before{content:"✓ ";color:#7dffb2}
+.ledgerlog li.warn span::before{content:"! ";color:var(--red)}
+.ledgerlog time{margin-left:auto;color:var(--paper-dim);white-space:nowrap}
 .wiretoggle{width:100%;display:flex;gap:18px;align-items:center;padding:11px var(--gutter);background:none;border:0;color:var(--paper);font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-align:left}
 .wiretoggle::before{content:"▸";transition:transform .25s var(--ease)}
-.wire[data-open=true] .wiretoggle::before{transform:rotate(90deg)}
+.wiretoggle[aria-expanded=true]::before{transform:rotate(90deg)}
 .wiretoggle .count,.wiretoggle .proto{color:var(--paper-dim);font-weight:400;letter-spacing:.02em;text-transform:none}
 .wiretoggle .proto{margin-left:auto}
 .wirelog{list-style:none;padding:0 var(--gutter);height:0;overflow:auto;font-size:11px;opacity:0}
