@@ -35,17 +35,16 @@ test("a recall of the monitor the family owns alerts them, by model number", () 
   assert.ok(a.match.evidence.some((e) => /SCD843/.test(e)));
 });
 
-test("the India sample is read day-first, in rupees, and forecasts staples", () => {
+test("the pantry sample is read in dollars and forecasts staples, not appliances", () => {
   const db = openDb(":memory:");
-  const r = ingestOrders(db, "in", load("sample-india.csv"));
-  assert.equal(r.dateOrder, "day-first");
-  assert.deepEqual(Object.keys(r.currencies), ["INR"]);
-  const runway = forecast(db, "in");
-  const atta = runway.find((i) => /Atta/.test(i.title));
-  assert.ok(atta && atta.currency === "INR" && atta.confidence === "high");
-  assert.ok(atta.unitPriceCents > 40000 && atta.unitPriceCents < 70000, `₹5xx per pack, got ${atta.unitPriceCents}`);
-  assert.ok(Math.abs(atta.unitsPerDay - 1 / 26) < 0.02, "about one pack every 26 days");
-  assert.ok(runway.every((i) => !/Air Fryer|Mixer/.test(i.title)));
+  const r = ingestOrders(db, "pan", load("sample-pantry.csv"));
+  assert.deepEqual(Object.keys(r.currencies), ["USD"]);
+  const runway = forecast(db, "pan");
+  const coffee = runway.find((i) => /Folgers/.test(i.title));
+  assert.ok(coffee && coffee.currency === "USD" && coffee.confidence === "high");
+  assert.ok(coffee.unitPriceCents > 1100 && coffee.unitPriceCents < 1700, `about $14 a canister, got ${coffee.unitPriceCents}`);
+  assert.ok(Math.abs(coffee.unitsPerDay - 1 / 26) < 0.02, "about one canister every 26 days");
+  assert.ok(runway.every((i) => !/Airfryer|Mixer|Anker/.test(i.title)));
 });
 
 test("short product words only match whole words: infant formula is a consumable, a vacuum attachment is not food", async () => {

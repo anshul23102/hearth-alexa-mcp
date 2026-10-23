@@ -74,7 +74,7 @@ export function packUnits(title: string): number {
 }
 
 const CONSUMABLE = [
-  "paper towel", "toilet paper", "tissue", "detergent", "dish soap", "dishwasher", "trash bag", "coffee", "k cup",
+  "paper towel", "toilet paper", "tissue", "detergent", "dish soap", "dishwasher", "trash bag", "coffee", "peanut butter", "k cup",
   "pods", "diaper", "wipes", "shampoo", "conditioner", "toothpaste", "razor", "batteries", "filter", "cat litter",
   "dog food", "cat food", "vitamin", "protein", "olive oil", "oats", "rice", "sponge", "hand soap", "sunscreen",
   "contact lens", "floss", "baby formula", "infant formula", "softener", "sunflower oil", "cooking oil", "mustard oil",

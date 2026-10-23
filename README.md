@@ -107,7 +107,7 @@ Hearth is **not a store**. It restocks only what the household already buys regu
 
 > **What is simulated.** Alexa+ add-on tooling is partner-only, so there is no real device: the web page in `web/` is a **real MCP client**
 > standing in for it, which the hackathon FAQ allows. The storefront is a simulated `StoreAdapter`; no real purchases occur.
-> The three sample households in `data/` (US home, family with a baby, India in ₹ with day-first dates) are **synthetic**.
+> The three sample households in `data/` (US home, family with a baby, two adults who cook at home) are **synthetic**.
 > The recall data is **real**. You can also import your own order export from the page.
 
 ## Run it

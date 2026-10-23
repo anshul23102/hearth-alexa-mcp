@@ -223,9 +223,9 @@ await n10; await alexa(); await sleep(1500); await caption("");
 
 mark("9. the real world: another coun");
 await goTo(A); await sleep(1200);
-await caption("Day-first dates, rupees, and replies in Spanish and Hindi; or import your own export");
-const n11 = narrate("It handles other countries too: rupees, day first dates. Or load your own export.");
-await load("sample-india.csv"); await sleep(700); await n11;
+await caption("A third household, replies in Spanish and Hindi; or import your own export");
+const n11 = narrate("A third household, or load your own export.");
+await load("sample-pantry.csv"); await sleep(700); await n11;
 const chip = await evaluate(`[...document.querySelectorAll("#chips button")].findIndex((b) => /Spanish/i.test(b.textContent))`);
 if (chip >= 0) {
   const n12 = narrate("And it speaks Spanish, Hindi and English.");

@@ -11,7 +11,7 @@ import { ingestOrders } from "../src/ingest.js";
 import { backtestCases, type BacktestCase } from "../src/forecast.js";
 
 const files = process.argv.slice(2).filter((a) => a.endsWith(".csv"));
-const inputs = files.length ? files : ["data/sample-orders.csv", "data/sample-family.csv", "data/sample-india.csv"];
+const inputs = files.length ? files : ["data/sample-orders.csv", "data/sample-family.csv", "data/sample-pantry.csv"];
 
 type Case = BacktestCase & { household: string };
 const cases: Case[] = [];

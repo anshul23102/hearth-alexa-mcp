@@ -1,0 +1,111 @@
+Order ID,Order Date,Product Name,ASIN,Quantity,Unit Price,Order Status
+114-7000137-1000091,"Nov 21, 2024","Jif Creamy Peanut Butter, 40 oz Jar",B00017SJEY,1,"9.54",Delivered
+114-7000274-1000182,"2024-12-28","Jif Creamy Peanut Butter, 40 oz Jar",B00017SJEY,1,"$9.70",Delivered
+114-7000411-1000273,"2/2/2025","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,,"9.34",Delivered
+114-7000548-1000364,"Mar 14, 2025","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"$9.56",Delivered
+114-7000685-1000455,"Apr 22, 2025","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"9.41",Delivered
+114-7000822-1000546,"2025-05-29","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"9.61",Delivered
+114-7000959-1000637,"Jul 1, 2025","Jif Creamy Peanut Butter, 40 oz Jar",B00017SJEY,1,"USD 9.64",Delivered
+114-7001096-1000728,"Aug 5, 2025","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,,"9.66",Delivered
+114-7001233-1000819,"Sep 14, 2025","Jif Creamy Peanut Butter, 40 oz Jar",B00017SJEY,1,"9.55",Delivered
+114-7001370-1000910,"Oct 17, 2025","Jif Creamy Peanut Butter, 40 oz Jar",B00017SJEY,1,"USD 9.25",Returned
+114-7001507-1001001,"11/17/2025","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"$9.62",Delivered
+114-7001644-1001092,"12/16/2025","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"USD 9.48",Cancelled
+114-7001781-1001183,"1/17/2026","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"$9.47",Delivered
+114-7001918-1001274,"2/14/2026","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"$9.22",Delivered
+114-7002055-1001365,"3/14/2026","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"USD 9.21",Delivered
+114-7002192-1001456,"Apr 15, 2026","Jif Creamy Peanut Butter, 40 oz Jar",B00017SJEY,1,"9.25",Delivered
+114-7002329-1001547,"5/16/2026","Jif Creamy Peanut Butter, 40 oz Jar",B00017SJEY,1,"$9.50",Delivered
+114-7002466-1001638,"2026-06-18","Jif Creamy Peanut Butter, 40 oz Jar",B00017SJEY,1,"USD 9.67",Delivered
+114-7002603-1001729,"7/18/2026","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"9.32",Delivered
+114-7002740-1001820,"8/18/2026","Jif Creamy Peanut Butter, 40 oz Jar",B00017SJEY,1,"9.27",Returned
+114-7002877-1001911,"2026-09-19","Jif Creamy Peanut Butter 40 Ounce",B00017SJEY,1,"USD 9.66",Delivered
+114-7003014-1002002,"2024-11-02","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"14.27",Delivered
+114-7003151-1002093,"Dec 2, 2024","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"USD 13.90",Delivered
+114-7003288-1002184,"2024-12-31","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"13.74",Delivered
+114-7003425-1002275,"1/26/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"14.03",Delivered
+114-7003562-1002366,"Feb 16, 2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"14.27",Delivered
+114-7003699-1002457,"3/11/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"USD 14.24",Delivered
+114-7003699-1002457,"3/11/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"USD 14.24",Delivered
+114-7003836-1002548,"4/11/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"USD 14.08",Delivered
+114-7003973-1002639,"2025-05-05","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"13.77",Delivered
+114-7004110-1002730,"5/28/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"USD 14.28",Delivered
+114-7004110-1002730,"5/28/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"USD 14.28",Delivered
+114-7004247-1002821,"6/23/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"13.92",Delivered
+114-7004384-1002912,"7/20/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"$14.19",Delivered
+114-7004521-1003003,"2025-08-12","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"13.97",Delivered
+114-7004658-1003094,"2025-09-04","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"$13.75",Cancelled
+114-7004795-1003185,"2025-10-02","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"$14.29",Delivered
+114-7004932-1003276,"10/26/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"$14.10",Delivered
+114-7005069-1003367,"11/24/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"14.23",Delivered
+114-7005206-1003458,"12/18/2025","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"USD 13.89",Delivered
+114-7005343-1003549,"1/17/2026","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"$14.22",Delivered
+114-7005480-1003640,"Feb 9, 2026","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"USD 13.91",Delivered
+114-7005617-1003731,"2026-03-05","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"13.62",Delivered
+114-7005754-1003822,"Apr 1, 2026","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"$14.38",Delivered
+114-7005891-1003913,"2026-04-28","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,2,"$13.71",Delivered
+114-7006028-1004004,"Jun 17, 2026","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"13.99",Delivered
+114-7006165-1004095,"7/16/2026","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"13.84",Delivered
+114-7006302-1004186,"2026-08-07","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"USD 13.97",Delivered
+114-7006439-1004277,"Sep 3, 2026","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"$14.35",Delivered
+114-7006576-1004368,"2026-09-29","Folgers Classic Roast Ground Coffee, 43.5 oz Canister",B0000GHT74,1,"13.72",Delivered
+114-7006713-1004459,"2024-11-20","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"$6.85",Delivered
+114-7006850-1004550,"Dec 30, 2024","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"6.89",Delivered
+114-7006987-1004641,"Feb 6, 2025","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"$6.87",Delivered
+114-7007124-1004732,"3/16/2025","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"USD 6.96",Delivered
+114-7007261-1004823,"4/24/2025","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,2,"$7.12",Delivered
+114-7007261-1004823,"4/24/2025","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,2,"$7.12",Delivered
+114-7007398-1004914,"7/16/2025","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"6.92",Delivered
+114-7007398-1004914,"7/16/2025","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"6.92",Delivered
+114-7007535-1005005,"8/22/2025","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"7.03",Delivered
+114-7007672-1005096,"2025-09-28","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"6.89",Cancelled
+114-7007809-1005187,"10/31/2025","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"6.82",Delivered
+114-7007946-1005278,"12/13/2025","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"USD 6.95",Delivered
+114-7008083-1005369,"Jan 15, 2026","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,2,"USD 7.11",Delivered
+114-7008220-1005460,"4/7/2026","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,2,"$7.09",Delivered
+114-7008357-1005551,"6/16/2026","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"6.82",Delivered
+114-7008494-1005642,"2026-07-28","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"$7.17",Delivered
+114-7008631-1005733,"2026-09-03","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"USD 6.97",Delivered
+114-7008768-1005824,"10/7/2026","Quaker Old Fashioned Rolled Oats, 42 oz Canister",B000073G4U,1,"$7.06",Delivered
+114-7008905-1005915,"2024-12-01","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"11.09",Delivered
+114-7009042-1006006,"1/14/2025","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"$11.13",Delivered
+114-7009179-1006097,"2/28/2025","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"10.70",Delivered
+114-7009316-1006188,"4/15/2025","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"10.84",Delivered
+114-7009453-1006279,"May 28, 2025","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"USD 10.90",Delivered
+114-7009590-1006370,"Jul 12, 2025","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"USD 10.70",Delivered
+114-7009727-1006461,"9/5/2025","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"10.95",Delivered
+114-7009864-1006552,"Oct 31, 2025","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"11.18",Cancelled
+114-7010001-1006643,"2025-12-26","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"$10.94",Delivered
+114-7010138-1006734,"Feb 10, 2026","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"10.89",Delivered
+114-7010275-1006825,"3/31/2026","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"11.15",Delivered
+114-7010412-1006916,"May 13, 2026","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"USD 11.10",Delivered
+114-7010549-1007007,"7/6/2026","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"$10.96",Delivered
+114-7010686-1007098,"8/25/2026","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"$11.01",Delivered
+114-7010686-1007098,"8/25/2026","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,1,"$11.01",Delivered
+114-7010823-1007189,"10/11/2026","Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz",B00006J3Y8,2,"$10.81",Delivered
+114-7010960-1007280,"2024-12-10","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"13.55",Delivered
+114-7011097-1007371,"1/28/2025","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"USD 13.52",Delivered
+114-7011234-1007462,"2025-03-29","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"$13.77",Delivered
+114-7011371-1007553,"May 29, 2025","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"$13.50",Delivered
+114-7011508-1007644,"7/20/2025","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"USD 13.26",Delivered
+114-7011645-1007735,"Sep 19, 2025","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"$13.73",Delivered
+114-7011782-1007826,"11/7/2025","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"13.53",Delivered
+114-7011919-1007917,"Jan 3, 2026","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"$13.27",Delivered
+114-7011919-1007917,"Jan 3, 2026","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"$13.27",Delivered
+114-7012056-1008008,"2/26/2026","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"$13.34",Delivered
+114-7012193-1008099,"4/26/2026","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"$13.58",Delivered
+114-7012330-1008190,"6/24/2026","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,1,"USD 13.72",Delivered
+114-7012467-1008281,"2026-08-14","Clorox Disinfecting Wipes, 75 Count (Pack of 3)",B0000LGZPS,2,"13.38",Delivered
+114-7012604-1008372,"Dec 28, 2024","Gain Liquid Laundry Detergent Original Scent 154 oz",B0000RI0D3,1,"19.71",Delivered
+114-7012741-1008463,"Mar 13, 2025","Gain Liquid Laundry Detergent Original Scent 154 oz",B0000RI0D3,1,"$19.50",Delivered
+114-7012878-1008554,"May 24, 2025","Gain Liquid Laundry Detergent Original Scent 154 oz",B0000RI0D3,1,"20.55",Delivered
+114-7013015-1008645,"Jul 24, 2025","Gain Original Liquid Laundry Detergent, 154 fl oz",B0000RI0D3,1,"USD 20.40",Delivered
+114-7013152-1008736,"Sep 29, 2025","Gain Original Liquid Laundry Detergent, 154 fl oz",B0000RI0D3,1,"USD 20.10",Delivered
+114-7013289-1008827,"12/15/2025","Gain Original Liquid Laundry Detergent, 154 fl oz",B0000RI0D3,1,"$20.03",Delivered
+114-7013426-1008918,"Feb 27, 2026","Gain Liquid Laundry Detergent Original Scent 154 oz",B0000RI0D3,1,"USD 20.26",Delivered
+114-7013563-1009009,"May 9, 2026","Gain Original Liquid Laundry Detergent, 154 fl oz",B0000RI0D3,1,"USD 20.47",Delivered
+114-7013700-1009100,"7/25/2026","Gain Original Liquid Laundry Detergent, 154 fl oz",B0000RI0D3,1,"USD 20.56",Delivered
+114-7013837-1009191,"9/27/2026","Gain Liquid Laundry Detergent Original Scent 154 oz",B0000RI0D3,1,"$19.46",Delivered
+114-7013974-1009282,"2025-04-02","Anker PowerCore 10000 Portable Charger Power Bank A1263",B0000WC1HN,1,"$19.99",Delivered
+114-7014111-1009373,"2025-11-17","Philips Premium Airfryer HD9650 XXL",B00009F4IY,1,"249.99",Delivered
+114-7014248-1009464,"2024-01-19","KitchenAid Artisan Series 5 Qt Tilt-Head Stand Mixer",B0000WXE4B,1,"$389.99",Delivered

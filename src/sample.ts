@@ -6,17 +6,16 @@
 // of 90 toilet rolls does not run out in four weeks); test/data-sanity.test.ts checks that, from the generated numbers themselves.
 // Appliances carry fixed purchase dates, because whether a recall applies depends on whether the unit was bought before it.
 
-export const SAMPLE_FILES = ["sample-orders.csv", "sample-family.csv", "sample-india.csv"] as const;
+export const SAMPLE_FILES = ["sample-orders.csv", "sample-family.csv", "sample-pantry.csv"] as const;
 export type SampleFile = (typeof SAMPLE_FILES)[number];
 
 const DAY = 86_400_000;
 type Item = { titles: string[]; gap: number; price: number };
 type Durable = { title: string; bought: string; price: number };
-interface Profile { consumables: Item[]; durables: Durable[]; style: "us" | "india" }
+interface Profile { consumables: Item[]; durables: Durable[] }
 
 const PROFILES: Record<SampleFile, Profile> = {
   "sample-orders.csv": {
-    style: "us",
     consumables: [
       { titles: ["Bounty Select-A-Size Paper Towels, 12 Triple Rolls", "BOUNTY Paper Towels Select a Size 12 Triple Rolls Family Pack"], gap: 30, price: 2699 },
       { titles: ["Charmin Ultra Soft Toilet Paper, 18 Mega Rolls", "Charmin Ultra Soft Toilet Paper 18 Mega Rolls = 90 Regular"], gap: 56, price: 2449 },
@@ -36,7 +35,6 @@ const PROFILES: Record<SampleFile, Profile> = {
     ],
   },
   "sample-family.csv": {
-    style: "us",
     // A household with a baby. Real recalls exist for Philips Avent monitors (SCD630, SCD843), Fisher-Price toys and Anker power banks.
     consumables: [
       { titles: ["Pampers Swaddlers Newborn Diapers, 124 Count", "Pampers Swaddlers Diapers Size 1, 140 Count"], gap: 11, price: 4299 },
@@ -53,21 +51,20 @@ const PROFILES: Record<SampleFile, Profile> = {
       { title: "Oster French Door Countertop Oven Toaster Oven", bought: "2025-08-27", price: 12999 },
     ],
   },
-  "sample-india.csv": {
-    style: "india",
-    // Prices are in paise (rupees x 100).
+  "sample-pantry.csv": {
+    // Two adults who cook at home. Prices are in cents. The Anker bank and the Philips air fryer are real recall subjects.
     consumables: [
-      { titles: ["Aashirvaad Select Premium Sharbati Atta, 10 kg"], gap: 26, price: 55900 },
-      { titles: ["Fortune Sunlite Refined Sunflower Oil, 5 L Jar", "Fortune Sunlite Refined Sunflower Oil 5 Litre"], gap: 32, price: 78500 },
-      { titles: ["Tata Salt Vacuum Evaporated Iodised Salt, 1 kg"], gap: 45, price: 2800 },
-      { titles: ["Surf Excel Matic Top Load Liquid Detergent, 2 L"], gap: 36, price: 52900 },
-      { titles: ["Colgate Strong Teeth Toothpaste, 600 g (Pack of 4)"], gap: 58, price: 29000 },
-      { titles: ["Amul Taaza Toned Milk Powder, 1 kg"], gap: 30, price: 41500 },
+      { titles: ["Jif Creamy Peanut Butter, 40 oz Jar", "Jif Creamy Peanut Butter 40 Ounce"], gap: 34, price: 949 },
+      { titles: ["Folgers Classic Roast Ground Coffee, 43.5 oz Canister"], gap: 26, price: 1399 },
+      { titles: ["Quaker Old Fashioned Rolled Oats, 42 oz Canister"], gap: 38, price: 699 },
+      { titles: ["Dawn Ultra Liquid Dish Soap, Original Scent, 56 oz"], gap: 48, price: 1099 },
+      { titles: ["Clorox Disinfecting Wipes, 75 Count (Pack of 3)"], gap: 52, price: 1349 },
+      { titles: ["Gain Original Liquid Laundry Detergent, 154 fl oz", "Gain Liquid Laundry Detergent Original Scent 154 oz"], gap: 66, price: 1999 },
     ],
     durables: [
-      { title: "Anker PowerCore 10000 Power Bank A1263", bought: "2025-04-02", price: 199900 },
-      { title: "Philips Air Fryer HD9200/90 4.1 L", bought: "2025-11-17", price: 649900 },
-      { title: "Prestige Iris 750 W Mixer Grinder with 3 Jars", bought: "2024-01-19", price: 349900 },
+      { title: "Anker PowerCore 10000 Portable Charger Power Bank A1263", bought: "2025-04-02", price: 1999 },
+      { title: "Philips Premium Airfryer HD9650 XXL", bought: "2025-11-17", price: 24999 },
+      { title: "KitchenAid Artisan Series 5 Qt Tilt-Head Stand Mixer", bought: "2024-01-19", price: 38999 },
     ],
   },
 };
@@ -83,19 +80,13 @@ export function generateSample(file: SampleFile, anchorISO: string): string {
   const jitter = (n: number, pct: number) => Math.round(n * (1 + (rnd() * 2 - 1) * pct));
 
   const usMoney = (c: number) => (rnd() < 0.25 ? `USD ${(c / 100).toFixed(2)}` : rnd() < 0.5 ? `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}` : (c / 100).toFixed(2));
-  const inMoney = (c: number) => (rnd() < 0.3 ? `Rs. ${(c / 100).toFixed(2)}` : `₹${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
   const usFormats = [
     (d: Date) => `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`,
     (d: Date) => d.toISOString().slice(0, 10),
     (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }),
   ];
-  // India exports are day-first (13/02/2026).
-  const inFormats = [
-    (d: Date) => `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`,
-    (d: Date) => `${d.getUTCDate()}-${d.getUTCMonth() + 1}-${d.getUTCFullYear()}`,
-  ];
-  const money = prof.style === "india" ? inMoney : usMoney;
-  const formats = prof.style === "india" ? inFormats : usFormats;
+  const money = usMoney;
+  const formats = usFormats;
 
   const rows: string[] = ["Order ID,Order Date,Product Name,ASIN,Quantity,Unit Price,Order Status"];
   let n = 0;

@@ -291,7 +291,7 @@ async function handleAgent(req: IncomingMessage, res: ServerResponse, url: URL):
 }
 
 function serveStatic(url: URL, res: ServerResponse) {
-  const sample = /^\/demo\/(sample-(?:orders|family|india)\.csv)$/.exec(url.pathname);
+  const sample = /^\/demo\/(sample-(?:orders|family|pantry)\.csv)$/.exec(url.pathname);
   if (sample) { // generated fresh, counted back from today, so the demo looks right whenever it is opened
     res.writeHead(200, { "content-type": "text/csv", "cache-control": "no-store" }).end(generateSample(sample[1] as SampleFile, new Date().toISOString().slice(0, 10)));
     return;
