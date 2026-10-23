@@ -325,7 +325,7 @@ async function showCard(name, args, result) {
     onToolResult: (tool, a, r) => {
       if (tool === "approval_code") return; // the code is for the person's eyes: it never enters the conversation the model reads
       const id = `ui_${Date.now()}`, spoken = r.content?.[0]?.text ?? "";
-      const label = tool === "remember_preference" ? (a.kind === "unskip_item" ? "Resume reordering" : "Stop reordering") : tool === "recall_status" ? "recall progress" : tool === "approve_restock" ? "Place order" : tool === "undo_restock" ? "Cancel order" : tool;
+      const label = tool === "plan_restock" ? "new budget" : tool === "remember_preference" ? (a.kind === "unskip_item" ? "Resume reordering" : "Stop reordering") : tool === "recall_status" ? "recall progress" : tool === "approve_restock" ? "Place order" : tool === "undo_restock" ? "Cancel order" : tool;
       // A complete, valid turn (question, call, result, answer): an orphaned tool result would make the next model call fail.
       messages.push(
         { role: "user", content: [{ type: "text", text: `(I pressed “${label}” on the card.)` }] },

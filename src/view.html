@@ -74,6 +74,7 @@ h1{font:700 40px/.95 var(--display);letter-spacing:-.025em;margin:14px 0 4px;tex
 
 .remedy .state{font-weight:600;margin:0 0 6px}.remedy .state[data-state=resolved]{color:#0a7a3f}.remedy .state[data-state=open]{color:#b4260f}.rbtns{display:flex;flex-wrap:wrap;gap:6px}.rb{font:inherit;font-size:11px;padding:6px 9px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;border-radius:0}.rb.on{background:var(--ink);color:var(--paper)}.rb:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .more-btn{font:inherit;font-size:11px;background:none;border:0;padding:6px 0 2px;color:var(--muted);text-decoration:underline;cursor:pointer}.more-btn::after{content:" \25be"}.more-btn[aria-expanded=true]::after{content:" \25b4"}.more{margin:4px 0 6px;padding:8px 10px;border-left:3px solid var(--ink);background:#eef2f6}.more p{margin:0 0 8px;font-size:11.5px}.skipbtn{font:inherit;font-size:11px;padding:6px 9px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;border-radius:0}.skipbtn:focus-visible,.more-btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}.row.skipped .name{text-decoration:line-through;color:var(--muted)}
+.tune{margin:12px 0 0}.tune label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}.tuner{display:flex;align-items:center;gap:12px}.tuner input{flex:1;accent-color:var(--ink);height:28px}.tuner output{font-weight:600;min-width:6ch;text-align:right}
 .remind{margin:10px 0 0;padding:6px 8px;border-left:4px solid var(--red);background:#ffe9e4;font-weight:600;font-size:11.5px}
 .limits{margin:10px 0 0;font-size:11px;color:var(--muted)}.proof{margin:8px 0 0;font-size:11px;color:#0a7a3f;text-align:center}
 .approval{margin:12px 0 0;padding:10px 12px;border:2px dashed var(--ink);display:grid;gap:2px;text-align:center}.approval small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}.approval b{font:700 30px/1.1 var(--mono);letter-spacing:.18em}.approval span{font-size:11px;color:var(--muted)}
@@ -124,7 +125,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
     if (e.source !== window.parent) return; // only the host frame may drive this card (its origin is opaque inside the sandbox, so the source is the check)
     const m = e.data; if (!m || m.jsonrpc !== "2.0") return;
     if (m.id !== undefined && !m.method) { const p = pending.get(m.id); if (!p) return; pending.delete(m.id); m.error ? p.bad(new Error(m.error.message)) : p.ok(m.result); return; }
-    if (m.method === "ui/notifications/tool-input") lastCall = m.params;
+    if (m.method === "ui/notifications/tool-input") { lastCall = m.params; const w = m.params && m.params.arguments && m.params.arguments.withinDays; if (Number.isInteger(w)) withinDays = w; }
     if (m.method === "ui/notifications/tool-result") render(m.params);
     if (m.method === "ui/notifications/host-context-changed") { /* single theme */ }
   });
@@ -212,14 +213,37 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
     app.querySelectorAll("[data-url]").forEach((b) => b.addEventListener("click", () => request("ui/open-link", { url: b.dataset.url }).catch(() => {})));
     wireRemedy();
   }
+  // Budget slider: drag, let go, and the plan is made again for that budget (planning buys nothing, so this is safe to do freely).
+  let withinDays = 14;
+  const fracDigits = (cur) => { try { return new Intl.NumberFormat(LOC, { style: "currency", currency: cur || "USD" }).resolvedOptions().maximumFractionDigits ?? 2; } catch { return 2; } };
+  function tuner(p) {
+    const d = 10 ** fracDigits(p.currency), basis = (p.budgetCents || p.totalCents) / d;
+    const min = Math.max(1, Math.floor(basis * 0.3)), max = Math.max(min + 1, Math.ceil(basis * 2)), step = Math.max(1, Math.round((max - min) / 24));
+    const val = Math.min(max, Math.max(min, Math.round((p.budgetCents || p.totalCents) / d)));
+    return '<div class="tune"><label for="bud">Try a different budget</label><div class="tuner"><input id="bud" type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" data-d="' + d + '" data-cur="' + esc(p.currency) + '"><output id="budOut" for="bud">' + money(val * d, p.currency) + "</output></div></div>";
+  }
+  function wireTuner() {
+    const r = document.getElementById("bud"); if (!r) return;
+    const out = document.getElementById("budOut");
+    r.addEventListener("input", () => { out.textContent = money(Number(r.value) * Number(r.dataset.d), r.dataset.cur); });
+    r.addEventListener("change", async () => {
+      r.disabled = true; out.textContent = "planning…";
+      try {
+        const res = await callTool("plan_restock", { withinDays, budget: Number(r.value) });
+        if (res.isError) throw new Error(res.content?.[0]?.text || "Could not re-plan");
+        render(res);
+      } catch (e) { out.textContent = e.message; r.disabled = false; }
+    });
+  }
   function proposal(sc) {
     const p = sc.proposal; current = p;
     if (!p.lines.length) return slip('<h1>Nothing to order</h1><p class="sub">Everything is stocked for that window.</p>');
     const lines = p.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + money(l.packs * l.unitPriceCents, l.currency) + '</span></div><div class="reason">' + esc(l.reason) + "</div>").join("");
     const dropped = p.dropped.map((d) => '<div class="leader struck"><span class="t">' + esc(short(d.title, d.name)) + '</span></div><div class="reason">left out: ' + esc(d.why) + "</div>").join("");
     slip('<h1>Restock plan</h1><p class="sub">Nothing is ordered until you say yes. Plan expires at ' + hhmm(p.expiresAt) + '.</p>' + '<div class="approval"><small>Approval code</small><b id="code" aria-live="polite">····</b><span>Say it to approve by voice, or press Place order below.</span></div><hr class="dots">' + lines + dropped + '<hr class="solid"><div class="total"><small>Total</small><span>' + money(p.totalCents, p.currency) + '</span></div>' + (p.budgetCents ? '<div class="note">Budget ' + money(p.budgetCents, p.currency) + " · " + money(p.budgetCents - p.totalCents, p.currency) + " to spare</div>" : "") +
-      (sc.limits ? '<p class="limits">Safety limits set by the operator, not the model: ' + money(sc.limits.perOrderCents, p.currency) + ' per order, ' + money(sc.limits.perDayCents, p.currency) + ' per day.</p>' : '') + '<div class="tear"><button class="btn" id="place">Place order</button><button class="btn ghost" id="later">Not now</button></div><div class="note" id="msg" role="status"></div>');
+      tuner(p) + (sc.limits ? '<p class="limits">Safety limits set by the operator, not the model: ' + money(sc.limits.perOrderCents, p.currency) + ' per order, ' + money(sc.limits.perDayCents, p.currency) + ' per day.</p>' : '') + '<div class="tear"><button class="btn" id="place">Place order</button><button class="btn ghost" id="later">Not now</button></div><div class="note" id="msg" role="status"></div>');
     const place = document.getElementById("place"), later = document.getElementById("later"), msg = document.getElementById("msg");
+    wireTuner();
     // The code exists only on this card: a tool the model cannot call issues it, and it is never written into the conversation.
     callTool("approval_code", { proposalId: p.id }).then((r) => { const c = r.structuredContent && r.structuredContent.code; if (c) document.getElementById("code").textContent = c.split("").join(" "); }).catch(() => { document.getElementById("code").textContent = "—"; });
     place.addEventListener("click", async () => {

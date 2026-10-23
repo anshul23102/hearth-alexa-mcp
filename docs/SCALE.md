@@ -10,7 +10,7 @@ Everything here is reproducible from this repo. Machine: one MacBook, Node 26, S
 ## Throughput and latency (`npm run bench -- 5000 200`)
 | Measurement | Result |
 |---|---|
-| Import, in-process, one transaction per household | 47,000 to 53,000 rows/s (676k rows in 12.7 to 14.3 s across two runs) |
+| Import, in-process, one transaction per household | 44,000 to 53,000 rows/s (676k rows in 12.7 to 15.4 s across three runs; the slowest was the most recent, on the same laptop) |
 | Forecast for one household | p50 0.4 to 0.9 ms, p99 0.7 to 2.8 ms (two runs; the machine was also running other work) |
 | Recall check for one household (3 durables, 10.5k notices) | p50 0.18 ms in both runs, p99 1.0 to 2.5 ms (brand cache warm; 17 ms cold) |
 | Database | 631,652 order rows = 154 MB |
@@ -34,11 +34,11 @@ positive numbers are an **upper bound**; the negatives are the number to watch.
 
 | Case | n | Result |
 |---|---|---|
-| Owned product is in a notice: right recall surfaced at all | 1,669 | **85.4%** |
-| ...flagged as confident ("likely") | 1,669 | **78.6%** |
-| Same brand, unrelated product | 1,669 | 0.0% any alert |
-| Third-party replacement part for the brand's product | 1,669 | 0.4% any alert, 0.0% "likely" |
-| Same brand and product type, **wrong model number** | 1,669 | 2.1% false "likely"; 78.9% get a cautious "possible, verify the label" |
+| Owned product is in a notice: right recall surfaced at all | 1,670 | **85.4%** |
+| ...flagged as confident ("likely") | 1,670 | **78.6%** |
+| Same brand, unrelated product | 1,670 | 0.0% any alert |
+| Third-party replacement part for the brand's product | 1,670 | 0.4% any alert, 0.0% "likely" |
+| Same brand and product type, **wrong model number** | 1,670 | 2.1% false "likely"; 78.9% get a cautious "possible, verify the label" |
 
 Reading it honestly: the 21% of true positives that are not "likely" mostly lack a model number that survives the title
 noise; they still surface as "possible" or are missed (14.6% missed). The deliberate trade is that a wrong-model owner sees a

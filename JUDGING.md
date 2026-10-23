@@ -30,7 +30,7 @@ To watch a recall arrive by push: set `HEARTH_ADMIN_TOKEN` (24+ characters) and 
 | Accessibility checked with axe-core on every screen | `npm run a11y` (0 issues; automated checks cover part of WCAG, so it is a floor) |
 | Closing the loop on a recall, and a fingerprint of the safety history you can check yourself | `recall_status`, the recall card buttons and the reminders for recalls still open after 72 hours (`test/remedy.test.ts`, `test/alerts.test.ts`); the Safety ledger fingerprint (`test/anchor.test.ts`) |
 | Tested | `npm test`: unit, chaos, security and end-to-end through the official MCP SDK client |
-| Measured, not asserted | [docs/SCALE.md](docs/SCALE.md); recall matching evaluated on 1,669 cases built from real notices (`npm run eval`); forecast backtest (`npm run backtest`) |
+| Measured, not asserted | [docs/SCALE.md](docs/SCALE.md); recall matching evaluated on 1,670 cases built from real notices (`npm run eval`); forecast backtest (`npm run backtest`) |
 | Security reviewed, every finding has an attack test | [SECURITY.md](SECURITY.md) |
 
 ### Design: is it a coherent, intuitive experience?
@@ -42,7 +42,7 @@ To watch a recall arrive by push: set `HEARTH_ADMIN_TOKEN` (24+ characters) and 
 ### Potential Impact: a specific need, beyond the hackathon?
 - Recalls are published but owners are rarely reached; [docs/PROBLEM.md](docs/PROBLEM.md) cites the regulator figures and says plainly what is *not* claimed.
 - Agents that can spend money need a standard safety pattern. plan, approve with a code only the card shows, undo, operator-set ceilings the model cannot change, and a hash-chained audit log are that pattern, reusable by any MCP server. It is measured, not just claimed: [docs/REDTEAM.md](docs/REDTEAM.md).
-- Deployable: compiled build, `/readyz`, `/metrics`, graceful shutdown, online backups, Dockerfile (built and smoke-tested by the `docker` CI job).
+- Deployable: compiled build, `/readyz`, `/metrics`, graceful shutdown, online backups, Dockerfile (built and smoke-tested by the `docker` CI job, which passes).
 
 ### Quality of the Idea: creative, and true to the ecosystem and the end user?
 - Proactive rather than reactive: new recalls are matched to owners by a brand index (37 ms to find 1,250 owners among 5,000 households) and pushed to open sessions.
@@ -53,4 +53,4 @@ To watch a recall arrive by push: set `HEARTH_ADMIN_TOKEN` (24+ characters) and 
 - **Real:** the MCP server, OAuth/PKCE, the recall data (10,000+ notices), the matching, the forecast, the safety layer, the Bedrock calls.
 - **Simulated:** the Alexa+ device (the web page is a real MCP client standing in for it, as the FAQ allows) and the storefront (`StoreAdapter`; no real purchases).
 - **Synthetic:** the three sample households in `data/`. You can import your own order export from the page.
-- **Not yet verified:** live microphone behaviour across every browser, forecast accuracy on real purchase histories (the backtest is there to run on one), and the container image until the first CI run on the public repository.
+- **Not yet verified:** live microphone behaviour across every browser, forecast accuracy on real purchase histories (the backtest is there to run on one), and `docker compose` with its read-only filesystem (the plain image is verified in CI).

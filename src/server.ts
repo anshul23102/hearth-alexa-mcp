@@ -222,7 +222,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         budgetUsd: z.number().positive().max(10_000_000).optional().describe("Deprecated alias for budget"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-      _meta: { ui: { resourceUri: RUNWAY_URI, visibility: ["model"] } },
+      _meta: { ui: { resourceUri: RUNWAY_URI, visibility: ["model", "app"] } }, // the plan card has a budget slider that re-plans (planning buys nothing)
     },
     async ({ withinDays, budget, budgetUsd }, extra) => {
       const h = hh(extra);

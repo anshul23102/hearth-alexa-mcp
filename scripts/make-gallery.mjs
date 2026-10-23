@@ -146,9 +146,9 @@ h1{margin:0;position:absolute;left:84px;top:52px;font:700 64px/1.1 B,system-ui,s
 .c h2{margin:26px 0 10px;font:700 31px/1.1 B,system-ui,sans-serif}.c small{font:400 13px M,monospace;color:#4a5170}
 .f{position:absolute;left:84px;top:910px;font:400 13px M,monospace;color:#c9d3ff}
 </style><h1>Measured, not claimed</h1><div class="sub">Reproducible from the repo: npm run bench, npm run eval, npm test.</div><div class="g">
-${stat("85.4%", false, "of known recalls surfaced", "1,669 cases from real CPSC notices (upper bound)")}
-${stat("0%", true, "false alerts on an unrelated product", "same brand, 1,669 cases; 2.1% false 'likely' on wrong model")}
-${stat("~13 s", false, "676,000 orders, 5,000 households", "12.7 to 14.3 s over two runs; per-household queries &lt; 1 ms")}
+${stat("85.4%", false, "of known recalls surfaced", "1,670 cases from real CPSC notices (upper bound)")}
+${stat("0%", true, "false alerts on an unrelated product", "same brand, 1,670 cases; 2.1% false 'likely' on wrong model")}
+${stat("13–15 s", false, "676,000 orders, 5,000 households", "12.7 to 15.4 s over three runs; per-household queries &lt; 1 ms")}
 ${stat("37 ms", false, "one new recall to 1,250 owners", "brand index + same scorer; push to open sessions only")}
 </div><div class="f">Also: ${tests} automated tests, 500k-row upload in about 13 s with p99 13 ms for other users, hash-chained audit log, ${findings} security findings fixed.</div>`);
 await send("Page.navigate", { url: pathToFileURL(measured).href });
