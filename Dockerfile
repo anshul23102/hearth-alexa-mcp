@@ -1,7 +1,7 @@
 # Two stages: compile TypeScript, then ship only compiled JS + production dependencies, running as a non-root user.
 # It was written where Docker was not available; the `docker` job in .github/workflows/ci.yml builds it and smoke-tests the
 # container on every push. The same compiled output (npm run build && npm run start:prod) is what local runs exercise.
-FROM node:24-slim AS build
+FROM node:25-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -9,7 +9,7 @@ COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:24-slim
+FROM node:25-slim
 ENV NODE_ENV=production PORT=3939 HEARTH_DB=/data/hearth.db
 WORKDIR /app
 COPY package.json package-lock.json ./
