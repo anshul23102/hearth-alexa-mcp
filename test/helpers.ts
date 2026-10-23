@@ -2,7 +2,8 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 
 export async function startServer(port: number, env: Record<string, string> = {}): Promise<{ proc: ChildProcess; base: string }> {
-  const proc = spawn("npx", ["tsx", "src/http.ts"], {
+  // Node directly, not through npx: killing an npx wrapper does not stop the server it started on Linux, and a surviving server keeps the test run alive.
+  const proc = spawn(process.execPath, ["--import", "tsx", "src/http.ts"], {
     env: { ...process.env, PORT: String(port), HEARTH_DB: ":memory:", HEARTH_RECALLS_OFFLINE: "1", HEARTH_RECALLS_SYNC: "off", HEARTH_RATE_REGISTER: "1000", HEARTH_RATE_TOKEN: "1000", HEARTH_RATE_AUTHORIZE: "1000", ...env },
     stdio: "pipe",
   });

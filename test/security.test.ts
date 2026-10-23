@@ -360,7 +360,7 @@ test("F5c bulk imports are limited in number, not just in size", async () => {
 test("a misconfigured deployment cannot run with authentication off", async () => {
   const { spawn } = await import("node:child_process");
   const run = (env: Record<string, string>) => new Promise<{ code: number | null; err: string }>((ok) => {
-    const c = spawn("npx", ["tsx", "src/http.ts"], { env: { ...process.env, PORT: "3967", HEARTH_DB: ":memory:", HEARTH_RECALLS_SYNC: "off", HEARTH_AUTH: "off", ...env }, stdio: "pipe" });
+    const c = spawn(process.execPath, ["--import", "tsx", "src/http.ts"], { env: { ...process.env, PORT: "3967", HEARTH_DB: ":memory:", HEARTH_RECALLS_SYNC: "off", HEARTH_AUTH: "off", ...env }, stdio: "pipe" });
     let err = ""; c.stderr.on("data", (d) => (err += d));
     c.on("exit", (code) => ok({ code, err }));
     setTimeout(() => { if (c.exitCode === null) { c.kill(); } }, 6000);
