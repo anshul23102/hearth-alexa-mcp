@@ -7,7 +7,7 @@
 
 Nothing else is in scope. Hearth is not a store and refuses to buy new products.
 
-**Prefer to watch first?** [docs/demo/hearth-demo.mp4](docs/demo/hearth-demo.mp4) (under 3 minutes, 1080p, live Claude on Bedrock; the YouTube link is on the Devpost page).
+**Prefer to watch first?** [YouTube, 2:26](https://youtu.be/UCX66KTd-_0) (1080p, live Claude on Bedrock).
 
 ## Try it (2 minutes)
 

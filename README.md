@@ -112,7 +112,7 @@ Hearth is **not a store**. It restocks only what the household already buys regu
 
 ## Demo video
 
-The full walkthrough (account link, messy export, forecast with "Why this date", recall matching and the remedy tracker, the not-a-store refusal, a plan approved by saying the code from the card, the Safety ledger, undo, a pushed recall, Spanish and Hindi, and the measured numbers) is recorded from the real app with live Claude on Amazon Bedrock at 1920x1080: [docs/demo/hearth-demo.mp4](docs/demo/hearth-demo.mp4). The voices are synthetic (open-source Kokoro); the screen is real. The YouTube link will be added here. Narration text: [docs/demo/NARRATION.md](docs/demo/NARRATION.md).
+The full walkthrough (account link, messy export, forecast with "Why this date", recall matching and the remedy tracker, the not-a-store refusal, a plan approved by saying the code from the card, the Safety ledger, undo, a pushed recall, Spanish and Hindi, and the measured numbers) is recorded from the real app with live Claude on Amazon Bedrock at 1920x1080: **[Watch it on YouTube](https://youtu.be/UCX66KTd-_0)** (2:26).
 
 ## Run it
 
