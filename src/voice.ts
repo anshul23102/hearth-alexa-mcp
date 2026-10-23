@@ -33,6 +33,7 @@ const answers = () => fetch(URL_BASE, { signal: AbortSignal.timeout(1500) }).the
 
 /** Start (or find) the voice in the background; the server never waits for it. */
 export async function startVoice(root: string): Promise<void> {
+  if (process.env.HEARTH_TTS === "off") return; // off means off: not even a voice server that is already running
   if (await answers()) { ready = true; return; } // someone already runs one (for example the demo recorder): use it, and never stop it
   const dir = process.env.HEARTH_TTS_URL ? undefined : ttsDir();
   if (!dir) return;
