@@ -14,3 +14,20 @@ jobs:
       - run: npm test
       - name: Known vulnerabilities in production dependencies
         run: npm audit --omit=dev --audit-level=high
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the image
+        run: docker build -t hearth:ci .
+      - name: The container starts, is healthy, runs as a non-root user and refuses unauthenticated calls
+        run: |
+          docker run -d --name hearth -p 3939:3939 -e PUBLIC_URL=http://localhost:3939 -e HEARTH_RECALLS_OFFLINE=1 -e HEARTH_RECALLS_SYNC=off hearth:ci
+          for i in $(seq 1 40); do curl -fsS http://localhost:3939/healthz && break; sleep 1; done
+          curl -fsS http://localhost:3939/readyz
+          curl -fsSI http://localhost:3939/ | grep -i content-security-policy
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3939/mcp)" = 401
+          test "$(docker exec hearth id -u)" != 0
+          docker logs hearth
+          docker stop hearth

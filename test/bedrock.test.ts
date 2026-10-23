@@ -93,7 +93,9 @@ test("tool results carry the ids the model needs in an assistant-only block, nev
   assert.ok(!blocks(plan)[0].text.includes(id), "the spoken block never contains an id");
   assert.deepEqual(blocks(plan)[1].annotations?.audience, ["assistant"]);
   assert.ok(blocks(plan)[1].text.includes(id) && /confirm_restock/.test(blocks(plan)[1].text));
-  const done = await c.callTool({ name: "confirm_restock", arguments: { proposalId: id, userConfirmed: true } });
+  const code = ((await c.callTool({ name: "approval_code", arguments: { proposalId: id } })) as any).structuredContent.code as string;
+  assert.ok(!JSON.stringify(plan).includes(code), "the approval code is never in anything the model is given");
+  const done = await c.callTool({ name: "confirm_restock", arguments: { proposalId: id, approvalCode: code } });
   assert.ok(blocks(done)[1].text.includes(id) && /undo_restock/.test(blocks(done)[1].text) && blocks(done)[1].text.includes("SIM-"));
   const run = await c.callTool({ name: "household_runway", arguments: {} });
   assert.match(blocks(run)[1].text, /"productKey":"asin:/);

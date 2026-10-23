@@ -1,6 +1,6 @@
 # Two stages: compile TypeScript, then ship only compiled JS + production dependencies, running as a non-root user.
-# NOTE: this Dockerfile has not been built in the environment it was written in (no Docker available there);
-# the same compiled output (npm run build && npm run start:prod) is what CI and local runs exercise.
+# It was written where Docker was not available; the `docker` job in .github/workflows/ci.yml builds it and smoke-tests the
+# container on every push. The same compiled output (npm run build && npm run start:prod) is what local runs exercise.
 FROM node:24-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./

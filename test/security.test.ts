@@ -235,7 +235,7 @@ test("F7 blast radius: operator spend ceilings hold even when the model confirms
       await c.connect(new StreamableHTTPClientTransport(new URL(`${base}/mcp`), { requestInit: { headers: { authorization: `Bearer ${tok.access_token}` } } }));
       await c.callTool({ name: "import_order_history", arguments: { csv: CSV } });
       const plan = async () => sc(await c.callTool({ name: "plan_restock", arguments: { withinDays: 14, budget: 60 } })).proposal;
-      const confirm = async (id: string) => c.callTool({ name: "confirm_restock", arguments: { proposalId: id, userConfirmed: true } });
+      const confirm = async (id: string) => c.callTool({ name: "approve_restock", arguments: { proposalId: id } }); // the card button route; the ceilings apply to every route
       const first = await plan();
       const r1 = await confirm(first.id);
       const second = await plan();

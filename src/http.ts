@@ -11,7 +11,7 @@ import { ingestStream, type IngestReport } from "./ingest.js";
 import { recallStats, syncRecalls, type RecallRecord } from "./recallIndex.js";
 import { Hub } from "./hub.js";
 import { processNewRecalls } from "./alerts.js";
-import { createHearthServer } from "./server.js";
+import { APP_ONLY_TOOLS, createHearthServer } from "./server.js";
 import { baseUrl, handleOAuth, pruneTokens, verifyToken } from "./oauth.js";
 import { bedrockClient, bedrockStep, hasBedrockCredentials, validateAgentRequest, reserveBedrockCall, MODEL_ID, REGION, type WireMessage, type WireTool } from "./agent.js";
 import { RateLimiter, allowedHosts, clientIp, csp, hostAllowed, originAllowed, readBody, securityHeaders, sha256b64 } from "./security.js";
@@ -225,7 +225,9 @@ async function handleAgent(req: IncomingMessage, res: ServerResponse, url: URL):
       if (bad) { sendJson(res, 400, { error: bad }); return true; }
       const budget = reserveBedrockCall(db);
       if (!budget.ok) { sendJson(res, 429, { error: `Daily model-call limit reached (${budget.max}). The simulator will use its offline router; raise HEARTH_BEDROCK_DAILY_CALLS only if you accept the cost.` }); return true; }
-      sendJson(res, 200, await bedrockStep(bedrockClient(), body.messages as WireMessage[], body.tools as WireTool[]));
+      // Defence in depth: tools that only an on-screen card may call are never offered to the model, whatever the browser sends.
+      const offered = (body.tools as WireTool[]).filter((tool) => !(APP_ONLY_TOOLS as readonly string[]).includes(tool.name));
+      sendJson(res, 200, await bedrockStep(bedrockClient(), body.messages as WireMessage[], offered));
     } catch (e) {
       if ((e as { status?: number }).status === 413) { sendJson(res, 413, { error: "request too large" }); return true; }
       console.error("bedrock:", (e as Error).name);

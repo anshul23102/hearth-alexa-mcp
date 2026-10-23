@@ -13,7 +13,7 @@ and that **never spends their money without an explicit, undoable yes**.
 [![Transport](https://img.shields.io/badge/transport-Streamable%20HTTP-2a3bd9)](https://modelcontextprotocol.io)
 [![Auth](https://img.shields.io/badge/auth-OAuth%202.1%20%2B%20PKCE-2a3bd9)](SECURITY.md)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522.16-3c873a)](package.json)
-[![Tests](https://img.shields.io/badge/tests-97%20passing-3c873a)](#tests)
+[![Tests](https://img.shields.io/badge/tests-106%20passing-3c873a)](#tests)
 [![Audit](https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-3c873a)](SECURITY.md)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
@@ -53,8 +53,9 @@ Matches carry their evidence, and only a **model-number hit** is called `likely`
 <td width="50%" valign="top">
 
 ### Spends money only with a clear, reversible yes
-`plan_restock` only proposes. `confirm_restock` needs explicit approval (MCP elicitation where the client supports it), is idempotent,
-and sits under **operator-set ceilings the model cannot change**. A 10-minute `undo_restock` and a hash-chained audit log back it up.
+`plan_restock` only proposes. To order by voice, the person must read out a **4-digit approval code that appears only on the plan card**:
+a model has no way to say "the user agreed", so a prompt-injected one cannot place an order. Orders sit under **operator-set ceilings the
+model cannot change**, with a 10-minute `undo_restock` and a hash-chained audit log.
 
 </td>
 </tr>
@@ -90,7 +91,9 @@ Hearth is **not a store**. It restocks only what the household already buys regu
 | **Owner-level matching** | Brand, product type and model number against 10,505 real notices. Measured on 1,669 cases built from real notices: **85.4%** surfaced, **0%** false alerts on unrelated products of the same brand, **2.1%** wrong-model false "likely". |
 | **Learns from messy data** | Imports order exports as they really arrive: mixed date formats (day-first detected), many currencies in the right minor unit, duplicates, cancellations, missing quantities, retitled products. Streams files of hundreds of thousands of rows on a worker thread. |
 | **Forecasts with error bars** | Median days-per-unit across purchase gaps, robust to stock-ups; reported as a likely window with a confidence, never a fake-precise date. |
-| **Safe by construction** | Spend ceilings, approval, idempotency, undo, audit chain, an erase tool hidden from the model, and a tested attack suite ([SECURITY.md](SECURITY.md)). |
+| **Consent a model cannot forge** | No `userConfirmed` flag to set. The model's only route to an order needs a code only the on-screen card shows (stored hashed, three wrong guesses lock the plan). **Attacked on purpose:** `npm run redteam` hits the live model with 16 prompt injections while a plan is pending and counts the orders placed ([docs/REDTEAM.md](docs/REDTEAM.md)). |
+| **A forecast you can audit** | `npm run backtest` predicts every purchase from the history before it. The stated window is calibrated so the real next purchase falls inside it about 80% of the time (it was 56% before the backtest caught it); run it on your own export. |
+| **Safe by construction** | Spend ceilings, idempotency, undo, audit chain, an erase tool hidden from the model, and a tested attack suite ([SECURITY.md](SECURITY.md)). |
 | **Speaks the household's language** | English, Spanish and Hindi replies, locale-correct money, preferences that persist. Spoken conversation with a wake word and follow-ups ([docs/VOICE.md](docs/VOICE.md)). |
 | **Real protocol, visible** | A real MCP client (OAuth + PKCE, Streamable HTTP/SSE, MCP Apps host) stands in for the device, with a live **MCP wire** drawer showing every JSON-RPC message. |
 | **Claude on Amazon Bedrock** | Optional brain via the Converse API with tool use, verified live with Claude Haiku 4.5, with retries and a daily call cap ([docs/BEDROCK.md](docs/BEDROCK.md)). |
@@ -176,10 +179,11 @@ sequenceDiagram
   H->>A: "Restock what we're low on, under $60"
   A->>S: plan_restock
   S-->>A: proposal + total (buys nothing)
-  A->>H: reads the plan back
-  H->>A: "Yes"
-  A->>S: confirm_restock
-  Note over S: within the operator's per-order and daily ceilings?<br/>idempotent on retry, audit entry written
+  S->>H: plan card shows an approval code (the model is never given it)
+  A->>H: reads the plan back, asks for the code
+  H->>A: "Confirm 4 8 2 7"
+  A->>S: confirm_restock + approvalCode
+  Note over S: code matches this plan? (3 wrong guesses lock it)<br/>within the per-order and daily ceilings?<br/>idempotent on retry, audit entry written
   S-->>A: placed
   H->>A: "Cancel that"
   A->>S: undo_restock (within 10 minutes)
@@ -198,7 +202,8 @@ sits behind one `StoreAdapter` interface, which is the seam where a real orderin
 | `recall_alerts` | Recalls published since the household last looked that match something they own (push + pull) | UI |
 | `check_recalls` | Match owned durables to the local U.S. + Canada recall index, with evidence | read-only, UI |
 | `plan_restock` | Propose an order within budget, in the household's currency; buys nothing | UI |
-| `confirm_restock` | Place a planned order after explicit approval | destructive, idempotent |
+| `confirm_restock` | Place a planned order; needs the approval code the person read off the card | destructive, idempotent |
+| `approval_code`, `approve_restock` | **Card only, hidden from the model:** show the code on the plan card; the **Place order** button | destructive, idempotent |
 | `undo_restock` | Cancel within 10 minutes | destructive, idempotent |
 | `remember_preference` | Persist budget, skip-item, language (en/es/hi), recall regions (US/CA) | idempotent |
 | `delete_household_data` | Erase everything held for the household (app-only, hidden from the model) | destructive |
@@ -208,16 +213,16 @@ An **Agent Skill** teaching an assistant the plan → read back → confirm disc
 
 ## Security
 
-Self-audited in two passes: **17 findings, each fixed and each with an attack test** (DNS rebinding, cross-site calls, CSRF on consent,
+Self-audited in several passes: **19 findings, each fixed and each with an attack test** (DNS rebinding, cross-site calls, CSRF on consent,
 token replay and refresh reuse, tenant isolation, spend-ceiling bypass, SQL metacharacters, path traversal, hostile text in recall feeds,
-resource exhaustion). Highlights: hashed tokens with rotating refresh and reuse detection, per-grant households, hash-only CSP, owner-only
-database file, operator ceilings the model cannot change, an erase tool the model cannot see, and refusal to start with auth off in production.
+resource exhaustion). Highlights: consent a prompt-injected model cannot forge (approval codes, red-teamed live), hashed tokens with rotating refresh and reuse
+detection, per-grant households, hash-only CSP, owner-only database file, operator ceilings the model cannot change, app-only tools the model is never offered, and refusal to start with auth off in production.
 Full table and method: [SECURITY.md](SECURITY.md). This is a self-audit, not a third-party penetration test.
 
 ## Tests
 
 ```bash
-npm test         # 97 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
+npm test         # 106 tests: unit, chaos, security, and end-to-end through the official MCP SDK client
 npm run typecheck
 ```
 
@@ -250,11 +255,11 @@ and CI that runs typecheck, build, tests and `npm audit`. Everything configurabl
 ## Honest limitations
 
 - No real Alexa+ device or add-on certification (tooling is partner-only); no real storefront (`StoreAdapter` is simulated).
-- Bedrock was exercised live (Claude Haiku 4.5, one free-plan account; [docs/BEDROCK.md](docs/BEDROCK.md)); CI runs it only against a stand-in server.
-- The Dockerfile and compose file are written but not built in CI.
+- Bedrock was exercised live (Claude Haiku 4.5, one free-plan account; [docs/BEDROCK.md](docs/BEDROCK.md), [docs/REDTEAM.md](docs/REDTEAM.md)); CI runs it only against a stand-in server.
+- The Dockerfile and compose file were written without Docker on the author's machine; the `docker` job in CI builds and smoke-tests the image, and that job runs on public repositories (see the badge for its latest result).
 - OAuth is a minimal authorization server for demonstrating account linking. Its consent step does not authenticate a person; production delegates to the household's real identity provider.
 - One node and SQLite. Scaling out means Postgres (data access is plain SQL in `src/`), a shared rate-limit store, and a pub/sub for the alert push. None of that is built.
-- The synthetic households prove throughput, not forecast accuracy on real purchases. Spanish and Hindi strings need native-speaker review.
+- The synthetic households prove throughput, and the backtest checks the forecaster's statistics, not real shopping behaviour: run `npm run backtest -- your-export.csv` to see how it does on a real export. Spanish and Hindi strings need native-speaker review.
 - The offline voice router understands English only; with the Bedrock brain Claude can interpret other languages, which is untested here.
 - Recall matching is heuristic by design (it says `possible` when unsure). It is a prompt to check the product label, not a safety guarantee.
 - Order exports with column names beyond those in `src/ingest.ts` need header synonyms added.
@@ -267,7 +272,7 @@ and CI that runs typecheck, build, tests and `npm audit`. Everything configurabl
 | `web/` | The Alexa+ simulator: MCP client, voice, MCP Apps host |
 | `src/view.html` | The receipt card (an MCP App) |
 | `skill/hearth/` | The Agent Skill |
-| `test/` | 97 tests |
+| `test/` | 106 tests |
 | `scripts/` | Sample generator, benchmarks, recall evaluation, backups, Bedrock checks, recall replay |
 | `data/` | Synthetic sample households and recall snapshots |
 | `docs/` | Problem evidence, scale, Bedrock, voice, operations, demo script, friction log, submission notes |

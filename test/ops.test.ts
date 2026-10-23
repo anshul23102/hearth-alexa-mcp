@@ -54,7 +54,7 @@ test("metrics are private, correct, and label no personal data", async () => {
   const c = new Client({ name: "m", version: "1" });
   await c.connect(new StreamableHTTPClientTransport(new URL(`${BASE}/mcp`), { requestInit: { headers: { authorization: `Bearer ${tok.access_token}` } } }));
   await c.callTool({ name: "import_order_history", arguments: { csv: CSV } });
-  await c.callTool({ name: "confirm_restock", arguments: { proposalId: "prop_nope", userConfirmed: true } }); // an error outcome
+  await c.callTool({ name: "confirm_restock", arguments: { proposalId: "prop_nope", approvalCode: "0000" } }); // an error outcome
   await c.close();
   const text = await (await fetch(`${BASE}/metrics`, { headers: { authorization: `Bearer ${TOKEN}` } })).text();
   assert.match(text, /hearth_tool_calls_total\{tool="import_order_history",outcome="ok"\} 1/);

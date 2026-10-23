@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { randomUUID } from "node:crypto";
+import { createHash, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { audit } from "./db.js";
 import * as metrics from "./metrics.js";
 import type { Runway } from "./forecast.js";
@@ -79,7 +79,46 @@ function load(db: DatabaseSync, household: string, id: string): Proposal | null 
   return { ...(JSON.parse(row.payload) as Proposal), status: row.status };
 }
 
-export async function confirm(db: DatabaseSync, store: StoreAdapter, household: string, id: string, now = Date.now()): Promise<{ ok: true; receipt: Receipt; replayed: boolean } | { ok: false; error: string }> {
+/**
+ * How the household's yes was proven. A model can say "the user agreed"; it cannot produce these:
+ *  - "app": the press of a button in the on-screen card (a tool only the card may call, hidden from the model);
+ *  - "elicitation": the user accepted a prompt that the client itself rendered;
+ *  - {code}: the 4-digit approval code shown only on the card and then spoken or typed by the person.
+ */
+export type Consent = "app" | "elicitation" | { code: string };
+
+const CODE_MAX_WRONG = 3;           // per plan: the third wrong guess locks the plan
+const CODE_MAX_WRONG_PER_HOUR = 9;  // per household, so re-planning cannot be used to keep guessing
+const HOUR_MS = 3_600_000;
+const codeHash = (id: string, code: string) => createHash("sha256").update(`${id}:${code}`).digest();
+
+/** Issue a fresh approval code for a pending plan. Only the card's app-only tool calls this, so the model never sees the code. */
+export function issueApprovalCode(db: DatabaseSync, household: string, id: string, now = Date.now()): { ok: true; code: string } | { ok: false; error: string } {
+  const p = load(db, household, id);
+  if (!p || p.status !== "pending") return { ok: false, error: "There is no pending plan to approve." };
+  if (now > p.expiresAt) return { ok: false, error: "That plan expired. Ask me to plan it again." };
+  const code = String(randomInt(0, 10_000)).padStart(4, "0");
+  db.prepare("UPDATE proposals SET approval_hash = ?, approval_attempts = 0 WHERE id = ?").run(codeHash(id, code).toString("hex"), id);
+  audit(db, household, "approval_code_issued", { id }, now);
+  return { ok: true, code };
+}
+
+function checkCode(db: DatabaseSync, household: string, id: string, given: string, now: number): { ok: true } | { ok: false; error: string } {
+  const row = db.prepare("SELECT approval_hash, approval_attempts FROM proposals WHERE id = ? AND household = ?").get(id, household) as { approval_hash: string | null; approval_attempts: number } | undefined;
+  const failedLastHour = (db.prepare("SELECT count(*) AS n FROM audit WHERE household = ? AND action = 'approval_failed' AND ts > ?").get(household, now - HOUR_MS) as { n: number }).n;
+  if (failedLastHour >= CODE_MAX_WRONG_PER_HOUR) return { ok: false, error: "Too many wrong approval codes in the last hour, so approvals by voice are paused. Press Place order on the card instead." };
+  if (!row?.approval_hash) return { ok: false, error: "I need the approval code that is shown on the plan card. Ask the person to read it out, then try again. Do not guess it." };
+  if (row.approval_attempts >= CODE_MAX_WRONG) return { ok: false, error: "That plan is locked after too many wrong codes. Ask me to plan it again." };
+  const digits = given.replace(/\D/g, "");
+  const ok = digits.length === 4 && timingSafeEqual(codeHash(id, digits), Buffer.from(row.approval_hash, "hex"));
+  if (ok) return { ok: true };
+  db.prepare("UPDATE proposals SET approval_attempts = approval_attempts + 1 WHERE id = ?").run(id);
+  audit(db, household, "approval_failed", { id, attempt: row.approval_attempts + 1 }, now);
+  metrics.inc("hearth_orders_blocked_total", { reason: "wrong_code" });
+  return { ok: false, error: "That approval code is not right. Ask the person to read the code on the card again." };
+}
+
+export async function confirm(db: DatabaseSync, store: StoreAdapter, household: string, id: string, consent: Consent, now = Date.now()): Promise<{ ok: true; receipt: Receipt; replayed: boolean } | { ok: false; error: string }> {
   const p = load(db, household, id);
   if (!p) return { ok: false, error: "No such proposal for this household." };
   if (p.status === "confirmed") {
@@ -92,6 +131,10 @@ export async function confirm(db: DatabaseSync, store: StoreAdapter, household: 
     return { ok: false, error: "Proposal expired. Ask me to plan it again so prices are fresh." };
   }
   if (p.lines.length === 0) return { ok: false, error: "Nothing to order in this proposal." };
+  if (typeof consent === "object") { // the model's route: it must present a code a person read off the screen
+    const c = checkCode(db, household, id, consent.code, now);
+    if (!c.ok) return c;
+  }
   const lim = spendLimits();
   const unit = 10 ** minorDigits(p.currency);
   if (p.totalCents > lim.perOrder * unit) {
@@ -109,7 +152,7 @@ export async function confirm(db: DatabaseSync, store: StoreAdapter, household: 
   const { orderRef } = await store.place(p.lines, id.replace("prop_", ""));
   const receipt: Receipt = { orderRef, placedAt: now, currency: p.currency, totalCents: p.totalCents, undoUntil: now + UNDO_WINDOW, lines: p.lines };
   db.prepare("UPDATE proposals SET status = 'confirmed', receipt = ? WHERE id = ?").run(JSON.stringify(receipt), id);
-  audit(db, household, "confirm_restock", { id, orderRef, totalCents: p.totalCents }, now);
+  audit(db, household, "confirm_restock", { id, orderRef, totalCents: p.totalCents, consent: typeof consent === "string" ? consent : "code" }, now);
   return { ok: true, receipt, replayed: false };
 }
 
