@@ -126,7 +126,11 @@ small b{color:var(--paper);font-weight:600}
 .wirelog li:hover pre,.wirelog li:focus-within pre,.wirelog li:last-child pre{display:block}
 
 @media (max-width:900px){
-  .stage{grid-template-columns:1fr;padding-top:20px}
+  .stage{grid-template-columns:minmax(0,1fr);padding-top:20px}
+  .top{gap:8px 16px}
+  .status{flex-wrap:wrap;min-width:0;max-width:100%}
+  #status{min-width:0;overflow-wrap:anywhere}
+  .device{min-width:0}
   .printer{position:static;max-height:none;max-width:none;justify-self:stretch}
   .paper{overflow:visible;-webkit-mask:none;mask:none}
   .say{min-height:0}

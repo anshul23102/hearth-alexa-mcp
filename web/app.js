@@ -51,6 +51,7 @@ function ledgerLine(it) {
   switch (it.action) {
     case "confirm_restock": return { text: `Order placed, ${PROOF[d.consent] ?? "approved"}`, tone: "ok" };
     case "undo_restock": return { text: "Order cancelled inside the undo window", tone: "" };
+    case "recall_status": return { text: `Recall progress recorded: ${String(d.status ?? "").replace(/_/g, " ")}`, tone: d.status === "resolved" ? "ok" : "" };
     case "approval_code_issued": return { text: "Approval code shown on the plan card (the model is never given it)", tone: "" };
     case "approval_failed": return { text: `Wrong approval code (attempt ${d.attempt ?? "?"} of 3): nothing ordered`, tone: "warn" };
     case "confirm_blocked": return { text: `Order blocked by the ${d.reason ?? "safety"} limit`, tone: "warn" };
@@ -63,7 +64,9 @@ function ledgerLine(it) {
 }
 async function refreshLedger() {
   try {
-    const r = await mcp.callTool("activity_log", { limit: 15 });
+    // A fingerprint kept in this browser, outside the database: if the server's history is rewritten later, it will not match.
+    let pin = null; try { pin = JSON.parse(sessionStorage.getItem("hearth.pin") || "null"); } catch { /* private mode */ }
+    const r = await mcp.callTool("activity_log", { limit: 15, ...(pin ? { pinnedSeq: pin.seq, pinnedHash: pin.hash } : {}) });
     const sc = r.structuredContent; if (!sc) return;
     const log = $("ledgerLog");
     const head = document.createElement("li");
@@ -75,7 +78,17 @@ async function refreshLedger() {
       li.append(Object.assign(document.createElement("span"), { textContent: text }), t);
       return li;
     });
-    log.replaceChildren(head, ...rows);
+    const fp = document.createElement("li");
+    if (sc.head) {
+      const short = `${sc.head.hash.slice(0, 8)}…${sc.head.hash.slice(-4)}`;
+      if (sc.pin === "changed" || sc.pin === "missing") { fp.className = "head warn"; fp.textContent = `Warning: this history no longer matches what this browser saw earlier (entry ${pin.seq} ${sc.pin === "missing" ? "is gone" : "was rewritten"}).`; }
+      else {
+        fp.className = "head ok";
+        fp.textContent = sc.pin === "unchanged" ? `Unchanged since you last looked (entry ${pin.seq}). Fingerprint now ${short}, entry ${sc.head.seq}.` : `Fingerprint ${short}, entry ${sc.head.seq}, remembered by this browser: a later rewrite of this history would not match it.`;
+        try { sessionStorage.setItem("hearth.pin", JSON.stringify(sc.head)); } catch { /* private mode */ }
+      }
+    }
+    log.replaceChildren(head, ...(sc.head ? [fp] : []), ...rows);
     $("ledgerCount").textContent = `${sc.entries} entries`;
   } catch { /* the drawer is a convenience; the conversation never depends on it */ }
 }
@@ -160,6 +173,13 @@ function ready() {
   $("voicebar").hidden = !voiceUsable;
   showChips();
 }
+
+// "/" jumps to the ask box, the way search boxes do elsewhere.
+addEventListener("keydown", (e) => {
+  if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey || /^(input|textarea|select)$/i.test(document.activeElement?.tagName ?? "")) return;
+  if ($("askForm").hidden) return;
+  e.preventDefault(); $("ask").focus();
+});
 
 $("linkBtn").addEventListener("click", () => mcp.startLinking());
 $("forget").addEventListener("click", async () => {
@@ -305,7 +325,7 @@ async function showCard(name, args, result) {
     onToolResult: (tool, a, r) => {
       if (tool === "approval_code") return; // the code is for the person's eyes: it never enters the conversation the model reads
       const id = `ui_${Date.now()}`, spoken = r.content?.[0]?.text ?? "";
-      const label = tool === "approve_restock" ? "Place order" : tool === "undo_restock" ? "Cancel order" : tool;
+      const label = tool === "recall_status" ? "recall progress" : tool === "approve_restock" ? "Place order" : tool === "undo_restock" ? "Cancel order" : tool;
       // A complete, valid turn (question, call, result, answer): an orphaned tool result would make the next model call fail.
       messages.push(
         { role: "user", content: [{ type: "text", text: `(I pressed “${label}” on the card.)` }] },

@@ -27,6 +27,7 @@ To watch a recall arrive by push: set `HEARTH_ADMIN_TOKEN` (24+ characters) and 
 | Agent Skill as well as MCP | `skill/hearth/SKILL.md` |
 | Claude on Amazon Bedrock (Converse API, tool use), live-verified | `src/agent.ts`, [docs/BEDROCK.md](docs/BEDROCK.md), `npm run bedrock:check` |
 | Consent a model cannot forge | Approval codes only the on-screen card shows: `src/actions.ts`, `test/approval.test.ts`; attacked live with 16 prompt injections: [docs/REDTEAM.md](docs/REDTEAM.md), `npm run redteam` |
+| Closing the loop on a recall, and a fingerprint of the safety history you can check yourself | `recall_status` and the recall card buttons (`test/remedy.test.ts`); the Safety ledger fingerprint (`test/anchor.test.ts`) |
 | Tested | `npm test`: unit, chaos, security and end-to-end through the official MCP SDK client |
 | Measured, not asserted | [docs/SCALE.md](docs/SCALE.md); recall matching evaluated on 1,669 cases built from real notices (`npm run eval`); forecast backtest (`npm run backtest`) |
 | Security reviewed, every finding has an attack test | [SECURITY.md](SECURITY.md) |

@@ -72,6 +72,8 @@ h1{font:700 40px/.95 var(--display);letter-spacing:-.025em;margin:14px 0 4px;tex
 .rc a,.link{color:var(--blue);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px;background:none;border:0;font:inherit;padding:0}
 .rc + .rc{margin-top:6px}
 
+.remedy .state{font-weight:600;margin:0 0 6px}.remedy .state[data-state=resolved]{color:#0a7a3f}.remedy .state[data-state=open]{color:#b4260f}.rbtns{display:flex;flex-wrap:wrap;gap:6px}.rb{font:inherit;font-size:11px;padding:6px 9px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;border-radius:0}.rb.on{background:var(--ink);color:var(--paper)}.rb:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.limits{margin:10px 0 0;font-size:11px;color:var(--muted)}.proof{margin:8px 0 0;font-size:11px;color:#0a7a3f;text-align:center}
 .approval{margin:12px 0 0;padding:10px 12px;border:2px dashed var(--ink);display:grid;gap:2px;text-align:center}.approval small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}.approval b{font:700 30px/1.1 var(--mono);letter-spacing:.18em}.approval span{font-size:11px;color:var(--muted)}
 .tear{margin:18px -20px 0;border-top:2px dashed var(--rule);padding:16px 20px 0;display:flex;gap:10px}
 button.btn{flex:1;font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:13px 10px;border:2px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;transition:transform .18s var(--ease),background .18s,box-shadow .18s;box-shadow:3px 3px 0 var(--blue)}
@@ -146,25 +148,48 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
     const due = items.filter((i) => i.daysLeft <= sc.withinDays).length;
     const rows = items.map((i) => {
       const w = i.daysLeft < 0 ? '<span class="when over">OVERDUE ' + Math.abs(i.daysLeft) + "D</span>" : i.daysLeft === 0 ? '<span class="when soon">TODAY</span>' : '<span class="when ' + (i.daysLeft <= 7 ? "soon" : "") + '">IN ' + i.daysLeft + "D</span>";
-      return '<div class="row"><div class="line"><span class="name">' + esc(short(i.title, i.name)) + "</span>" + w + '</div><div class="meta"><span>±' + i.windowDays + "d · " + i.confidence + " confidence</span><span>" + i.purchases + " orders</span></div>" + scale(i) + "</div>";
+      return '<div class="row"><div class="line"><span class="name">' + esc(short(i.title, i.name)) + "</span>" + w + '</div><div class="meta"><span>±' + i.windowDays + "d · " + i.confidence + " confidence" + (i.unitsPerDay > 0 && i.packUnits ? " · a pack lasts ~" + Math.max(1, Math.round(i.packUnits / i.unitsPerDay)) + "d" : "") + "</span><span>" + i.purchases + " orders</span></div>" + scale(i) + "</div>";
     }).join("");
     slip('<h1>Running low</h1><p class="sub">' + due + " of " + items.length + " items run out within " + sc.withinDays + ' days. Bars show the likely window, not a promise: each is sized to catch your next purchase about 8 times in 10.</p><hr class="dots">' + rows);
+  }
+  const REMEDY = [["stopped_using", "I stopped using it"], ["remedy_requested", "I asked for the free fix"], ["resolved", "Fixed or returned"]];
+  const REMEDY_WORDS = { open: "Still open", stopped_using: "Stopped using it", remedy_requested: "Free fix requested", resolved: "Resolved", not_mine: "Not my model" };
+  // A recall is only worth anything once the product is dealt with: let the person record where they got to.
+  function remedyBlock(m) {
+    const cur = m.remedy || "open";
+    return '<div class="remedy" data-rid="' + esc(m.recall.id) + '" data-pk="' + esc(m.owned.productKey) + '"><div class="lbl">What have you done?</div><p class="state" data-state="' + esc(cur) + '">' + esc(REMEDY_WORDS[cur] || cur) + '</p><div class="rbtns">' +
+      REMEDY.map((x) => '<button class="rb' + (cur === x[0] ? " on" : "") + '" data-s="' + x[0] + '">' + x[1] + "</button>").join("") + "</div></div>";
+  }
+  function wireRemedy() {
+    app.querySelectorAll(".remedy").forEach((box) => box.querySelectorAll(".rb").forEach((b) => b.addEventListener("click", async () => {
+      const state = box.querySelector(".state");
+      try {
+        const r = await callTool("recall_status", { recallId: box.dataset.rid, productKey: box.dataset.pk, status: b.dataset.s });
+        if (r.isError) throw new Error(r.content?.[0]?.text || "Could not save that");
+        box.querySelectorAll(".rb").forEach((x) => x.classList.toggle("on", x === b));
+        state.dataset.state = b.dataset.s; state.textContent = REMEDY_WORDS[b.dataset.s];
+        const all = [...app.querySelectorAll(".remedy .state")], count = app.querySelector(".sub b");
+        if (count) count.textContent = all.filter((x) => x.dataset.state !== "resolved" && x.dataset.state !== "not_mine").length + " of " + all.length + " still open.";
+      } catch (e) { state.textContent = e.message; }
+      fit();
+    })));
   }
   function recalls(sc) {
     const ms = sc.matches || [];
     if (!ms.length) return slip(sc.fromAlerts ? '<h1>Nothing new</h1><p class="sub">No new recalls for anything you own.</p>' : '<h1>All clear</h1><p class="sub">Checked ' + sc.checked + " products against " + Number(sc.indexed || 0).toLocaleString(LOC) + " recall notices. No matches.</p>");
     const src = (sc.regions || []).join(" + ");
-    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul>' + (m.recall.url ? '<button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button>' : "") + '</div><hr class="dots">').join("");
-    slip('<h1>' + (sc.fromAlerts ? "New recall alert" : ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at") + "</h1><p class=\"sub\">" + (sc.fromAlerts ? "Found the moment the notice was published, by matching it to what you own on brand, product type and model number." : "Matched on brand, product type and model number against " + Number(sc.indexed || 0).toLocaleString(LOC) + " public recall notices (" + esc(src) + ").") + "</p><hr class=\"dots\">" + cards);
+    const cards = ms.map((m) => '<div class="rc"><div class="banner"><span>' + esc(m.recall.region) + " · " + esc(SRC[m.recall.source] || m.recall.source) + "</span><span>" + esc(m.recall.date) + '</span></div><h2>' + esc(m.recall.title.replace(/;.*$/, "")) + '</h2><span class="stamp ' + (m.level === "likely" ? "" : "poss") + '">' + m.level + ' match</span><div class="lbl">You own</div><p>' + esc(m.owned.title) + " · bought " + esc(m.owned.lastPurchased) + '</p><div class="lbl">Hazard</div><p>' + esc(m.recall.hazard) + '</p><div class="lbl">Remedy</div><p>' + esc(m.recall.remedy) + '</p><div class="lbl">Why I think so</div><ul>' + m.evidence.map((e) => "<li" + (/verify|may be/.test(e) ? ' class="warn"' : "") + ">" + esc(e) + "</li>").join("") + '</ul>' + remedyBlock(m) + (m.recall.url ? '<button class="link" data-url="' + esc(m.recall.url) + '">Read the official notice ↗</button>' : "") + '</div><hr class="dots">').join("");
+    slip('<h1>' + (sc.fromAlerts ? "New recall alert" : ms.length + (ms.length === 1 ? " recall" : " recalls") + " to look at") + "</h1><p class=\"sub\">" + (sc.fromAlerts ? "Found the moment the notice was published, by matching it to what you own on brand, product type and model number." : "Matched on brand, product type and model number against " + Number(sc.indexed || 0).toLocaleString(LOC) + " public recall notices (" + esc(src) + ").") + (typeof sc.open === "number" ? " <b>" + sc.open + " of " + ms.length + " still open.</b>" : "") + "</p><hr class=\"dots\">" + cards);
     app.querySelectorAll("[data-url]").forEach((b) => b.addEventListener("click", () => request("ui/open-link", { url: b.dataset.url }).catch(() => {})));
+    wireRemedy();
   }
   function proposal(sc) {
     const p = sc.proposal; current = p;
     if (!p.lines.length) return slip('<h1>Nothing to order</h1><p class="sub">Everything is stocked for that window.</p>');
     const lines = p.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + money(l.packs * l.unitPriceCents, l.currency) + '</span></div><div class="reason">' + esc(l.reason) + "</div>").join("");
     const dropped = p.dropped.map((d) => '<div class="leader struck"><span class="t">' + esc(short(d.title, d.name)) + '</span></div><div class="reason">left out: ' + esc(d.why) + "</div>").join("");
-    slip('<h1>Restock plan</h1><p class="sub">Nothing is ordered until you say yes. Plan expires at ' + hhmm(p.expiresAt) + '.</p><hr class="dots">' + lines + dropped + '<hr class="solid"><div class="total"><small>Total</small><span>' + money(p.totalCents, p.currency) + '</span></div>' + (p.budgetCents ? '<div class="note">Budget ' + money(p.budgetCents, p.currency) + " · " + money(p.budgetCents - p.totalCents, p.currency) + " to spare</div>" : "") +
-      '<div class="approval"><small>Approval code</small><b id="code" aria-live="polite">····</b><span>Say it to approve by voice, or press Place order.</span></div><div class="tear"><button class="btn" id="place">Place order</button><button class="btn ghost" id="later">Not now</button></div><div class="note" id="msg" role="status"></div>');
+    slip('<h1>Restock plan</h1><p class="sub">Nothing is ordered until you say yes. Plan expires at ' + hhmm(p.expiresAt) + '.</p>' + '<div class="approval"><small>Approval code</small><b id="code" aria-live="polite">····</b><span>Say it to approve by voice, or press Place order below.</span></div><hr class="dots">' + lines + dropped + '<hr class="solid"><div class="total"><small>Total</small><span>' + money(p.totalCents, p.currency) + '</span></div>' + (p.budgetCents ? '<div class="note">Budget ' + money(p.budgetCents, p.currency) + " · " + money(p.budgetCents - p.totalCents, p.currency) + " to spare</div>" : "") +
+      (sc.limits ? '<p class="limits">Safety limits set by the operator, not the model: ' + money(sc.limits.perOrderCents, p.currency) + ' per order, ' + money(sc.limits.perDayCents, p.currency) + ' per day.</p>' : '') + '<div class="tear"><button class="btn" id="place">Place order</button><button class="btn ghost" id="later">Not now</button></div><div class="note" id="msg" role="status"></div>');
     const place = document.getElementById("place"), later = document.getElementById("later"), msg = document.getElementById("msg");
     // The code exists only on this card: a tool the model cannot call issues it, and it is never written into the conversation.
     callTool("approval_code", { proposalId: p.id }).then((r) => { const c = r.structuredContent && r.structuredContent.code; if (c) document.getElementById("code").textContent = c.split("").join(" "); }).catch(() => { document.getElementById("code").textContent = "—"; });
@@ -192,7 +217,7 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--blue);outline-offse
     if (sc.declined) return slip('<h1>Not ordered</h1><p class="sub">Okay, I did not place that order.</p>');
     const r = sc.receipt, id = sc.proposalId;
     const lines = r.lines.map((l) => '<div class="leader"><span class="t">' + l.packs + "× " + esc(short(l.title, l.name)) + '</span><span class="d"></span><span class="p">' + money(l.packs * l.unitPriceCents, l.currency) + "</span></div>").join("");
-    slip('<h1>Ordered</h1><p class="sub ok">' + (sc.replayed ? "Already placed — no duplicate created." : "Placed through the simulated store.") + '</p><hr class="dots">' + lines + '<hr class="solid"><div class="total"><small>Paid</small><span>' + money(r.totalCents, r.currency) + "</span></div>" + code39(r.orderRef) + '<div class="center note">' + esc(r.orderRef) + '</div><div class="tear"><div style="flex:1"><div class="note" style="margin:0">Undo window</div><div class="timer" id="timer">—</div></div><button class="btn ghost" id="undo">Cancel order</button></div><div class="note" id="msg" role="status"></div>');
+    slip('<h1>Ordered</h1><p class="sub ok">' + (sc.replayed ? "Already placed — no duplicate created." : "Placed through the simulated store.") + '</p><hr class="dots">' + lines + '<hr class="solid"><div class="total"><small>Paid</small><span>' + money(r.totalCents, r.currency) + "</span></div>" + code39(r.orderRef) + '<div class="center note">' + esc(r.orderRef) + '</div>' + (r.consent ? '<p class="proof">Approved ' + ({ code: "with the spoken code", app: "with the Place order button", elicitation: "at a prompt your device showed" }[r.consent] || "") + ". Logged in the safety ledger.</p>" : "") + '<div class="tear"><div style="flex:1"><div class="note" style="margin:0">Undo window</div><div class="timer" id="timer">—</div></div><button class="btn ghost" id="undo">Cancel order</button></div><div class="note" id="msg" role="status"></div>');
     const t = document.getElementById("timer"), u = document.getElementById("undo"), msg = document.getElementById("msg");
     clearInterval(timer);
     const tick = () => { const s = Math.max(0, Math.round((r.undoUntil - Date.now()) / 1000)); t.textContent = String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); if (!s) { u.disabled = true; clearInterval(timer); } };

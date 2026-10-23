@@ -63,3 +63,32 @@ export function markAlertsSeen(db: DatabaseSync, household: string, ids: number[
 export function countNewAlerts(db: DatabaseSync, household: string): number {
   return (db.prepare("SELECT COUNT(*) AS n FROM alerts WHERE household = ? AND status = 'new'").get(household) as { n: number }).n;
 }
+
+/**
+ * A recall notice that reaches an owner has done nothing until the product is dealt with (CPSC's own figure: under half of recalled
+ * units are ever corrected). Hearth keeps the household's progress on each match: open, stopped using it, remedy requested, resolved.
+ */
+export const REMEDY_STATUSES = ["stopped_using", "remedy_requested", "resolved", "not_mine"] as const;
+export type RemedyStatus = (typeof REMEDY_STATUSES)[number] | "open";
+const MAX_TRACKED = 500;
+
+export function setRecallStatus(db: DatabaseSync, household: string, recallId: string, productKey: string, status: (typeof REMEDY_STATUSES)[number], now = Date.now()): { ok: true } | { ok: false; error: string } {
+  const [source, extId] = recallId.split(/:(.*)/s);
+  const real = extId !== undefined && db.prepare("SELECT 1 FROM recalls WHERE source = ? AND ext_id = ?").get(source, extId);
+  const owned = db.prepare("SELECT 1 FROM orders WHERE household = ? AND product_key = ? LIMIT 1").get(household, productKey);
+  if (!real || !owned) return { ok: false, error: "That recall and product are not a match I know about for this household." };
+  const have = (db.prepare("SELECT COUNT(*) AS n FROM recall_actions WHERE household = ?").get(household) as { n: number }).n;
+  const exists = db.prepare("SELECT 1 FROM recall_actions WHERE household = ? AND recall_id = ? AND product_key = ?").get(household, recallId, productKey);
+  if (!exists && have >= MAX_TRACKED) return { ok: false, error: "Too many recalls are being tracked for this household." };
+  db.prepare("INSERT INTO recall_actions (household, recall_id, product_key, status, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT (household, recall_id, product_key) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at").run(household, recallId, productKey, status, now);
+  audit(db, household, "recall_status", { recallId, productKey, status }, now);
+  return { ok: true };
+}
+
+/** Attach each match's progress, and count how many are still open. */
+export function withRemedy<T extends { recall: { id: string }; owned: { productKey: string } }>(db: DatabaseSync, household: string, matches: T[]): { matches: (T & { remedy: RemedyStatus })[]; open: number } {
+  const rows = db.prepare("SELECT recall_id, product_key, status FROM recall_actions WHERE household = ?").all(household) as unknown as { recall_id: string; product_key: string; status: RemedyStatus }[];
+  const by = new Map(rows.map((r) => [`${r.recall_id}|${r.product_key}`, r.status]));
+  const out = matches.map((m) => ({ ...m, remedy: by.get(`${m.recall.id}|${m.owned.productKey}`) ?? ("open" as RemedyStatus) }));
+  return { matches: out, open: out.filter((m) => m.remedy !== "resolved" && m.remedy !== "not_mine").length }; // stopping use or asking for the fix is progress, not closure
+}

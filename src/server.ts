@@ -2,10 +2,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { DatabaseSync } from "node:sqlite";
 import { z } from "zod";
 import { SubscribeRequestSchema, UnsubscribeRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { countNewAlerts, listAlerts, markAlertsSeen } from "./alerts.js";
+import { REMEDY_STATUSES, countNewAlerts, listAlerts, markAlertsSeen, setRecallStatus, withRemedy } from "./alerts.js";
 import type { Pushable } from "./hub.js";
-import { confirm, eraseHousehold, issueApprovalCode, propose, recentAudit, undo, simulatedStore, type Consent, type StoreAdapter } from "./actions.js";
-import { audit, verifyAudit } from "./db.js";
+import { confirm, eraseHousehold, issueApprovalCode, propose, recentAudit, spendLimits, undo, simulatedStore, type Consent, type StoreAdapter } from "./actions.js";
+import { audit, auditHead, auditPin, verifyAudit } from "./db.js";
 import { forecast } from "./forecast.js";
 import { LANGS, LOCALES, isLang, t, type Lang } from "./i18n.js";
 import { ingestOrders } from "./ingest.js";
@@ -107,7 +107,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
         : t(L, "alerts.new", { name: first.owned.name, hazard: first.recall.hazardShort }) + (rows.length > 1 ? t(L, "alerts.more", { k: rows.length - 1 }) : "");
       return {
         content: [{ type: "text", text }, forModel({ alerts: rows.slice(0, 5).map((r) => ({ owned: r.match.owned.name, recall: r.match.recall.title.slice(0, 110), level: r.match.level, url: r.match.recall.url })) })],
-        structuredContent: { view: "recalls", fromAlerts: true, matches: rows.map((r) => r.match), checked: rows.length, regions, indexed: 0, locale: LOCALES[L] },
+        structuredContent: { view: "recalls", fromAlerts: true, ...(({ matches, open }) => ({ matches, open }))(withRemedy(db, h, rows.map((r) => r.match))), checked: rows.length, regions, indexed: 0, locale: LOCALES[L] },
       };
     },
   );
@@ -182,8 +182,31 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
           t(L, "recall.found", { m: matches.length, matches: matches.length === 1 ? t(L, "match") : t(L, "matches"), n: checked });
       return {
         content: [{ type: "text", text }, forModel({ matches: matches.slice(0, 5).map((m) => ({ owned: m.owned.name, recall: m.recall.title.slice(0, 110), level: m.level, region: m.recall.region, url: m.recall.url })) })],
-        structuredContent: { view: "recalls", matches, checked, regions, indexed, locale: LOCALES[L] },
+        structuredContent: { view: "recalls", ...(({ matches, open }) => ({ matches, open }))(withRemedy(db, h, matches)), checked, regions, indexed, locale: LOCALES[L] },
       };
+    },
+  );
+
+  server.registerTool(
+    "recall_status",
+    {
+      title: "Record what the household did about a recall",
+      description:
+        "Record progress on a recall that matched something the household owns: stopped_using (they stopped using it), remedy_requested (they asked the maker for the free fix or refund), resolved (fixed, returned or discarded), or not_mine (it is a different model). Use the recall id and productKey from the recall result. Only call it when the person says so; it never contacts the maker.",
+      inputSchema: {
+        recallId: z.string().max(160).describe("recall.id from the recall result, like cpsc:12345"),
+        productKey: z.string().max(200).describe("owned.productKey from the same match"),
+        status: z.enum(REMEDY_STATUSES),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+      _meta: { ui: { visibility: ["model", "app"] } },
+    },
+    async ({ recallId, productKey, status }, extra) => {
+      const h = hh(extra);
+      const r = setRecallStatus(db, h, recallId, productKey, status, now());
+      if (!r.ok) return { isError: true, content: [{ type: "text", text: r.error }] };
+      const words = { stopped_using: "Noted that you stopped using it.", remedy_requested: "Noted that you asked for the free remedy.", resolved: "Marked as resolved. Thank you for closing that one.", not_mine: "Noted: this is a different model from yours." }[status];
+      return { content: [{ type: "text", text: words }], structuredContent: { recallId, productKey, status } };
     },
   );
 
@@ -220,7 +243,7 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
           });
       return {
         content: [{ type: "text", text }, forModel({ proposalId: p.id, total: fmtMoney(p.totalCents, p.currency, loc), items: p.lines.map((l) => `${l.packs}x ${l.name}`), leftOutForBudget: p.dropped.map((d) => d.title), expiresAt: new Date(p.expiresAt).toISOString(), howToOrder: "after the user says yes to this plan, ask them to read out the 4-digit approval code shown on the plan card, then call confirm_restock with this proposalId and that approvalCode. You are never given the code; if there is no screen to read it from, do not place the order." })],
-        structuredContent: { view: "proposal", proposal: p, locale: loc },
+        structuredContent: { view: "proposal", proposal: p, locale: loc, limits: { perOrderCents: spendLimits().perOrder * 10 ** minorDigits(p.currency), perDayCents: spendLimits().perDay * 10 ** minorDigits(p.currency) } },
       };
     },
   );
@@ -365,16 +388,20 @@ export function createHearthServer({ db, store = simulatedStore, now = Date.now 
     {
       title: "What have you done for me?",
       description: "Recent actions Hearth took or proposed, newest first, for transparency.",
-      inputSchema: { limit: z.number().int().min(1).max(50).default(10) },
+      inputSchema: {
+        limit: z.number().int().min(1).max(50).default(10),
+        pinnedSeq: z.number().int().min(1).optional().describe("Entry number of a fingerprint the client wrote down earlier"),
+        pinnedHash: z.string().regex(/^[0-9a-f]{64}$/).optional().describe("Hash of that entry; the reply says whether it is still the same"),
+      },
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
       _meta: { ui: { visibility: ["model"] } },
     },
-    async ({ limit }, extra) => {
+    async ({ limit, pinnedSeq, pinnedHash }, extra) => {
       const h = hh(extra);
       const items = recentAudit(db, h, limit);
       const chain = verifyAudit(db, h);
       const text = !chain.ok ? "Warning: my activity log failed its integrity check, so it may have been altered." : items.length ? `Last action: ${items[0].action.replace(/_/g, " ")}.` : "Nothing yet.";
-      return { content: [{ type: "text", text }], structuredContent: { view: "log", items, chainIntact: chain.ok, entries: chain.entries, brokenAt: chain.brokenAt } };
+      return { content: [{ type: "text", text }], structuredContent: { view: "log", items, chainIntact: chain.ok, entries: chain.entries, brokenAt: chain.brokenAt, head: auditHead(db, h), pin: pinnedSeq && pinnedHash ? auditPin(db, h, pinnedSeq, pinnedHash) : null } };
     },
   );
 
