@@ -17,8 +17,9 @@ Setup: `npm run sample && npm start`; open http://localhost:3939 in a fresh prof
 | 2:25-2:40 | Press Cancel order on the receipt; barcode voids. Open MCP wire briefly | "Ten-minute undo, idempotent retries, spend ceilings, and a hash-chained audit log." |
 | 2:40-2:55 | Terminal: `npm test` ending in 97 passing | "Ninety-seven automated tests through the official MCP SDK, including an attack suite. Open source, MIT." |
 
-Optional, only once `npm run bedrock:check` has really passed: add "Claude on Amazon Bedrock can drive it" and show the header reading
-"Claude on Amazon Bedrock". Until then do not claim a live Bedrock run; say "it includes a Bedrock integration".
+Bedrock has passed `npm run bedrock:check` and run live, so you may say "Claude on Amazon Bedrock can drive it" and show the header reading
+"Claude on Amazon Bedrock". It needs a fresh short-term key exported in the same terminal shortly before recording (keys last at most 12 hours), and a
+model call can fail momentarily, so record when it answers cleanly; the app then falls back to its offline router for that answer.
 
 Do not show: real credentials, real Amazon trademarks beyond the word "Alexa+" used descriptively, any real orders.
 
