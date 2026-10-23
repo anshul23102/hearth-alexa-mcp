@@ -2,6 +2,7 @@
 // drives the real simulator in headless Chrome over the DevTools protocol (link, load, ask, place order, push a recall), and
 // frames each screenshot on a 3:2 canvas with a caption. Needs Google Chrome; run `npm run gallery`.
 import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { mkdtempSync, writeFileSync, copyFileSync, existsSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
@@ -10,7 +11,7 @@ import { pathToFileURL } from "node:url";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const CHROME = process.env.CHROME ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const PORT = 3955, DEBUG = 9333, TOKEN = "gallery-operator-token-0123456789";
+const PORT = 3955, DEBUG = 9333, TOKEN = randomBytes(18).toString("hex"); // a fresh operator token for this throwaway server
 const BASE = `http://localhost:${PORT}`;
 const tmp = mkdtempSync(join(tmpdir(), "hearth-gallery-"));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
