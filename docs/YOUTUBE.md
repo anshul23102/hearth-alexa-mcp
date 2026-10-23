@@ -1,7 +1,7 @@
 # YouTube upload package
 
 Everything to paste into YouTube for `docs/demo/hearth-demo.mp4`, then into Devpost.
-Replace the `{T1}`..`{T10}` placeholders in the chapters block with the real timestamps from the finished video (`m:ss`; the first must be `0:00`).
+Chapter timestamps below were measured from the final video (accurate to a few seconds).
 
 ## Settings
 
@@ -46,7 +46,15 @@ Everything on screen is the real app. Waits for the model longer than about two 
 - Measured, not claimed: 85% of known recalls surfaced, zero false alerts on unrelated products, 16 red-team attacks with no order placed, 142 automated tests
 
 CHAPTERS
-{CHAPTERS}
+0:00 The problem and what Hearth is
+0:11 Real OAuth 2.1 + PKCE account linking and the MCP wire
+0:21 A messy household order export
+0:28 Forecast: a likely window, never a fake date
+0:44 Recalls matched by brand and model, plus the remedy tracker
+1:09 Hearth is not a store
+1:22 Safe reordering: approval code by voice, safety ledger, undo
+1:40 A new recall pushed to every owner, then Spanish and Hindi
+2:12 Measured, not claimed
 
 HONEST NOTES
 - Alexa+ add-on tooling is partner-only, so there is no real Alexa device in this video. A real MCP client (OAuth + PKCE, Streamable HTTP, MCP Apps host) stands in for it, which the hackathon FAQ allows.
@@ -63,19 +71,26 @@ Red team: https://github.com/anshul23102/hearth-alexa-mcp/blob/main/docs/REDTEAM
 #Alexa #MCP #ModelContextProtocol #AmazonBedrock #ProductRecalls #Hackathon
 ```
 
-Chapters block to substitute for `{CHAPTERS}` (YouTube needs at least three, the first at `0:00`, each 10 seconds or longer):
+Chapters block to substitute for `0:00 The problem and what Hearth is
+0:11 Real OAuth 2.1 + PKCE account linking and the MCP wire
+0:21 A messy household order export
+0:28 Forecast: a likely window, never a fake date
+0:44 Recalls matched by brand and model, plus the remedy tracker
+1:09 Hearth is not a store
+1:22 Safe reordering: approval code by voice, safety ledger, undo
+1:40 A new recall pushed to every owner, then Spanish and Hindi
+2:12 Measured, not claimed` (YouTube needs at least three, the first at `0:00`, each 10 seconds or longer):
 
 ```
-{T1} The problem and what Hearth is
-{T2} Real OAuth 2.1 + PKCE account linking and the MCP wire
-{T3} A messy household order export
-{T4} Forecast: a likely window, never a fake date
-{T5} Recalls matched by brand and model, plus the remedy tracker
-{T6} Hearth is not a store
-{T7} Safe reordering: approval code, safety ledger, undo
-{T8} A new recall pushed to every owner
-{T9} Spanish, Hindi and your own export
-{T10} Measured, not claimed
+0:00 The problem and what Hearth is
+0:11 Real OAuth 2.1 + PKCE account linking and the MCP wire
+0:21 A messy household order export
+0:28 Forecast: a likely window, never a fake date
+0:44 Recalls matched by brand and model, plus the remedy tracker
+1:09 Hearth is not a store
+1:22 Safe reordering: approval code by voice, safety ledger, undo
+1:40 A new recall pushed to every owner, then Spanish and Hindi
+2:12 Measured, not claimed
 ```
 
 These match the scenes marked in `scripts/make-demo-video.mjs` (1 to 10). The closing title card is part of scene 10.
@@ -98,7 +113,15 @@ Judges: start with JUDGING.md. The Alexa+ device is simulated by a real MCP clie
 ## Upload checklist
 
 1. Check the video: 1080p, under 3:00, narration audible, no dead air.
-2. Upload `docs/demo/hearth-demo.mp4`; title as above; paste the description with `{CHAPTERS}` replaced by the chapters block (real timestamps).
+2. Upload `docs/demo/hearth-demo.mp4`; title as above; paste the description with `0:00 The problem and what Hearth is
+0:11 Real OAuth 2.1 + PKCE account linking and the MCP wire
+0:21 A messy household order export
+0:28 Forecast: a likely window, never a fake date
+0:44 Recalls matched by brand and model, plus the remedy tracker
+1:09 Hearth is not a store
+1:22 Safe reordering: approval code by voice, safety ledger, undo
+1:40 A new recall pushed to every owner, then Spanish and Hindi
+2:12 Measured, not claimed` replaced by the chapters block (real timestamps).
 3. Thumbnail, audience, category, language, synthetic-content setting as in the table.
 4. Visibility **Public** (not Unlisted, not Private), then publish.
 5. Open the link in a private/incognito window to confirm it plays without signing in; confirm the chapters appear on the timeline.
